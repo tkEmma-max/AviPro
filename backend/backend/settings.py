@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'django_filters',
-    'drf_yasg',
+    #'drf_yasg',
     
     # Local apps
     'api',
@@ -176,9 +176,10 @@ CORS_ALLOW_CREDENTIALS = True
 
 
 # REST Framework Configuration
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  # <--- CORRECT
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
@@ -190,8 +191,11 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 20,
     'DATETIME_FORMAT': '%Y-%m-%dT%H:%M:%S%z',
     'DATE_FORMAT': '%Y-%m-%d',
+
+    "DEFAULT_FORMAT_SUFFIX_KWARG": None,
 }
 
+USE_FORMAT_SUFFIX = False
 
 # JWT Configuration
 SIMPLE_JWT = {
