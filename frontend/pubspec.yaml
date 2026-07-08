@@ -1,0 +1,51 @@
+# pubspec.yaml
+name: avipro
+description: Application de gestion avicole
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # HTTP & API
+  dio: ^5.4.0
+
+  # État
+  provider: ^6.1.1
+
+  # Stockage local
+  shared_preferences: ^2.5.5
+
+  # UI
+  flutter_svg: ^2.3.0
+  intl: ^0.20.3
+  fl_chart: ^0.68.0
+
+  # Utilitaires
+  uuid: ^4.5.3
+  connectivity_plus: ^6.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+  flutter_launcher_icons: ^0.14.4
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/avipro_icon.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icons/avipro_icon.png"
+  remove_alpha_ios: true

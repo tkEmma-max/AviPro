@@ -27,25 +27,34 @@ class AuthProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    try {
-      final response = await _apiService.login(username, password);
-      if (response.statusCode == 200) {
-        _token = response.data['access'];
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(AppConstants.storageAccessToken, _token!);
-        await prefs.setString(AppConstants.storageRefreshToken, response.data['refresh']);
-        _isLoading = false;
-        notifyListeners();
-        return true;
-      }
-      _isLoading = false;
-      notifyListeners();
-      return false;
-    } catch (e) {
-      _isLoading = false;
-      notifyListeners();
-      return false;
-    }
+    await Future.delayed(const Duration(seconds: 1));
+
+    _token = 'demo_token_123456789';
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(AppConstants.storageAccessToken, _token!);
+
+    _isLoading = false;
+    notifyListeners();
+    return true;
+  }
+
+  // ═══════════════════════════════════════════════
+  // NOUVELLE MÉTHODE : REGISTER
+  // ═══════════════════════════════════════════════
+  Future<bool> register(String fullName, String email, String phone, String password) async {
+    _isLoading = true;
+    notifyListeners();
+
+    await Future.delayed(const Duration(seconds: 1));
+
+    // Simulation d'inscription réussie
+    _token = 'demo_token_123456789';
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(AppConstants.storageAccessToken, _token!);
+
+    _isLoading = false;
+    notifyListeners();
+    return true;
   }
 
   Future<void> logout() async {

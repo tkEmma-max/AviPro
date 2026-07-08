@@ -15,6 +15,7 @@ class CustomTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final TextInputType keyboardType;
   final bool enabled;
+  final ValueChanged<String>? onChanged; // <--- DÉJÀ PRÉSENT
 
   const CustomTextField({
     super.key,
@@ -27,6 +28,7 @@ class CustomTextField extends StatelessWidget {
     this.validator,
     this.keyboardType = TextInputType.text,
     this.enabled = true,
+    this.onChanged, // <--- DÉJÀ PRÉSENT
   });
 
   @override
@@ -37,36 +39,36 @@ class CustomTextField extends StatelessWidget {
       validator: validator,
       keyboardType: keyboardType,
       enabled: enabled,
+      onChanged: onChanged, // <--- DÉJÀ PRÉSENT
       style: AppTextStyles.bodyMedium,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
         prefixIcon: prefixIcon != null
-            ? Icon(prefixIcon, color: AppColors.textHint)
+            ? Icon(prefixIcon, color: AppColors.textHint, size: 20)
             : null,
         suffixIcon: suffixIcon,
         border: OutlineInputBorder(
-          borderRadius: AppBorders.radiusMedium,
+          borderRadius: AppBorders.inputRadius,
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: AppBorders.radiusMedium,
-          borderSide: BorderSide(color: AppColors.grey300),
+          borderRadius: AppBorders.inputRadius,
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: AppBorders.radiusMedium,
+          borderRadius: AppBorders.inputRadius,
           borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: AppBorders.radiusMedium,
+          borderRadius: AppBorders.inputRadius,
           borderSide: const BorderSide(color: AppColors.error, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg,
           vertical: AppSpacing.md,
         ),
-        labelStyle: AppTextStyles.bodyMedium.copyWith(
-          color: AppColors.textSecondary,
-        ),
+        labelStyle: AppTextStyles.bodyMedium,
         errorStyle: AppTextStyles.bodySmall.copyWith(
           color: AppColors.error,
         ),

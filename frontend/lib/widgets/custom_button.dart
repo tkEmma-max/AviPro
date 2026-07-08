@@ -47,13 +47,11 @@ class CustomButton extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           foregroundColor: color,
           side: BorderSide(color: color),
-          minimumSize: const Size(double.infinity, 50),
+          minimumSize: const Size(double.infinity, 48), // 48px de hauteur
           shape: RoundedRectangleBorder(
-            borderRadius: AppBorders.radiusMedium,
+            borderRadius: AppBorders.buttonRadius, // Capsule 24px
           ),
-          textStyle: AppTextStyles.buttonLarge.copyWith(
-            color: color,
-          ),
+          textStyle: AppTextStyles.button,
         ),
       );
     }
@@ -63,12 +61,13 @@ class CustomButton extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: color,
         foregroundColor: textCol,
-        minimumSize: const Size(double.infinity, 50),
+        minimumSize: const Size(double.infinity, 48), // 48px de hauteur
         shape: RoundedRectangleBorder(
-          borderRadius: AppBorders.radiusMedium,
+          borderRadius: AppBorders.buttonRadius, // Capsule 24px
         ),
         elevation: 2,
-        disabledBackgroundColor: AppColors.grey400,
+        shadowColor: AppColors.shadow,
+        disabledBackgroundColor: AppColors.textHint,
       ),
       child: isLoading
           ? SizedBox(
@@ -88,7 +87,7 @@ class CustomButton extends StatelessWidget {
                 ],
                 Text(
                   label,
-                  style: AppTextStyles.buttonLarge.copyWith(
+                  style: AppTextStyles.button.copyWith(
                     color: textCol,
                   ),
                 ),

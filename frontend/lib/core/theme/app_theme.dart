@@ -4,55 +4,64 @@ import 'app_colors.dart';
 import 'app_text_styles.dart';
 import 'app_spacing.dart';
 import 'app_borders.dart';
+import 'app_shadows.dart';
 
 class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primary,
+      colorScheme: const ColorScheme.light(
         primary: AppColors.primary,
-        secondary: AppColors.secondary,
+        secondary: AppColors.success,
         error: AppColors.error,
+        surface: AppColors.surface,
       ),
 
-      // Typographie
+      // ============================================================
+      // TYPOGRAPHIE - Inter
+      // ============================================================
       textTheme: const TextTheme(
-        displayLarge: AppTextStyles.headline1,
-        displayMedium: AppTextStyles.headline2,
-        displaySmall: AppTextStyles.headline3,
-        headlineMedium: AppTextStyles.headline4,
+        displayLarge: AppTextStyles.headlineLarge,
+        displayMedium: AppTextStyles.headlineMedium,
+        displaySmall: AppTextStyles.headlineSmall,
+        headlineMedium: AppTextStyles.subtitleLarge,
         bodyLarge: AppTextStyles.bodyLarge,
         bodyMedium: AppTextStyles.bodyMedium,
         bodySmall: AppTextStyles.bodySmall,
-        labelLarge: AppTextStyles.labelLarge,
-        labelMedium: AppTextStyles.labelMedium,
-        labelSmall: AppTextStyles.labelSmall,
+        labelLarge: AppTextStyles.subtitleMedium,
+        labelMedium: AppTextStyles.label,
       ),
 
-      // AppBar
+      // ============================================================
+      // APPBAR - Deep Farm Blue
+      // ============================================================
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
+          fontFamily: 'Inter',
           fontSize: 20,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
       ),
 
-      // Boutons
+      // ============================================================
+      // BOUTONS CAPSULE - 48px de hauteur, radius 24px
+      // ============================================================
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          minimumSize: const Size(double.infinity, 50),
+          minimumSize: const Size(double.infinity, 48),
           shape: RoundedRectangleBorder(
-            borderRadius: AppBorders.radiusMedium,
+            borderRadius: AppBorders.buttonRadius,
           ),
-          textStyle: AppTextStyles.buttonLarge,
+          textStyle: AppTextStyles.button,
+          elevation: 2,
+          shadowColor: AppColors.shadow,
         ),
       ),
 
@@ -60,57 +69,67 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.primary,
           side: const BorderSide(color: AppColors.primary),
+          minimumSize: const Size(double.infinity, 48),
           shape: RoundedRectangleBorder(
-            borderRadius: AppBorders.radiusMedium,
+            borderRadius: AppBorders.buttonRadius,
           ),
+          textStyle: AppTextStyles.button,
         ),
       ),
 
-      // Inputs
+      // ============================================================
+      // CHAMPS DE SAISIE - Style Adobe Express
+      // ============================================================
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.grey50,
+        fillColor: AppColors.surfaceLight,
         border: OutlineInputBorder(
-          borderRadius: AppBorders.radiusMedium,
-          borderSide: const BorderSide(color: AppColors.grey300),
+          borderRadius: AppBorders.inputRadius,
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: AppBorders.radiusMedium,
-          borderSide: const BorderSide(color: AppColors.grey300),
+          borderRadius: AppBorders.inputRadius,
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: AppBorders.radiusMedium,
+          borderRadius: AppBorders.inputRadius,
           borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: AppBorders.radiusMedium,
+          borderRadius: AppBorders.inputRadius,
           borderSide: const BorderSide(color: AppColors.error, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.md,
+          horizontal: 16,
+          vertical: 14,
         ),
         labelStyle: AppTextStyles.bodyMedium,
         errorStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
+        prefixIconColor: AppColors.textHint,
       ),
 
-      // Cards
-      cardTheme: CardTheme(
+      // ============================================================
+      // CARTES - Radius 12px, ombre subtile ou bordure
+      // ============================================================
+      cardTheme: CardThemeData(
         elevation: 2,
         shape: RoundedRectangleBorder(
-          borderRadius: AppBorders.radiusMedium,
+          borderRadius: AppBorders.cardRadius,
         ),
-        shadowColor: AppColors.shadowLight,
+        shadowColor: AppColors.shadow,
         color: AppColors.surface,
-        margin: const EdgeInsets.all(0),
+        margin: EdgeInsets.zero,
+        surfaceTintColor: Colors.transparent,
       ),
 
-      // SnackBar
+      // ============================================================
+      // SNACKBAR
+      // ============================================================
       snackBarTheme: const SnackBarThemeData(
         backgroundColor: AppColors.textPrimary,
         contentTextStyle: TextStyle(color: Colors.white),
         shape: RoundedRectangleBorder(
-          borderRadius: AppBorders.radiusMedium,
+          borderRadius: AppBorders.cardRadius,
         ),
         behavior: SnackBarBehavior.floating,
       ),

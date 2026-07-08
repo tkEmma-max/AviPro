@@ -22,6 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -33,11 +34,15 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
+    setState(() => _isLoading = true);
+
     final authProvider = context.read<AuthProvider>();
     final success = await authProvider.login(
       _usernameController.text.trim(),
       _passwordController.text.trim(),
     );
+
+    setState(() => _isLoading = false);
 
     if (success && mounted) {
       Navigator.pushReplacementNamed(context, '/home');
@@ -46,16 +51,22 @@ class _LoginScreenState extends State<LoginScreen> {
         SnackBar(
           content: Row(
             children: const [
-              Icon(Icons.error_outline, color: Colors.white),
+              Icon(Icons.error_outline, color: Colors.white, size: 20),
               SizedBox(width: AppSpacing.sm),
-              Text('Identifiants incorrects'),
+              Expanded(
+                child: Text(
+                  'Identifiants incorrects. Veuillez réessayer.',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
             ],
           ),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-            borderRadius: AppBorders.radiusMedium,
+            borderRadius: AppBorders.cardRadius,
           ),
+          margin: const EdgeInsets.all(AppSpacing.lg),
         ),
       );
     }
@@ -63,85 +74,207 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = context.watch<AuthProvider>();
-
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSpacing.xxl),
+      backgroundColor: AppColors.surface,
+      body: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: MediaQuery.of(context).size.height,
+          ),
+          child: IntrinsicHeight(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo
+                // ============================================================
+                // ZONE 1 : HEADER (30% de l'écran)
+                // ============================================================
                 Container(
-                  width: 100,
-                  height: 100,
+                  height: MediaQuery.of(context).size.height * 0.30,
                   decoration: BoxDecoration(
                     color: AppColors.primary,
-                    borderRadius: AppBorders.radiusXLarge,
-                    boxShadow: AppShadows.shadowMedium,
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(32),
+                      bottomRight: Radius.circular(32),
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.egg,
-                    size: 60,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Text(
-                  'AviPro',
-                  style: AppTextStyles.headline1.copyWith(
-                    color: AppColors.primary,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'Gestion avicole intelligente',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xxxl),
-
-                // Formulaire
-                Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      CustomTextField(
-                        controller: _usernameController,
-                        label: 'Nom d\'utilisateur',
-                        prefixIcon: Icons.person_outline,
-                        validator: (value) =>
-                            value!.isEmpty ? 'Champ requis' : null,
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      CustomTextField(
-                        controller: _passwordController,
-                        label: 'Mot de passe',
-                        prefixIcon: Icons.lock_outline,
-                        obscureText: _obscurePassword,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
-                            color: AppColors.textHint,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Logo
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            borderRadius: AppBorders.radiusXLarge,
                           ),
-                          onPressed: () => setState(
-                            () => _obscurePassword = !_obscurePassword,
+                          child: const Icon(
+                            Icons.egg,
+                            size: 48,
+                            color: Colors.white,
                           ),
                         ),
-                        validator: (value) =>
-                            value!.isEmpty ? 'Champ requis' : null,
-                      ),
-                      const SizedBox(height: AppSpacing.xxl),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          'AVIPRO',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          'Gestion intégrée de votre élevage avicole',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.white.withOpacity(0.8),
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
-                      CustomButton(
-                        label: 'Se connecter',
-                        isLoading: authProvider.isLoading,
-                        onPressed: _login,
+                // ============================================================
+                // ZONE 2 : FORMULAIRE (55% de l'écran)
+                // ============================================================
+                Expanded(
+                  flex: 7,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xxl,
+                    ),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: AppSpacing.xxxl),
+
+                          // Titre
+                          Text(
+                            'Bienvenue',
+                            style: AppTextStyles.headlineLarge.copyWith(
+                              fontSize: 24,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            'Connectez-vous à votre compte',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.xxxl),
+
+                          // Champ Identifiant
+                          CustomTextField(
+                            controller: _usernameController,
+                            label: 'Nom d\'utilisateur',
+                            hint: 'Entrez votre nom d\'utilisateur',
+                            prefixIcon: Icons.person_outline,
+                            validator: (value) =>
+                                value!.isEmpty ? 'Veuillez saisir votre identifiant' : null,
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+
+                          // Champ Mot de passe
+                          CustomTextField(
+                            controller: _passwordController,
+                            label: 'Mot de passe',
+                            hint: 'Entrez votre mot de passe',
+                            prefixIcon: Icons.lock_outline,
+                            obscureText: _obscurePassword,
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                                color: AppColors.textHint,
+                                size: 20,
+                              ),
+                              onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
+                            ),
+                            validator: (value) =>
+                                value!.isEmpty ? 'Veuillez saisir votre mot de passe' : null,
+                          ),
+
+                          // Mot de passe oublié
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: () {
+                                // TODO: Naviguer vers Page 4 (Mot de passe oublié)
+                              },
+                              style: TextButton.styleFrom(
+                                foregroundColor: AppColors.primary,
+                                minimumSize: Size.zero,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: AppSpacing.sm,
+                                ),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: Text(
+                                'Mot de passe oublié ?',
+                                style: AppTextStyles.labelSmall.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.xxxl),
+
+                          // Bouton Se connecter
+                          CustomButton(
+                            label: 'Se connecter',
+                            isLoading: _isLoading,
+                            onPressed: _login,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                // ============================================================
+                // ZONE 3 : FOOTER (15% de l'écran)
+                // ============================================================
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.xl,
+                  ),
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Nouveau sur AVIPRO ? ',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pushNamed(context, '/register');
+                        },
+                        child: Text(
+                          'Créer un compte',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ],
                   ),
