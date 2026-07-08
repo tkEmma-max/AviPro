@@ -2,8 +2,9 @@ services:
   - type: web
     name: avipro-backend
     runtime: python
-    buildCommand: ./build.sh
-    startCommand: gunicorn avipro.wsgi:application
+    rootDir: backend
+    buildCommand: chmod +x build.sh && ./build.sh
+    startCommand: gunicorn backend.wsgi:application --bind 0.0.0.0:$PORT
     envVars:
       - key: SECRET_KEY
         generateValue: true
@@ -11,6 +12,12 @@ services:
         value: "False"
       - key: ALLOWED_HOSTS
         value: ".onrender.com"
+      - key: RENDER
+        value: "true"
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      - key: POETRY_VERSION
+        value: "1.7.0"
       - key: DB_NAME
         fromDatabase:
           name: avipro_db
