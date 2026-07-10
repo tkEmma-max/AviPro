@@ -4,24 +4,24 @@ from django.db import models
 import uuid
 
 class User(AbstractUser):
-    """
-    Modèle utilisateur personnalisé avec UUID comme clé primaire.
-    """
-    USERNAME_FIELD = 'email'
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # Désactiver le champ username
+    username = None  # Supprimer le champ username
+
+    # Rendre l'email obligatoire et unique
+    email = models.EmailField(unique=True)
+
+    # Prénom obligatoire
+    first_name = models.CharField(max_length=150, blank=False)
+
+    # Nom facultatif
+    last_name = models.CharField(max_length=150, blank=True, null=True)
+
+    # Autres champs
     telephone = models.CharField(max_length=20, blank=True, null=True)
     adresse = models.TextField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    is_active = models.BooleanField(default=True)
 
-    email = models.EmailField(unique=True)
-    REQUIRED_FIELDS = ['username']
-
-    class Meta:
-        db_table = 'users'
-        verbose_name = 'Utilisateur'
-        verbose_name_plural = 'Utilisateurs'
+    USERNAME_FIELD = 'email'  # L'email devient l'identifiant
+    REQUIRED_FIELDS = ['first_name']  # Le prénom est requis
 
     def __str__(self):
-        return self.username
+        return f"{self.first_name} {self.last_name or ''}".strip()

@@ -39,10 +39,23 @@ class ApiService {
   Future<Response> put(String endpoint, {dynamic data}) async => await _dio.put(endpoint, data: data);
   Future<Response> delete(String endpoint) async => await _dio.delete(endpoint);
 
-  Future<Response> login(String username, String password) async {
+  Future<Response> login(String email, String password) async {
     return await _dio.post(
       'auth/login/',
-      data: {'username': username, 'password': password},
+      data: {'email': email, 'password': password},
+    );
+  }
+
+  Future<Response> register(String firstName, String lastName, String email, String phone, String password) async {
+    return await _dio.post(
+      'auth/register/',
+      data: {
+        'first_name': firstName,
+        'last_name': lastName,
+        'email': email,
+        'telephone': phone,
+        'password': password,
+      },
     );
   }
 

@@ -23,38 +23,57 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> login(String username, String password) async {
+  Future<bool> login(String email, String password) async {
     _isLoading = true;
     notifyListeners();
 
-    await Future.delayed(const Duration(seconds: 1));
-
-    _token = 'demo_token_123456789';
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(AppConstants.storageAccessToken, _token!);
-
-    _isLoading = false;
-    notifyListeners();
-    return true;
+    try {
+      final response = await _apiService.login(email, password);
+      if (response.statusCode == 200) {
+        _token = response.data['access'];
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(AppConstants.storageAccessToken, _token!);
+        await prefs.setString(AppConstants.storageRefreshToken, response.data['refresh']);
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      }
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
   }
 
-  // ═══════════════════════════════════════════════
-  // NOUVELLE MÉTHODE : REGISTER
-  // ═══════════════════════════════════════════════
-  Future<bool> register(String fullName, String email, String phone, String password) async {
+  Future<bool> register(String firstName, String lastName, String email, String phone, String password) async {
     _isLoading = true;
     notifyListeners();
 
-    await Future.delayed(const Duration(seconds: 1));
-
-    // Simulation d'inscription réussie
-    _token = 'demo_token_123456789';
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(AppConstants.storageAccessToken, _token!);
-
-    _isLoading = false;
-    notifyListeners();
-    return true;
+    try {
+      final response = await _apiService.register(
+        firstName,
+        lastName,
+        email,
+        phone,
+        password,
+      );
+      if (response.statusCode == 201) {
+        final loginSuccess = await login(email, password);
+        _isLoading = false;
+        notifyListeners();
+        return loginSuccess;
+      }
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
   }
 
   Future<void> logout() async {

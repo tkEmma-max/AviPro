@@ -19,14 +19,14 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -38,7 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final authProvider = context.read<AuthProvider>();
     final success = await authProvider.login(
-      _usernameController.text.trim(),
+      _emailController.text.trim(),
       _passwordController.text.trim(),
     );
 
@@ -177,9 +177,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           // Champ Identifiant
                           CustomTextField(
-                            controller: _usernameController,
-                            label: 'Nom d\'utilisateur',
-                            hint: 'Entrez votre nom d\'utilisateur',
+                            controller: _emailController,
+                            label: 'Adresse email',
+                            hint: 'Entrez votre addresse email',
                             prefixIcon: Icons.person_outline,
                             validator: (value) =>
                                 value!.isEmpty ? 'Veuillez saisir votre identifiant' : null,
