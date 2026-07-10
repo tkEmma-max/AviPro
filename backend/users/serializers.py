@@ -50,6 +50,12 @@ class UserListSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email', 'full_name', 'telephone', 'is_active']
 
+        extra_kwargs = {
+                    'password': {'write_only': True},
+                    'username': {'required': True},
+        }
+
+
     def get_full_name(self, obj):
         return obj.get_full_name()
 
