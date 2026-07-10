@@ -18,7 +18,8 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _fullNameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -32,11 +33,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   void dispose() {
-    _fullNameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
-    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -80,7 +81,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     final authProvider = context.read<AuthProvider>();
     final success = await authProvider.register(
-      _fullNameController.text.trim(),
+      _firstNameController.text.trim(),
+      _lastNameController.text.trim(),
       _emailController.text.trim(),
       _phoneController.text.trim(),
       _passwordController.text.trim(),
@@ -204,16 +206,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: AppSpacing.xxxl),
 
-              // Champ : Nom complet
               CustomTextField(
-                controller: _fullNameController,
-                label: 'Nom complet',
-                hint: 'Entrez votre nom complet',
+                controller: _firstNameController,
+                label: 'Prénom *',
+                hint: 'Entrez votre prénom',
                 prefixIcon: Icons.person_outline,
-                validator: (value) =>
-                    value!.isEmpty ? 'Veuillez saisir votre nom complet' : null,
+                validator: (value) => value!.isEmpty ? 'Ce champ est requis' : null,
               ),
               const SizedBox(height: AppSpacing.lg),
+
+              CustomTextField(
+                controller: _lastNameController,
+                label: 'Nom (optionnel)',
+                hint: 'Entrez votre nom',
+                prefixIcon: Icons.person_outline,
+              ),
 
               // Champ : Email
               CustomTextField(
