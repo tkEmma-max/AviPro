@@ -37,36 +37,69 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() => _selectedIndex = index);
-        },
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textHint,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Accueil',
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.house_outlined),
-            label: 'Poulaillers',
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 20,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.timeline_outlined),
-            label: 'Cycles',
+          child: BottomNavigationBar(
+            currentIndex: _selectedIndex,
+            onTap: (index) {
+              setState(() => _selectedIndex = index);
+            },
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.white,
+            elevation: 0,
+            selectedItemColor: AppColors.primary,
+            unselectedItemColor: AppColors.textHint,
+            selectedLabelStyle: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+            unselectedLabelStyle: const TextStyle(fontSize: 11),
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home_rounded),
+                label: 'Accueil',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.house_outlined),
+                activeIcon: Icon(Icons.house_rounded),
+                label: 'Poulaillers',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.timeline_outlined),
+                activeIcon: Icon(Icons.timeline_rounded),
+                label: 'Cycles',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.account_balance_wallet_outlined),
+                activeIcon: Icon(Icons.account_balance_wallet_rounded),
+                label: 'Finances',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person_outline_rounded),
+                activeIcon: Icon(Icons.person_rounded),
+                label: 'Profil',
+              ),
+            ],
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.money_outlined),
-            label: 'Finances',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profil',
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -85,15 +118,19 @@ class _DashboardContent extends StatefulWidget {
 class _DashboardContentState extends State<_DashboardContent> {
   bool _isLoading = false;
 
+  final List<double> gainsData = [0, 15000, 28000, 42000, 38000, 55000, 72000, 68000, 85000, 92000];
+  final List<double> depensesData = [0, 8000, 12000, 25000, 22000, 35000, 40000, 48000, 52000, 60000];
+  final List<String> jours = ['1', '5', '10', '15', '20', '25', '30'];
+
+  // Nuance plus foncée de la couleur primaire, utile pour les dégradés
+  Color _darken(Color color, [double amount = .15]) {
+    final hsl = HSLColor.fromColor(color);
+    final hslDark = hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0));
+    return hslDark.toColor();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final authProvider = context.watch<AuthProvider>();
-    final poulaillerProvider = context.watch<PoulaillerProvider>();
-
-    final List<double> gainsData = [0, 15000, 28000, 42000, 38000, 55000, 72000, 68000, 85000, 92000];
-    final List<double> depensesData = [0, 8000, 12000, 25000, 22000, 35000, 40000, 48000, 52000, 60000];
-    final List<String> jours = ['1', '5', '10', '15', '20', '25', '30'];
-
     final solde = 250000;
     final totalDepenses = 85000;
     final cyclesActifs = 2;
@@ -102,6 +139,7 @@ class _DashboardContentState extends State<_DashboardContent> {
     return Scaffold(
       backgroundColor: AppColors.surface,
       body: RefreshIndicator(
+        color: AppColors.primary,
         onRefresh: () async {
           setState(() => _isLoading = true);
           await Future.delayed(const Duration(seconds: 1));
@@ -109,32 +147,47 @@ class _DashboardContentState extends State<_DashboardContent> {
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
+              // ============================================================
+              // HEADER
+              // ============================================================
+              const SizedBox(height: AppSpacing.md),
               Container(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg,
-                  AppSpacing.lg,
-                  AppSpacing.lg,
-                  AppSpacing.md,
+                padding: const EdgeInsets.only(
+                  top: AppSpacing.lg,
+                  bottom: AppSpacing.md,
                 ),
                 child: Row(
                   children: [
                     Container(
-                      width: 48,
-                      height: 48,
+                      width: 50,
+                      height: 50,
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            AppColors.primary,
+                            _darken(AppColors.primary, 0.12),
+                          ],
+                        ),
                         shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.35),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
                       child: const Center(
                         child: Text(
                           'JD',
                           style: TextStyle(
-                            color: AppColors.primary,
+                            color: Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),
@@ -146,13 +199,21 @@ class _DashboardContentState extends State<_DashboardContent> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Bonjour, Jean',
-                            style: AppTextStyles.headlineSmall.copyWith(
-                              fontSize: 16,
-                              color: AppColors.textPrimary,
-                            ),
+                          Row(
+                            children: [
+                              Text(
+                                'Bonjour, Jean',
+                                style: AppTextStyles.headlineSmall.copyWith(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              const Text('👋', style: TextStyle(fontSize: 14)),
+                            ],
                           ),
+                          const SizedBox(height: 2),
                           Text(
                             DateFormat('EEEE d MMMM yyyy', 'fr_FR')
                                 .format(DateTime.now()),
@@ -164,25 +225,40 @@ class _DashboardContentState extends State<_DashboardContent> {
                       ),
                     ),
                     Stack(
+                      clipBehavior: Clip.none,
                       children: [
-                        IconButton(
-                          icon: const Icon(Icons.notifications_none),
-                          color: AppColors.textPrimary,
-                          onPressed: () {
-                            Navigator.pushNamed(context, '/notifications');
-                          },
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.06),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.notifications_none_rounded),
+                            color: AppColors.textPrimary,
+                            onPressed: () {
+                              Navigator.pushNamed(context, '/notifications');
+                            },
+                          ),
                         ),
                         Positioned(
-                          right: 8,
-                          top: 8,
+                          right: 6,
+                          top: 6,
                           child: Container(
                             width: 18,
                             height: 18,
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               color: AppColors.error,
                               shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
                             ),
-                            child: Center(
+                            child: const Center(
                               child: Text(
                                 '3',
                                 style: TextStyle(
@@ -200,63 +276,56 @@ class _DashboardContentState extends State<_DashboardContent> {
                 ),
               ),
 
-              // Stats
+              // ============================================================
+              // GRILLE STATS
+              // ============================================================
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                 child: GridView.count(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   crossAxisCount: 2,
                   crossAxisSpacing: AppSpacing.md,
                   mainAxisSpacing: AppSpacing.md,
-                  childAspectRatio: 1.6,
+                  childAspectRatio: 1.55,
                   children: [
                     _buildStatCard(
                       title: 'Solde net',
-                      value: '$solde FCFA',
-                      icon: Icons.account_balance_wallet,
-                      backgroundColor: AppColors.primary,
-                      textColor: Colors.white,
+                      value: '${_formatMoney(solde)} FCFA',
+                      icon: Icons.account_balance_wallet_rounded,
+                      isPrimary: true,
                     ),
                     _buildStatCard(
                       title: 'Dépenses totales',
-                      value: '$totalDepenses FCFA',
-                      icon: Icons.trending_down,
-                      backgroundColor: Colors.white,
-                      textColor: AppColors.error,
-                      borderColor: AppColors.border,
-                      valueColor: AppColors.error,
+                      value: '${_formatMoney(totalDepenses)} FCFA',
+                      icon: Icons.trending_down_rounded,
+                      accentColor: AppColors.error,
                     ),
                     _buildStatCard(
-                      title: 'Cycles Actifs',
+                      title: 'Cycles actifs',
                       value: '$cyclesActifs bandes',
-                      icon: Icons.timeline,
-                      backgroundColor: Colors.white,
-                      textColor: AppColors.primary,
-                      borderColor: AppColors.border,
+                      icon: Icons.egg_rounded,
+                      accentColor: AppColors.primary,
                     ),
                     _buildStatCard(
                       title: 'Prêts en cours',
-                      value: '$pretsRestants FCFA',
-                      icon: Icons.credit_card,
-                      backgroundColor: Colors.white,
-                      textColor: AppColors.primary,
-                      borderColor: AppColors.border,
-                      valueColor: AppColors.warning,
+                      value: '${_formatMoney(pretsRestants)} FCFA',
+                      icon: Icons.credit_card_rounded,
+                      accentColor: AppColors.warning,
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.lg),
 
-              // Graphique
+              // ============================================================
+              // GRAPHIQUE
+              // ============================================================
               Container(
-                margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: AppBorders.cardRadius,
-                  border: Border.all(color: AppColors.border, width: 1),
+                  border: Border.all(color: AppColors.border.withOpacity(0.6), width: 1),
                   boxShadow: AppShadows.shadowCard,
                 ),
                 child: Column(
@@ -265,11 +334,29 @@ class _DashboardContentState extends State<_DashboardContent> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Flux de trésorerie (30j)',
-                          style: AppTextStyles.subtitleLarge.copyWith(
-                            color: AppColors.primary,
-                          ),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.show_chart_rounded,
+                                size: 16,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Flux de trésorerie (30j)',
+                              style: AppTextStyles.subtitleLarge.copyWith(
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                         Row(
                           children: [
@@ -280,20 +367,34 @@ class _DashboardContentState extends State<_DashboardContent> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: AppSpacing.md),
+                    const SizedBox(height: AppSpacing.lg),
                     SizedBox(
                       height: 160,
                       child: LineChart(
                         LineChartData(
-                          gridData: const FlGridData(show: false),
+                          gridData: FlGridData(
+                            show: true,
+                            drawVerticalLine: false,
+                            horizontalInterval: 50000,
+                            getDrawingHorizontalLine: (value) => FlLine(
+                              color: AppColors.border.withOpacity(0.4),
+                              strokeWidth: 1,
+                              dashArray: [4, 4],
+                            ),
+                          ),
                           titlesData: FlTitlesData(
                             leftTitles: AxisTitles(
                               sideTitles: SideTitles(
                                 showTitles: true,
+                                reservedSize: 45,
                                 getTitlesWidget: (value, meta) {
-                                  if (value == 0) return const Text('0');
-                                  if (value == 50000) return const Text('50k');
-                                  if (value == 100000) return const Text('100k');
+                                  final style = TextStyle(
+                                    fontSize: 10,
+                                    color: AppColors.textHint,
+                                  );
+                                  if (value == 0) return Text('0', style: style);
+                                  if (value == 50000) return Text('50k', style: style);
+                                  if (value == 100000) return Text('100k', style: style);
                                   return const Text('');
                                 },
                               ),
@@ -307,13 +408,17 @@ class _DashboardContentState extends State<_DashboardContent> {
                             bottomTitles: AxisTitles(
                               sideTitles: SideTitles(
                                 showTitles: true,
+                                reservedSize: 25,
                                 interval: 1,
                                 getTitlesWidget: (value, meta) {
                                   final index = value.toInt();
                                   if (index < jours.length) {
                                     return Text(
                                       jours[index],
-                                      style: AppTextStyles.labelSmall,
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: AppColors.textHint,
+                                      ),
                                     );
                                   }
                                   return const Text('');
@@ -326,7 +431,7 @@ class _DashboardContentState extends State<_DashboardContent> {
                             LineChartBarData(
                               spots: List.generate(
                                 gainsData.length,
-                                (index) => FlSpot(
+                                    (index) => FlSpot(
                                   index.toDouble(),
                                   gainsData[index].toDouble(),
                                 ),
@@ -335,15 +440,23 @@ class _DashboardContentState extends State<_DashboardContent> {
                               curveSmoothness: 0.3,
                               color: AppColors.success,
                               dotData: FlDotData(show: false),
+                              barWidth: 2.5,
                               belowBarData: BarAreaData(
                                 show: true,
-                                color: AppColors.success.withOpacity(0.1),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    AppColors.success.withOpacity(0.18),
+                                    AppColors.success.withOpacity(0.0),
+                                  ],
+                                ),
                               ),
                             ),
                             LineChartBarData(
                               spots: List.generate(
                                 depensesData.length,
-                                (index) => FlSpot(
+                                    (index) => FlSpot(
                                   index.toDouble(),
                                   depensesData[index].toDouble(),
                                 ),
@@ -352,9 +465,17 @@ class _DashboardContentState extends State<_DashboardContent> {
                               curveSmoothness: 0.3,
                               color: AppColors.error,
                               dotData: FlDotData(show: false),
+                              barWidth: 2.5,
                               belowBarData: BarAreaData(
                                 show: true,
-                                color: AppColors.error.withOpacity(0.1),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    AppColors.error.withOpacity(0.14),
+                                    AppColors.error.withOpacity(0.0),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
@@ -368,45 +489,74 @@ class _DashboardContentState extends State<_DashboardContent> {
                   ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.xl),
 
-              // Échéances
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Échéances prioritaires',
-                      style: AppTextStyles.subtitleLarge.copyWith(
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    _buildEcheanceCard(
-                      preteur: 'Crédit Agricole',
-                      date: '2026-07-10',
-                      montant: 45000,
-                      statut: 'urgent',
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    _buildEcheanceCard(
-                      preteur: 'Tontine Mme Koffi',
-                      date: '2026-07-18',
-                      montant: 25000,
-                      statut: 'normal',
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    _buildEcheanceCard(
-                      preteur: 'Frère Jean',
-                      date: '2026-07-25',
-                      montant: 12000,
-                      statut: 'normal',
-                    ),
-                    const SizedBox(height: AppSpacing.xxl),
-                  ],
-                ),
+              // ============================================================
+              // VENTES ET DÉPENSES RÉCENTES
+              // ============================================================
+              _buildSectionHeader(
+                title: 'Dernières transactions',
+                icon: Icons.receipt_long_rounded,
+                onSeeAll: () {},
               ),
+              const SizedBox(height: AppSpacing.md),
+
+              _buildTransactionCard(
+                label: 'Vente de poulets',
+                montant: '+ 250 000 FCFA',
+                date: 'Aujourd\'hui',
+                isVente: true,
+                icon: Icons.sell_rounded,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              _buildTransactionCard(
+                label: 'Aliment pondeuse',
+                montant: '- 85 000 FCFA',
+                date: 'Hier',
+                isVente: false,
+                icon: Icons.restaurant_rounded,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              _buildTransactionCard(
+                label: "Vente d'œufs",
+                montant: '+ 120 000 FCFA',
+                date: 'Il y a 2 jours',
+                isVente: true,
+                icon: Icons.egg_alt_rounded,
+              ),
+              const SizedBox(height: AppSpacing.xl),
+
+              // ============================================================
+              // ÉCHÉANCES PRIORITAIRES
+              // ============================================================
+              _buildSectionHeader(
+                title: 'Échéances prioritaires',
+                icon: Icons.event_note_rounded,
+                onSeeAll: () {},
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              _buildEcheanceCard(
+                preteur: 'Crédit Agricole',
+                date: '2026-07-10',
+                montant: 45000,
+                statut: 'urgent',
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              _buildEcheanceCard(
+                preteur: 'Tontine Mme Koffi',
+                date: '2026-07-18',
+                montant: 25000,
+                statut: 'normal',
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              _buildEcheanceCard(
+                preteur: 'Frère Jean',
+                date: '2026-07-25',
+                montant: 12000,
+                statut: 'normal',
+              ),
+              const SizedBox(height: AppSpacing.xxl),
             ],
           ),
         ),
@@ -414,35 +564,160 @@ class _DashboardContentState extends State<_DashboardContent> {
     );
   }
 
+  String _formatMoney(int value) {
+    return value.toString().replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+          (match) => '${match[1]} ',
+    );
+  }
+
+  // ============================================================
+  // EN-TÊTE DE SECTION (titre + icône + "Voir tout")
+  // ============================================================
+  Widget _buildSectionHeader({
+    required String title,
+    required IconData icon,
+    VoidCallback? onSeeAll,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 4,
+              height: 18,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: AppTextStyles.subtitleLarge.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        if (onSeeAll != null)
+          InkWell(
+            onTap: onSeeAll,
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              child: Row(
+                children: [
+                  Text(
+                    'Voir tout',
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 11,
+                    color: AppColors.primary,
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  // ============================================================
+  // CARTE STATISTIQUE
+  // ============================================================
   Widget _buildStatCard({
     required String title,
     required String value,
     required IconData icon,
-    required Color backgroundColor,
-    required Color textColor,
-    Color? borderColor,
-    Color? valueColor,
+    bool isPrimary = false,
+    Color accentColor = Colors.black,
   }) {
+    if (isPrimary) {
+      return Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.primary,
+              _darken(AppColors.primary, 0.14),
+            ],
+          ),
+          borderRadius: AppBorders.radiusLarge,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withOpacity(0.35),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.18),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: Colors.white, size: 18),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.white.withOpacity(0.85),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: backgroundColor,
+        color: Colors.white,
         borderRadius: AppBorders.radiusLarge,
-        border: borderColor != null
-            ? Border.all(color: borderColor, width: 1)
-            : null,
-        boxShadow: backgroundColor == Colors.white
-            ? AppShadows.shadowCard
-            : null,
+        border: Border.all(
+          color: AppColors.border.withOpacity(0.6),
+          width: 1,
+        ),
+        boxShadow: AppShadows.shadowCard,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            icon,
-            color: textColor.withOpacity(0.6),
-            size: 20,
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: accentColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: accentColor, size: 18),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
@@ -450,7 +725,7 @@ class _DashboardContentState extends State<_DashboardContent> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: valueColor ?? textColor,
+              color: accentColor,
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -458,7 +733,7 @@ class _DashboardContentState extends State<_DashboardContent> {
             title,
             style: TextStyle(
               fontSize: 12,
-              color: textColor.withOpacity(0.7),
+              color: AppColors.textSecondary,
             ),
           ),
         ],
@@ -466,28 +741,121 @@ class _DashboardContentState extends State<_DashboardContent> {
     );
   }
 
+  // ============================================================
+  // LÉGENDE DU GRAPHIQUE
+  // ============================================================
   Widget _buildLegend(String label, Color color) {
-    return Row(
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
           ),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: AppTextStyles.labelSmall.copyWith(
-            color: AppColors.textSecondary,
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: AppTextStyles.labelSmall.copyWith(
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
+  // ============================================================
+  // CARTE TRANSACTION
+  // ============================================================
+  Widget _buildTransactionCard({
+    required String label,
+    required String montant,
+    required String date,
+    required bool isVente,
+    required IconData icon,
+  }) {
+    final color = isVente ? AppColors.success : AppColors.error;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: AppBorders.cardRadius,
+        border: Border.all(
+          color: AppColors.border.withOpacity(0.6),
+          width: 1,
+        ),
+        boxShadow: AppShadows.shadowCard,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AppTextStyles.subtitleMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  date,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textHint,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              montant,
+              style: AppTextStyles.numberMedium.copyWith(
+                color: color,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // CARTE ÉCHÉANCE (avec bande d'accent colorée)
+  // ============================================================
   Widget _buildEcheanceCard({
     required String preteur,
     required String date,
@@ -501,71 +869,96 @@ class _DashboardContentState extends State<_DashboardContent> {
         : AppColors.warning.withOpacity(0.08);
 
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: AppBorders.cardRadius,
         border: Border.all(
-          color: isUrgent ? AppColors.error : AppColors.border,
-          width: isUrgent ? 1.5 : 1,
+          color: isUrgent
+              ? AppColors.error.withOpacity(0.3)
+              : AppColors.border.withOpacity(0.6),
+          width: 1,
         ),
+        boxShadow: AppShadows.shadowCard,
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 4,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: AppBorders.radiusSmall,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  preteur,
-                  style: AppTextStyles.subtitleMedium,
-                ),
-                Text(
-                  'Échéance: $date',
-                  style: AppTextStyles.bodySmall,
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+      child: ClipRRect(
+        borderRadius: AppBorders.cardRadius,
+        child: IntrinsicHeight(
+          child: Row(
             children: [
-              Text(
-                '$montant FCFA',
-                style: AppTextStyles.subtitleMedium.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm,
-                  vertical: AppSpacing.xs,
-                ),
-                decoration: BoxDecoration(
-                  color: bgColor,
-                  borderRadius: AppBorders.buttonRadius,
-                ),
-                child: Text(
-                  isUrgent ? 'Urgent' : 'À venir',
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w600,
+              Container(width: 4, color: color),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.md,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: bgColor,
+                          borderRadius: AppBorders.buttonRadius,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isUrgent
+                                  ? Icons.warning_rounded
+                                  : Icons.schedule_rounded,
+                              size: 12,
+                              color: color,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              isUrgent ? 'Urgent' : 'À venir',
+                              style: AppTextStyles.labelSmall.copyWith(
+                                color: color,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              preteur,
+                              style: AppTextStyles.subtitleMedium.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Échéance : $date',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.textHint,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        '${_formatMoney(montant)} FCFA',
+                        style: AppTextStyles.numberSmall.copyWith(
+                          color: color,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

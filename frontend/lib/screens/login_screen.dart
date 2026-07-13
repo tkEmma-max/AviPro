@@ -74,6 +74,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+
     return Scaffold(
       backgroundColor: AppColors.surface,
       body: SingleChildScrollView(
@@ -86,7 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               children: [
                 // ============================================================
-                // ZONE 1 : HEADER (30% de l'écran)
+                // ZONE 1 : HEADER
                 // ============================================================
                 Container(
                   height: MediaQuery.of(context).size.height * 0.30,
@@ -106,13 +108,18 @@ class _LoginScreenState extends State<LoginScreen> {
                           width: 80,
                           height: 80,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
-                            borderRadius: AppBorders.radiusXLarge,
-                          ),
-                          child: const Icon(
-                            Icons.egg,
-                            size: 48,
                             color: Colors.white,
+                            borderRadius: AppBorders.radiusXLarge,
+                            boxShadow: AppShadows.shadowMedium,
+                          ),
+                          child: ClipRRect(
+                            borderRadius: AppBorders.radiusXLarge,
+                            child: Image.asset(
+                              'assets/icons/avipro_icon.png',
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
                         const SizedBox(height: AppSpacing.md),
@@ -143,7 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
 
                 // ============================================================
-                // ZONE 2 : FORMULAIRE (55% de l'écran)
+                // ZONE 2 : FORMULAIRE
                 // ============================================================
                 Expanded(
                   flex: 7,
@@ -173,21 +180,27 @@ class _LoginScreenState extends State<LoginScreen> {
                               color: AppColors.textSecondary,
                             ),
                           ),
-                          const SizedBox(height: AppSpacing.xxxl),
+                          const SizedBox(height: AppSpacing.xxl),
 
-                          // Champ Identifiant
-                          CustomTextField(
+                          // Champ Email
+                          _buildInputField(
                             controller: _emailController,
                             label: 'Adresse email',
-                            hint: 'Entrez votre addresse email',
-                            prefixIcon: Icons.person_outline,
-                            validator: (value) =>
-                                value!.isEmpty ? 'Veuillez saisir votre identifiant' : null,
+                            hint: 'exemple@email.com',
+                            prefixIcon: Icons.email_outlined,
+                            keyboardType: TextInputType.emailAddress,
+                            validator: (value) {
+                              if (value!.isEmpty) return 'Veuillez saisir votre email';
+                              if (!value.contains('@') || !value.contains('.')) {
+                                return 'Veuillez saisir un email valide';
+                              }
+                              return null;
+                            },
                           ),
-                          const SizedBox(height: AppSpacing.lg),
+                          const SizedBox(height: AppSpacing.xl),
 
                           // Champ Mot de passe
-                          CustomTextField(
+                          _buildInputField(
                             controller: _passwordController,
                             label: 'Mot de passe',
                             hint: 'Entrez votre mot de passe',
@@ -202,11 +215,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                 size: 20,
                               ),
                               onPressed: () => setState(
-                                () => _obscurePassword = !_obscurePassword,
+                                    () => _obscurePassword = !_obscurePassword,
                               ),
                             ),
                             validator: (value) =>
-                                value!.isEmpty ? 'Veuillez saisir votre mot de passe' : null,
+                            value!.isEmpty ? 'Veuillez saisir votre mot de passe' : null,
                           ),
 
                           // Mot de passe oublié
@@ -214,7 +227,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             alignment: Alignment.centerRight,
                             child: TextButton(
                               onPressed: () {
-                                // TODO: Naviguer vers Page 4 (Mot de passe oublié)
+                                // TODO: Page 4 - Mot de passe oublié
                               },
                               style: TextButton.styleFrom(
                                 foregroundColor: AppColors.primary,
@@ -233,7 +246,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: AppSpacing.xxxl),
+                          const SizedBox(height: AppSpacing.xxl),
 
                           // Bouton Se connecter
                           CustomButton(
@@ -248,7 +261,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
 
                 // ============================================================
-                // ZONE 3 : FOOTER (15% de l'écran)
+                // ZONE 3 : FOOTER
                 // ============================================================
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -284,6 +297,94 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  // ============================================================
+  // WIDGET INPUT PERSONNALISÉ
+  // ============================================================
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData prefixIcon,
+    Widget? suffixIcon,
+    bool obscureText = false,
+    TextInputType keyboardType = TextInputType.text,
+    String? Function(String?)? validator,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppTextStyles.labelLarge.copyWith(
+            color: AppColors.textSecondary,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surfaceLight,
+            borderRadius: AppBorders.inputRadius,
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFCBD5E1),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+                spreadRadius: 0,
+              ),
+            ],
+          ),
+          child: TextFormField(
+            controller: controller,
+            obscureText: obscureText,
+            validator: validator,
+            keyboardType: keyboardType,
+            style: AppTextStyles.bodyMedium.copyWith(
+              fontSize: 16,
+              color: AppColors.textPrimary,
+            ),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textHint,
+                fontSize: 15,
+              ),
+              prefixIcon: Icon(prefixIcon, color: AppColors.textHint, size: 22),
+              suffixIcon: suffixIcon,
+              filled: true,
+              fillColor: Colors.transparent,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: 18,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: AppBorders.inputRadius,
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: AppBorders.inputRadius,
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: AppBorders.inputRadius,
+                borderSide: BorderSide.none,
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: AppBorders.inputRadius,
+                borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: AppBorders.inputRadius,
+                borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
