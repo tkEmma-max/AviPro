@@ -35,8 +35,10 @@ class RapportSuiviViewSet(viewsets.ModelViewSet):
         return RapportSuiviSerializer
 
     def get_queryset(self):
-        """Filtre les rapports par cycle si spécifié"""
-        queryset = super().get_queryset()
+        queryset = RapportSuivi.objects.filter(
+            created_by=self.request.user,
+            is_deleted=False
+        )
         cycle_id = self.request.query_params.get('cycle')
         if cycle_id:
             queryset = queryset.filter(cycle_id=cycle_id)

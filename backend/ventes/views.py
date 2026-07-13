@@ -32,8 +32,10 @@ class VenteViewSet(viewsets.ModelViewSet):
         return VenteSerializer
 
     def get_queryset(self):
-        """Filtre les ventes par cycle si spécifié"""
-        queryset = super().get_queryset()
+        queryset = Vente.objects.filter(
+            created_by=self.request.user,
+            is_deleted=False
+        )
         cycle_id = self.request.query_params.get('cycle')
         if cycle_id:
             queryset = queryset.filter(cycle_id=cycle_id)
