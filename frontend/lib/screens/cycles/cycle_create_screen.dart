@@ -5,9 +5,10 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_borders.dart';
-import '../../core/theme/app_shadows.dart';
 import '../../models/poulailler.dart';
+import '../../models/cycle.dart';
 import '../../providers/poulailler_provider.dart';
+import '../../providers/cycle_provider.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/custom_button.dart';
 
@@ -21,17 +22,14 @@ class CycleCreateScreen extends StatefulWidget {
 class _CycleCreateScreenState extends State<CycleCreateScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // Contrôleurs
   final _nomController = TextEditingController();
   final _nbSujetsController = TextEditingController();
-  final _coutAchatController = TextEditingController();
+  final _dureeController = TextEditingController();
 
-  // Sélecteurs
   String? _selectedPoulaillerId;
   String _selectedType = 'CHAIR';
   DateTime _selectedDate = DateTime.now();
 
-  // Calculs dynamiques
   double _densite = 0;
   bool _isDensiteOk = false;
 
@@ -41,7 +39,7 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
   void dispose() {
     _nomController.dispose();
     _nbSujetsController.dispose();
-    _coutAchatController.dispose();
+    _dureeController.dispose();
     super.dispose();
   }
 
@@ -51,7 +49,7 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
     if (poulailler != null && nb > 0 && poulailler.surface != null) {
       setState(() {
         _densite = nb / poulailler.surface!;
-        _isDensiteOk = _densite <= 10; // Seuil pour poulet de chair
+        _isDensiteOk = _densite <= 10;
       });
     } else {
       setState(() {
@@ -65,14 +63,14 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
     final provider = context.read<PoulaillerProvider>();
     try {
       return provider.poulaillers.firstWhere(
-        (p) => p.id == _selectedPoulaillerId,
+            (p) => p.id == _selectedPoulaillerId,
       );
     } catch (e) {
       return null;
     }
   }
 
-  void _createCycle() {
+  void _createCycle() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedPoulaillerId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -84,10 +82,58 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
       );
       return;
     }
-    if (!_isDensiteOk) return;
+    if (!_isDensiteOk) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Densité excessive !'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
-    // TODO: Sauvegarder le cycle
-    Navigator.pop(context);
+    final cycle = Cycle(
+      id: '',
+      nom: _nomController.text.trim(),
+      poulailler: _selectedPoulaillerId!,
+      type: _selectedType,
+      dateDebut: _selectedDate,
+      dateFin: null,
+      nombreSujetsInitiaux: int.parse(_nbSujetsController.text),
+      nombreSujetsActuels: int.parse(_nbSujetsController.text),
+      dureeEstimeeJours: int.parse(_dureeController.text),
+      isActive: true,
+      isArchived: false,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    try {
+      final provider = context.read<CycleProvider>();
+      await provider.addCycle(cycle);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cycle créé avec succès !'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -131,9 +177,7 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
             children: [
               const SizedBox(height: AppSpacing.lg),
 
-              // ============================================================
-              // SÉLECTION DU POULAILLER
-              // ============================================================
+              // Poulailler
               Text(
                 'Infrastructure',
                 style: AppTextStyles.subtitleMedium.copyWith(
@@ -141,7 +185,6 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
-
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                 decoration: BoxDecoration(
@@ -168,7 +211,7 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
                             Container(
                               width: 8,
                               height: 8,
-                              decoration: BoxDecoration(
+                              decoration: const BoxDecoration(
                                 color: AppColors.success,
                                 shape: BoxShape.circle,
                               ),
@@ -198,9 +241,7 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
               ),
               const SizedBox(height: AppSpacing.xxl),
 
-              // ============================================================
-              // CARACTÉRISTIQUES DU LOT
-              // ============================================================
+              // Nom
               Text(
                 'Caractéristiques du lot',
                 style: AppTextStyles.subtitleMedium.copyWith(
@@ -215,11 +256,11 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
                 hint: 'Ex: Lot Chair Juil-07',
                 prefixIcon: Icons.label_outline,
                 validator: (value) =>
-                    value!.isEmpty ? 'Ce champ est requis' : null,
+                value!.isEmpty ? 'Ce champ est requis' : null,
               ),
               const SizedBox(height: AppSpacing.lg),
 
-              // Type d'élevage
+              // Type
               Row(
                 children: _types.map((type) {
                   final isSelected = _selectedType == type;
@@ -248,7 +289,7 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
                             style: AppTextStyles.labelMedium.copyWith(
                               color: isSelected ? Colors.white : AppColors.textSecondary,
                               fontWeight:
-                                  isSelected ? FontWeight.w600 : FontWeight.w400,
+                              isSelected ? FontWeight.w600 : FontWeight.w400,
                             ),
                           ),
                         ),
@@ -283,19 +324,23 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
                   Expanded(
                     flex: 1,
                     child: CustomTextField(
-                      controller: _coutAchatController,
-                      label: "Coût d'achat",
-                      hint: '0 FCFA',
-                      prefixIcon: Icons.money_outlined,
+                      controller: _dureeController,
+                      label: 'Durée (jours) *',
+                      hint: '45',
+                      prefixIcon: Icons.timer_outlined,
                       keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value!.isEmpty) return 'Requis';
+                        final v = int.tryParse(value);
+                        if (v == null || v <= 0) return '> 0';
+                        return null;
+                      },
                     ),
                   ),
                 ],
               ),
 
-              // ============================================================
-              // ALERTE DE DENSITÉ
-              // ============================================================
+              // Densité
               if (_selectedPoulaillerId != null &&
                   _nbSujetsController.text.isNotEmpty)
                 Container(
@@ -329,7 +374,7 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
                             Text(
                               _isDensiteOk
                                   ? '🟢 Densité conforme (${_densite.toStringAsFixed(1)} sujets/m²)'
-                                  : '🔴 Surcharge : Capacité maximale de ${capaciteMax} sujets (${_densite.toStringAsFixed(1)} sujets/m²)',
+                                  : '🔴 Surcharge : Capacité maximale de $capaciteMax sujets',
                               style: AppTextStyles.bodyMedium.copyWith(
                                 color: _isDensiteOk
                                     ? AppColors.success
@@ -337,13 +382,6 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            if (!_isDensiteOk)
-                              Text(
-                                'La capacité maximale de ce bâtiment est de $capaciteMax sujets.',
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  color: AppColors.error,
-                                ),
-                              ),
                           ],
                         ),
                       ),
@@ -352,9 +390,7 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
                 ),
               const SizedBox(height: AppSpacing.xxl),
 
-              // ============================================================
-              // DATE DE MISE EN PLACE
-              // ============================================================
+              // Date
               Text(
                 'Date de mise en place',
                 style: AppTextStyles.subtitleMedium.copyWith(
@@ -362,7 +398,6 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
-
               GestureDetector(
                 onTap: () async {
                   final date = await showDatePicker(
@@ -385,8 +420,7 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.calendar_today,
-                          color: AppColors.textHint, size: 20),
+                      Icon(Icons.calendar_today, color: AppColors.textHint),
                       const SizedBox(width: AppSpacing.md),
                       Text(
                         '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
@@ -400,29 +434,10 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
               ),
               const SizedBox(height: AppSpacing.xxxl),
 
-              // ============================================================
-              // BOUTON VALIDER
-              // ============================================================
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: _createCycle,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppBorders.buttonRadius,
-                    ),
-                  ),
-                  child: Text(
-                    'VALIDER ET LANCER LE CYCLE',
-                    style: AppTextStyles.button.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
+              // Bouton
+              CustomButton(
+                label: 'VALIDER ET LANCER LE CYCLE',
+                onPressed: _createCycle,
               ),
               const SizedBox(height: AppSpacing.xxl),
             ],

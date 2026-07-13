@@ -44,7 +44,8 @@ class _PoulaillerCreateScreenState extends State<PoulaillerCreateScreen> {
     });
   }
 
-  void _savePoulailler() {
+  // lib/screens/poulaillers/poulailler_create_screen.dart
+  void _savePoulailler() async {
     if (!_formKey.currentState!.validate()) return;
 
     final poulailler = Poulailler(
@@ -62,31 +63,31 @@ class _PoulaillerCreateScreenState extends State<PoulaillerCreateScreen> {
       updatedAt: DateTime.now(),
     );
 
-    final provider = context.read<PoulaillerProvider>();
-    provider.addPoulailler(poulailler);
+    try {
+      final provider = context.read<PoulaillerProvider>();
+      await provider.addPoulailler(poulailler);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white, size: 20),
-            const SizedBox(width: AppSpacing.sm),
-            Text(
-              'Poulailler "${poulailler.nom}" enregistré !',
-              style: const TextStyle(color: Colors.white),
-            ),
-          ],
-        ),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: AppBorders.cardRadius,
-        ),
-        margin: const EdgeInsets.all(AppSpacing.lg),
-      ),
-    );
-
-    Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Poulailler créé avec succès !'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   @override

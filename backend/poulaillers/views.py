@@ -27,6 +27,13 @@ class PoulaillerViewSet(viewsets.ModelViewSet):
             return PoulaillerListSerializer
         return PoulaillerSerializer
 
+    def get_queryset(self):
+            # ✅ Filtrer par l'utilisateur connecté
+            return Poulailler.objects.filter(
+                created_by=self.request.user,
+                is_deleted=False
+    )
+
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 

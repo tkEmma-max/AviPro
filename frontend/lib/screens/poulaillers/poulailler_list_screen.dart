@@ -6,8 +6,9 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_borders.dart';
 import '../../core/theme/app_shadows.dart';
-import '../../widgets/custom_search_field.dart';
+import '../../models/poulailler.dart';
 import '../../providers/poulailler_provider.dart';
+import '../../widgets/custom_search_field.dart';
 
 class PoulaillerListScreen extends StatefulWidget {
   const PoulaillerListScreen({super.key});
@@ -23,9 +24,22 @@ class _PoulaillerListScreenState extends State<PoulaillerListScreen> {
   final List<String> _filters = ['Tous', 'Libres', 'Occupés'];
 
   @override
+  void initState() {
+    super.initState();
+    print('🟢 [PoulaillerListScreen] initState');
+    // Forcer le chargement après le premier build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      print('🔄 [PoulaillerListScreen] PostFrameCallback - refresh');
+      context.read<PoulaillerProvider>().refreshPoulaillers();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    print('🟢 [PoulaillerListScreen] build');
     final provider = context.watch<PoulaillerProvider>();
     final poulaillers = provider.poulaillers;
+    print('📦 [PoulaillerListScreen] ${poulaillers.length} poulaillers dans le provider');
 
     // Filtrage
     final filtered = poulaillers.where((p) {
@@ -36,15 +50,26 @@ class _PoulaillerListScreenState extends State<PoulaillerListScreen> {
       return matchSearch && matchFilter;
     }).toList();
 
+    print('📊 [PoulaillerListScreen] ${filtered.length} poulaillers filtrés');
+
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text('Mes Poulaillers'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              print('🔄 [PoulaillerListScreen] Bouton refresh cliqué');
+              context.read<PoulaillerProvider>().refreshPoulaillers();
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.add),
             onPressed: () {
+              print('➕ [PoulaillerListScreen] Bouton add cliqué');
               Navigator.pushNamed(context, '/poulailler/create');
             },
           ),
@@ -52,9 +77,7 @@ class _PoulaillerListScreenState extends State<PoulaillerListScreen> {
       ),
       body: Column(
         children: [
-          // ============================================================
-          // Barre de recherche + Filtres
-          // ============================================================
+          // Barre de recherche + filtres
           Container(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
@@ -70,22 +93,9 @@ class _PoulaillerListScreenState extends State<PoulaillerListScreen> {
                       ),
                     ),
                     const SizedBox(width: AppSpacing.sm),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: AppBorders.radiusMedium,
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.add, color: Colors.white),
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/poulailler/create');
-                        },
-                      ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.md),
-                // Filtres rapides
                 Row(
                   children: _filters.map((filter) {
                     final isSelected = _filterType == filter;
@@ -117,74 +127,78 @@ class _PoulaillerListScreenState extends State<PoulaillerListScreen> {
             ),
           ),
 
-          // ============================================================
           // Liste des poulaillers
-          // ============================================================
           Expanded(
             child: filtered.isEmpty
                 ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.house_outlined,
-                          size: 60,
-                          color: AppColors.textHint,
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                        Text(
-                          _searchQuery.isEmpty && _filterType == 'Tous'
-                              ? 'Aucun poulailler enregistré'
-                              : 'Aucun résultat trouvé',
-                          style: AppTextStyles.headline4.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          _searchQuery.isEmpty && _filterType == 'Tous'
-                              ? 'Ajoutez votre premier poulailler'
-                              : 'Essayez de modifier votre recherche',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.textHint,
-                          ),
-                        ),
-                        if (_searchQuery.isEmpty && _filterType == 'Tous')
-                          const SizedBox(height: AppSpacing.xl),
-                        if (_searchQuery.isEmpty && _filterType == 'Tous')
-                          ElevatedButton(
-                            onPressed: () {
-                              Navigator.pushNamed(context, '/poulailler/create');
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: AppBorders.buttonRadius,
-                              ),
-                            ),
-                            child: const Text('Ajouter un poulailler'),
-                          ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.lg,
-                      vertical: AppSpacing.sm,
-                    ),
-                    itemCount: filtered.length,
-                    itemBuilder: (context, index) {
-                      final p = filtered[index];
-                      return _buildPoulaillerCard(context, p);
-                    },
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.house_outlined,
+                    size: 60,
+                    color: AppColors.textHint,
                   ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text(
+                    _searchQuery.isEmpty && _filterType == 'Tous'
+                        ? 'Aucun poulailler enregistré'
+                        : 'Aucun résultat trouvé',
+                    style: AppTextStyles.headline4.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    _searchQuery.isEmpty && _filterType == 'Tous'
+                        ? 'Ajoutez votre premier poulailler'
+                        : 'Essayez de modifier votre recherche',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.textHint,
+                    ),
+                  ),
+                  if (_searchQuery.isEmpty && _filterType == 'Tous')
+                    const SizedBox(height: AppSpacing.xl),
+                  if (_searchQuery.isEmpty && _filterType == 'Tous')
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/poulailler/create');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AppBorders.buttonRadius,
+                        ),
+                      ),
+                      child: const Text('Ajouter un poulailler'),
+                    ),
+                ],
+              ),
+            )
+                : RefreshIndicator(
+              onRefresh: () async {
+                print('🔄 [PoulaillerListScreen] Pull-to-refresh');
+                await context.read<PoulaillerProvider>().refreshPoulaillers();
+              },
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.sm,
+                ),
+                itemCount: filtered.length,
+                itemBuilder: (context, index) {
+                  final p = filtered[index];
+                  return _buildPoulaillerCard(context, p);
+                },
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPoulaillerCard(BuildContext context, dynamic poulailler) {
+  Widget _buildPoulaillerCard(BuildContext context, Poulailler poulailler) {
     final isOccuped = poulailler.statut == 'OCCUPÉ';
     final statutColor = isOccuped ? AppColors.warning : AppColors.success;
     final statutLabel = isOccuped ? 'OCCUPÉ' : 'LIBRE';
@@ -192,7 +206,6 @@ class _PoulaillerListScreenState extends State<PoulaillerListScreen> {
         ? AppColors.warning.withOpacity(0.1)
         : AppColors.success.withOpacity(0.1);
 
-    // Code couleur densité
     Color densiteColor;
     String densiteLabel;
     if (poulailler.densiteActuelle == null || poulailler.densiteActuelle! < 5) {
@@ -208,10 +221,10 @@ class _PoulaillerListScreenState extends State<PoulaillerListScreen> {
 
     return GestureDetector(
       onTap: () {
-        final id = poulailler.id; // Récupérer l'ID avant la navigation
         Navigator.pushNamed(
           context,
-          '/poulailler/$id',
+          '/poulailler/${poulailler.id}',
+          arguments: poulailler,
         );
       },
       child: Container(

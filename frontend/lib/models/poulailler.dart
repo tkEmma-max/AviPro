@@ -38,22 +38,22 @@ class Poulailler {
 
   factory Poulailler.fromJson(Map<String, dynamic> json) {
     return Poulailler(
-      id: json['id'],
-      nom: json['nom'],
-      longueur: json['longueur'].toDouble(),
-      largeur: json['largeur'].toDouble(),
+      id: json['id'] ?? '',
+      nom: json['nom'] ?? '',
+      longueur: (json['longueur'] ?? 0.0).toDouble(),
+      largeur: (json['largeur'] ?? 0.0).toDouble(),
       hauteur: json['hauteur']?.toDouble(),
       localisation: json['localisation'],
       typeSol: json['type_sol'],
       nombreMangeoires: json['nombre_mangeoires'] ?? 0,
       nombreAbreuvoirs: json['nombre_abreuvoirs'] ?? 0,
       isArchived: json['is_archived'] ?? false,
-      statut: json['statut'],
+      statut: json['statut'] ?? 'LIBRE',
       nbPouletsActuels: json['nb_poulets_actuels'] ?? 0,
       surface: json['surface']?.toDouble(),
       densiteActuelle: json['densite_actuelle']?.toDouble(),
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
+      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : DateTime.now(),
     );
   }
 

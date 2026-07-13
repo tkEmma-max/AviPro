@@ -36,6 +36,9 @@ import 'screens/poulaillers/poulailler_migration_screen.dart';
 import 'screens/cycles/cycle_report_history_screen.dart';
 import 'screens/cycles/cycle_edit_screen.dart';
 import 'screens/profile_settings_screen.dart';
+import 'providers/cycle_provider.dart';
+import 'providers/poulailler_provider.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,6 +55,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => PoulaillerProvider()),
+        ChangeNotifierProvider(create: (_) => CycleProvider()),  // <--- AJOUTER
       ],
       child: MaterialApp(
         title: 'AviPro',

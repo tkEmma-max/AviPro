@@ -5,7 +5,7 @@ class AppConstants {
 
   static String get apiBaseUrl {
     return isProduction
-        ? 'https://avipro.onrender.com/api/'
+        ? 'https://avipro-backend.onrender.com/api/'
         : 'http://192.168.137.1:8000/api/';
   }
 

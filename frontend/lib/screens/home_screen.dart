@@ -14,6 +14,7 @@ import 'poulaillers/poulailler_list_screen.dart';
 import 'cycles/cycle_list_screen.dart';
 import 'finances/finance_hub_screen.dart';
 import 'profile_settings_screen.dart';
+import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -142,7 +143,8 @@ class _DashboardContentState extends State<_DashboardContent> {
         color: AppColors.primary,
         onRefresh: () async {
           setState(() => _isLoading = true);
-          await Future.delayed(const Duration(seconds: 1));
+          final provider = context.read<PoulaillerProvider>();
+          await provider.refreshPoulaillers();  // <--- AJOUTER CETTE LIGNE
           setState(() => _isLoading = false);
         },
         child: SingleChildScrollView(
@@ -201,13 +203,17 @@ class _DashboardContentState extends State<_DashboardContent> {
                         children: [
                           Row(
                             children: [
-                              Text(
-                                'Bonjour, Jean',
-                                style: AppTextStyles.headlineSmall.copyWith(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
-                                ),
+                              Consumer<AuthProvider>(
+                                builder: (context, authProvider, child) {
+                                  final firstName = authProvider.user?['first_name'] ?? 'Utilisateur';
+                                  return Text(
+                                    'Bonjour, $firstName',
+                                    style: AppTextStyles.headlineSmall.copyWith(
+                                      fontSize: 16,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  );
+                                },
                               ),
                               const SizedBox(width: 6),
                               const Text('👋', style: TextStyle(fontSize: 14)),

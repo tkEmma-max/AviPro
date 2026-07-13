@@ -15,13 +15,13 @@ class PoulaillerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Poulailler
         fields = [
-            'id', 'nom', 'longueur', 'largeur', 'hauteur',
-            'localisation', 'type_sol', 'surface',
-            'nombre_mangeoires', 'nombre_abreuvoirs',
-            'statut', 'nb_poulets_actuels', 'densite_actuelle',
-            'is_archived', 'created_at', 'updated_at'
+                    'id', 'nom', 'longueur', 'largeur', 'hauteur',
+                    'localisation', 'type_sol', 'surface',
+                    'nombre_mangeoires', 'nombre_abreuvoirs',
+                    'statut', 'nb_poulets_actuels', 'densite_actuelle',
+                    'is_archived', 'created_at', 'updated_at', 'created_by'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'created_by']
 
 
 class PoulaillerListSerializer(serializers.ModelSerializer):
