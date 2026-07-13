@@ -34,6 +34,6 @@ class PoulaillerListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Poulailler
         fields = [
-            'id', 'nom', 'statut', 'nb_poulets_actuels',
-            'localisation', 'is_archived'
+                    'id', 'nom', 'longueur', 'largeur', 'surface',  # ✅ AJOUTER CES CHAMPS
+                    'statut', 'nb_poulets_actuels', 'localisation', 'is_archived'
         ]
