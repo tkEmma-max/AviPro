@@ -59,7 +59,7 @@ class Cycle {
       poulailler: json['poulailler'] ?? '',
       poulaillerNom: json['poulailler_nom'],
       type: json['type'] ?? 'CHAIR',
-      dateDebut: DateTime.parse(json['date_debut']),
+      dateDebut: json['date_debut'] != null ? DateTime.parse(json['date_debut']) : DateTime.now(),
       dateFin: json['date_fin'] != null ? DateTime.parse(json['date_fin']) : null,
       nombreSujetsInitiaux: json['nombre_sujets_initiaux'] ?? 0,
       nombreSujetsActuels: json['nombre_sujets_actuels'] ?? 0,
@@ -76,8 +76,8 @@ class Cycle {
       estRentable: json['est_rentable'],
       coutProductionUnitaire: json['cout_production_unitaire']?.toDouble(),
       prixVenteMoyen: json['prix_vente_moyen']?.toDouble(),
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
+      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : DateTime.now(),
     );
   }
 

@@ -6,6 +6,8 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_borders.dart';
 import '../../core/theme/app_shadows.dart';
+import 'pret_list_screen.dart';
+
 
 class FinanceHubScreen extends StatefulWidget {
   const FinanceHubScreen({super.key});
@@ -251,7 +253,7 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
                                       ? Colors.white
                                       : AppColors.textSecondary,
                                   fontWeight:
-                                      isSelected ? FontWeight.w600 : FontWeight.w400,
+                                  isSelected ? FontWeight.w600 : FontWeight.w400,
                                 ),
                               ),
                             ),
@@ -266,106 +268,106 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
                 Expanded(
                   child: _filteredTransactions.isEmpty
                       ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.receipt_long_outlined,
-                                size: 60,
-                                color: AppColors.textHint,
-                              ),
-                              const SizedBox(height: AppSpacing.lg),
-                              Text(
-                                'Aucune transaction ce mois-ci',
-                                style: AppTextStyles.headline4.copyWith(
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                              const SizedBox(height: AppSpacing.xs),
-                              Text(
-                                'Enregistrez votre premier flux ci-dessous.',
-                                style: AppTextStyles.bodyMedium.copyWith(
-                                  color: AppColors.textHint,
-                                ),
-                              ),
-                            ],
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.receipt_long_outlined,
+                          size: 60,
+                          color: AppColors.textHint,
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        Text(
+                          'Aucune transaction ce mois-ci',
+                          style: AppTextStyles.headline4.copyWith(
+                            color: AppColors.textSecondary,
                           ),
-                        )
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          'Enregistrez votre premier flux ci-dessous.',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.textHint,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
                       : ListView.separated(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.lg,
-                          ),
-                          itemCount: _filteredTransactions.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: AppSpacing.sm),
-                          itemBuilder: (context, index) {
-                            final t = _filteredTransactions[index];
-                            final isVente = t['type'] == 'vente';
-                            final color = isVente ? AppColors.success : AppColors.error;
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                    ),
+                    itemCount: _filteredTransactions.length,
+                    separatorBuilder: (_, __) =>
+                    const SizedBox(height: AppSpacing.sm),
+                    itemBuilder: (context, index) {
+                      final t = _filteredTransactions[index];
+                      final isVente = t['type'] == 'vente';
+                      final color = isVente ? AppColors.success : AppColors.error;
 
-                            return GestureDetector(
-                              onTap: () {
-                                // TODO: Ouvrir détail de la transaction
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(AppSpacing.md),
+                      return GestureDetector(
+                        onTap: () {
+                          // TODO: Ouvrir détail de la transaction
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: AppBorders.cardRadius,
+                            border: Border.all(
+                              color: AppColors.border,
+                              width: 1,
+                            ),
+                            boxShadow: AppShadows.shadowCard,
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 4,
+                                height: 40,
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: AppBorders.cardRadius,
-                                  border: Border.all(
-                                    color: AppColors.border,
-                                    width: 1,
-                                  ),
-                                  boxShadow: AppShadows.shadowCard,
+                                  color: color,
+                                  borderRadius: AppBorders.radiusSmall,
                                 ),
-                                child: Row(
+                              ),
+                              const SizedBox(width: AppSpacing.md),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                  CrossAxisAlignment.start,
                                   children: [
-                                    Container(
-                                      width: 4,
-                                      height: 40,
-                                      decoration: BoxDecoration(
-                                        color: color,
-                                        borderRadius: AppBorders.radiusSmall,
-                                      ),
-                                    ),
-                                    const SizedBox(width: AppSpacing.md),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            t['libelle'],
-                                            style: AppTextStyles.subtitleMedium,
-                                          ),
-                                          Text(
-                                            '${t['date']} • ${t['cycle']}',
-                                            style: AppTextStyles.bodySmall,
-                                          ),
-                                        ],
-                                      ),
+                                    Text(
+                                      t['libelle'],
+                                      style: AppTextStyles.subtitleMedium,
                                     ),
                                     Text(
-                                      '${isVente ? '+' : '-'} ${t['montant']} FCFA',
-                                      style: AppTextStyles.numberMedium.copyWith(
-                                        color: color,
-                                        fontSize: 16,
-                                      ),
+                                      '${t['date']} • ${t['cycle']}',
+                                      style: AppTextStyles.bodySmall,
                                     ),
                                   ],
                                 ),
                               ),
-                            );
-                          },
+                              Text(
+                                '${isVente ? '+' : '-'} ${t['montant']} FCFA',
+                                style: AppTextStyles.numberMedium.copyWith(
+                                  color: color,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
           ),
 
           // ============================================================
-          // FOOTER - Barre d'actions fixes (15%)
-          // ============================================================
+// FOOTER - Barre d'actions fixes (15%)
+// ============================================================
           Container(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.lg,
@@ -386,14 +388,7 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
                     },
                     icon: const Icon(Icons.remove_circle_outline, size: 18),
                     label: const Text('Dépense'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.error,
-                      side: const BorderSide(color: AppColors.error),
-                      minimumSize: const Size(0, 44),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: AppBorders.buttonRadius,
-                      ),
-                    ),
+                    // ...
                   ),
                 ),
                 const SizedBox(width: AppSpacing.md),
@@ -404,9 +399,26 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
                     },
                     icon: const Icon(Icons.add_circle_outline, size: 18),
                     label: const Text('Vente'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.success,
-                      foregroundColor: Colors.white,
+                    // ...
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PretListScreen(),  // <--- SUPPRIMER "const"
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.credit_card_outlined, size: 18),
+                    label: const Text('Prêts'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: const BorderSide(color: AppColors.primary),
                       minimumSize: const Size(0, 44),
                       shape: RoundedRectangleBorder(
                         borderRadius: AppBorders.buttonRadius,

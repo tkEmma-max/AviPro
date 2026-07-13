@@ -240,6 +240,14 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
                           );
                         },
                       ),
+                      ListTile(
+                        leading: const Icon(Icons.assessment_outlined, color: AppColors.primary),
+                        title: const Text('Voir les rapports'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.pushNamed(context, '/rapports');
+                        },
+                      ),
                     ],
                   ),
                 ),

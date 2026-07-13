@@ -45,6 +45,7 @@ class VenteListSerializer(serializers.ModelSerializer):
         ]
 
 
+
 class VenteCreateSerializer(serializers.ModelSerializer):
     """
     Serializer pour la création d'une vente

@@ -38,6 +38,10 @@ import 'screens/cycles/cycle_edit_screen.dart';
 import 'screens/profile_settings_screen.dart';
 import 'providers/cycle_provider.dart';
 import 'providers/poulailler_provider.dart';
+import 'providers/pret_provider.dart';
+import 'screens/finances/pret_list_screen.dart';
+import 'providers/rapport_provider.dart';
+import 'screens/rapports/rapport_list_screen.dart';
 
 
 void main() async {
@@ -56,6 +60,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => PoulaillerProvider()),
         ChangeNotifierProvider(create: (_) => CycleProvider()),  // <--- AJOUTER
+        ChangeNotifierProvider(create: (_) => PretProvider()),
+        ChangeNotifierProvider(create: (_) => RapportProvider()),
       ],
       child: MaterialApp(
         title: 'AviPro',
@@ -108,6 +114,8 @@ class MyApp extends StatelessWidget {
                 cycle: ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>,
               ),
           '/settings': (context) => const ProfileSettingsScreen(),
+          '/prets': (context) => const PretListScreen(),
+          '/rapports': (context) => const RapportListScreen(),
         },
         onGenerateRoute: (settings) {
           // ⚠️ ROUTE SPÉCIFIQUE DU RAPPORT (PLUS LONGUE) - DOIT ÊTRE EN PREMIER

@@ -23,7 +23,7 @@ class Vente(models.Model):
     )
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)
     quantite = models.FloatField()
-    prix_unitaire = models.DecimalField(max_digits=12, decimal_places=0)
+    prix_unitaire = models.FloatField()
     montant_total = models.DecimalField(max_digits=12, decimal_places=0, blank=True, null=True)
     date = models.DateField()
     description = models.TextField(blank=True, null=True)
@@ -60,9 +60,7 @@ class Vente(models.Model):
         ordering = ['-date']
 
     def save(self, *args, **kwargs):
-        """Calcul automatique du montant total avant sauvegarde"""
-        if not self.montant_total:
-            self.montant_total = self.quantite * self.prix_unitaire
+        self.montant_total = self.quantite * float(self.prix_unitaire)
         super().save(*args, **kwargs)
 
     def __str__(self):

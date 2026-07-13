@@ -9,7 +9,6 @@ import '../../core/theme/app_shadows.dart';
 import '../../providers/cycle_provider.dart';
 import '../../models/cycle.dart';
 
-
 class CycleListScreen extends StatefulWidget {
   const CycleListScreen({super.key});
 
@@ -19,6 +18,14 @@ class CycleListScreen extends StatefulWidget {
 
 class _CycleListScreenState extends State<CycleListScreen> {
   String _filter = 'Tous';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<CycleProvider>().refreshCycles();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,9 +50,9 @@ class _CycleListScreenState extends State<CycleListScreen> {
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: const Icon(Icons.compare_arrows),
+            icon: const Icon(Icons.refresh),
             onPressed: () {
-              // TODO: Comparer cycles
+              context.read<CycleProvider>().refreshCycles();
             },
           ),
         ],
@@ -65,9 +72,7 @@ class _CycleListScreenState extends State<CycleListScreen> {
                   child: GestureDetector(
                     onTap: () => setState(() => _filter = filter),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: AppSpacing.sm,
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                       decoration: BoxDecoration(
                         color: isSelected ? AppColors.primary : Colors.transparent,
                         borderRadius: AppBorders.buttonRadius,
@@ -95,11 +100,7 @@ class _CycleListScreenState extends State<CycleListScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.timeline_outlined,
-                    size: 60,
-                    color: AppColors.textHint,
-                  ),
+                  Icon(Icons.timeline_outlined, size: 60, color: AppColors.textHint),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
                     'Aucun cycle ${_filter.toLowerCase()}',
@@ -110,16 +111,21 @@ class _CycleListScreenState extends State<CycleListScreen> {
                 ],
               ),
             )
-                : ListView.builder(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.lg,
-                vertical: AppSpacing.sm,
-              ),
-              itemCount: filteredCycles.length,
-              itemBuilder: (context, index) {
-                final cycle = filteredCycles[index];
-                return _buildCycleCard(cycle);
+                : RefreshIndicator(
+              onRefresh: () async {
+                await context.read<CycleProvider>().refreshCycles();
               },
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.sm,
+                ),
+                itemCount: filteredCycles.length,
+                itemBuilder: (context, index) {
+                  final cycle = filteredCycles[index];
+                  return _buildCycleCard(cycle);
+                },
+              ),
             ),
           ),
         ],
@@ -177,16 +183,10 @@ class _CycleListScreenState extends State<CycleListScreen> {
                     children: [
                       Row(
                         children: [
-                          Text(
-                            cycle.nom,
-                            style: AppTextStyles.subtitleLarge,
-                          ),
+                          Text(cycle.nom, style: AppTextStyles.subtitleLarge),
                           const SizedBox(width: AppSpacing.sm),
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.xs,
-                              vertical: 2,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 2),
                             decoration: BoxDecoration(
                               color: typeColor.withOpacity(0.1),
                               borderRadius: AppBorders.buttonRadius,
@@ -209,10 +209,7 @@ class _CycleListScreenState extends State<CycleListScreen> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: AppSpacing.xs,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                   decoration: BoxDecoration(
                     color: cycle.isActive && !cycle.isArchived
                         ? AppColors.success.withOpacity(0.1)
@@ -222,9 +219,7 @@ class _CycleListScreenState extends State<CycleListScreen> {
                   child: Text(
                     cycle.isActive && !cycle.isArchived ? 'Actif' : 'Clôturé',
                     style: AppTextStyles.labelSmall.copyWith(
-                      color: cycle.isActive && !cycle.isArchived
-                          ? AppColors.success
-                          : AppColors.textHint,
+                      color: cycle.isActive && !cycle.isArchived ? AppColors.success : AppColors.textHint,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -232,7 +227,6 @@ class _CycleListScreenState extends State<CycleListScreen> {
               ],
             ),
             const SizedBox(height: AppSpacing.md),
-
             // Barre de progression
             Row(
               children: [
@@ -240,10 +234,7 @@ class _CycleListScreenState extends State<CycleListScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Progression',
-                        style: AppTextStyles.bodySmall,
-                      ),
+                      Text('Progression', style: AppTextStyles.bodySmall),
                       const SizedBox(height: 4),
                       Stack(
                         children: [
@@ -259,11 +250,7 @@ class _CycleListScreenState extends State<CycleListScreen> {
                             child: Container(
                               height: 8,
                               decoration: BoxDecoration(
-                                color: progression > 80
-                                    ? AppColors.error
-                                    : progression > 50
-                                    ? AppColors.warning
-                                    : AppColors.success,
+                                color: progression > 80 ? AppColors.error : progression > 50 ? AppColors.warning : AppColors.success,
                                 borderRadius: AppBorders.buttonRadius,
                               ),
                             ),
@@ -277,11 +264,7 @@ class _CycleListScreenState extends State<CycleListScreen> {
                 Text(
                   '${progression.toInt()}%',
                   style: AppTextStyles.numberSmall.copyWith(
-                    color: progression > 80
-                        ? AppColors.error
-                        : progression > 50
-                        ? AppColors.warning
-                        : AppColors.success,
+                    color: progression > 80 ? AppColors.error : progression > 50 ? AppColors.warning : AppColors.success,
                   ),
                 ),
               ],
@@ -294,27 +277,19 @@ class _CycleListScreenState extends State<CycleListScreen> {
 
   Color _getTypeColor(String type) {
     switch (type) {
-      case 'CHAIR':
-        return AppColors.primary;
-      case 'PONDEUSE':
-        return AppColors.warning;
-      case 'LOCAL':
-        return AppColors.success;
-      default:
-        return AppColors.textHint;
+      case 'CHAIR': return AppColors.primary;
+      case 'PONDEUSE': return AppColors.warning;
+      case 'LOCAL': return AppColors.success;
+      default: return AppColors.textHint;
     }
   }
 
   String _getTypeLabel(String type) {
     switch (type) {
-      case 'CHAIR':
-        return 'Chair';
-      case 'PONDEUSE':
-        return 'Pondeuse';
-      case 'LOCAL':
-        return 'Local';
-      default:
-        return type;
+      case 'CHAIR': return 'Chair';
+      case 'PONDEUSE': return 'Pondeuse';
+      case 'LOCAL': return 'Local';
+      default: return type;
     }
   }
 
