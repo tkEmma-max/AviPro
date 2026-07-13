@@ -31,8 +31,10 @@ class DepenseViewSet(viewsets.ModelViewSet):
         return DepenseSerializer
 
     def get_queryset(self):
-        """Filtre les dépenses par cycle si spécifié"""
-        queryset = super().get_queryset()
+        queryset = Depense.objects.filter(
+            created_by=self.request.user,
+            is_deleted=False
+        )
         cycle_id = self.request.query_params.get('cycle')
         if cycle_id:
             queryset = queryset.filter(cycle_id=cycle_id)

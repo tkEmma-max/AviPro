@@ -33,6 +33,12 @@ class CycleViewSet(viewsets.ModelViewSet):
             return CycleDetailSerializer
         return CycleSerializer
 
+    def get_queryset(self):
+        return Cycle.objects.filter(
+            created_by=self.request.user,
+            is_deleted=False
+        )
+
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
