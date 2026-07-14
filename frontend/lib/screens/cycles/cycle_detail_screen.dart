@@ -6,75 +6,49 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_borders.dart';
 import '../../core/theme/app_shadows.dart';
+import '../../models/cycle.dart';
+import '../../services/api_service.dart';
+import 'package:provider/provider.dart';
+import '../../providers/cycle_provider.dart';
 
 class CycleDetailScreen extends StatefulWidget {
-  final Map<String, dynamic> cycle;
+  final Map<String, dynamic> cycleData;
 
-  const CycleDetailScreen({super.key, required this.cycle});
+  const CycleDetailScreen({super.key, required this.cycleData});
 
   @override
   State<CycleDetailScreen> createState() => _CycleDetailScreenState();
 }
 
 class _CycleDetailScreenState extends State<CycleDetailScreen> {
-  int _effectifActuel = 0;
+  late Cycle _cycle;
   int _pertes = 0;
 
   @override
   void initState() {
     super.initState();
-    _effectifActuel = widget.cycle['nbSujets'] ?? 0;
+    _cycle = Cycle.fromJson(widget.cycleData);
+    _refreshCycle();
   }
 
-  void _declarerPerte() {
+  // Vérifie si le cycle peut être supprimé (moins de 48h)
+  bool _canDeleteCycle() {
+    final difference = DateTime.now().difference(_cycle.createdAt);
+    return difference.inHours < 48;
+  }
+
+  // Affiche la confirmation de suppression
+  void _showDeleteConfirmation() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: AppBorders.radiusLarge,
         ),
-        title: const Text('Déclarer une perte'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Nombre de poulets morts aujourd\'hui',
-              style: AppTextStyles.bodyMedium,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildNumberButton('-', () {
-                  setState(() {
-                    if (_pertes > 0) _pertes--;
-                  });
-                }),
-                Container(
-                  width: 60,
-                  height: 60,
-                  alignment: Alignment.center,
-                  child: Text(
-                    _pertes.toString(),
-                    style: AppTextStyles.numberLarge.copyWith(
-                      fontSize: 28,
-                      color: AppColors.error,
-                    ),
-                  ),
-                ),
-                _buildNumberButton('+', () {
-                  setState(() {
-                    if (_pertes < _effectifActuel) _pertes++;
-                  });
-                }),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'Effectif restant: ${_effectifActuel - _pertes}',
-              style: AppTextStyles.bodySmall,
-            ),
-          ],
+        title: const Text('Supprimer le cycle ?'),
+        content: Text(
+          'Le cycle "${_cycle.nom}" et toutes ses données (dépenses, ventes) seront définitivement supprimés.',
+          style: AppTextStyles.bodyMedium,
         ),
         actions: [
           TextButton(
@@ -87,31 +61,163 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
             ),
           ),
           TextButton(
-            onPressed: () {
-              setState(() {
-                _effectifActuel -= _pertes;
-                _pertes = 0;
-              });
+            onPressed: () async {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Perte déclarée. Effectif: $_effectifActuel'),
-                  backgroundColor: AppColors.error,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: AppBorders.cardRadius,
-                  ),
-                ),
-              );
+              final cycleProvider = context.read<CycleProvider>();
+              final success = await cycleProvider.deleteCycle(_cycle.id);
+              if (mounted) {
+                if (success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Cycle "${_cycle.nom}" supprimé'),
+                      backgroundColor: AppColors.success,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                  Navigator.pop(context); // Retour à la liste
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Erreur lors de la suppression'),
+                      backgroundColor: AppColors.error,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              }
             },
             child: Text(
-              'Confirmer',
+              'Supprimer',
               style: AppTextStyles.button.copyWith(
                 color: AppColors.error,
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _refreshCycle() async {
+    try {
+      final apiService = ApiService();
+      final response = await apiService.get('cycles/${_cycle.id}/');
+      if (response.statusCode == 200 && mounted) {
+        setState(() {
+          _cycle = Cycle.fromJson(response.data);
+        });
+      }
+    } catch (e) {
+      print('❌ Erreur rafraîchissement cycle: $e');
+    }
+  }
+
+  void _declarerPerte() {
+    int pertesTemp = 0;
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: AppBorders.radiusLarge,
+          ),
+          title: const Text('Déclarer une perte'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Nombre de poulets morts',
+                style: AppTextStyles.bodyMedium,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildNumberButton('-', () {
+                    setDialogState(() {
+                      if (pertesTemp > 0) pertesTemp--;
+                    });
+                  }),
+                  Container(
+                    width: 60,
+                    height: 60,
+                    alignment: Alignment.center,
+                    child: Text(
+                      pertesTemp.toString(),
+                      style: AppTextStyles.numberLarge.copyWith(
+                        fontSize: 28,
+                        color: AppColors.error,
+                      ),
+                    ),
+                  ),
+                  _buildNumberButton('+', () {
+                    setDialogState(() {
+                      if (pertesTemp < _cycle.nombreSujetsActuels) pertesTemp++;
+                    });
+                  }),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'Effectif restant: ${_cycle.nombreSujetsActuels - pertesTemp}',
+                style: AppTextStyles.bodySmall,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Annuler',
+                style: AppTextStyles.button.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _cycle = Cycle(
+                    id: _cycle.id,
+                    nom: _cycle.nom,
+                    poulailler: _cycle.poulailler,
+                    poulaillerNom: _cycle.poulaillerNom,
+                    type: _cycle.type,
+                    dateDebut: _cycle.dateDebut,
+                    dateFin: _cycle.dateFin,
+                    nombreSujetsInitiaux: _cycle.nombreSujetsInitiaux,
+                    nombreSujetsActuels: _cycle.nombreSujetsActuels - pertesTemp,
+                    dureeEstimeeJours: _cycle.dureeEstimeeJours,
+                    isActive: _cycle.isActive,
+                    isArchived: _cycle.isArchived,
+                    joursEcoules: _cycle.joursEcoules,
+                    progression: _cycle.progression,
+                    mortalites: (_cycle.mortalites ?? 0) + pertesTemp,
+                    tauxMortalite: _cycle.nombreSujetsInitiaux > 0
+                        ? ((_cycle.mortalites ?? 0) + pertesTemp) / _cycle.nombreSujetsInitiaux * 100
+                        : 0,
+                    totalDepenses: _cycle.totalDepenses,
+                    totalVentes: _cycle.totalVentes,
+                    benefice: _cycle.benefice,
+                    estRentable: _cycle.estRentable,
+                    coutProductionUnitaire: _cycle.coutProductionUnitaire,
+                    prixVenteMoyen: _cycle.prixVenteMoyen,
+                    createdAt: _cycle.createdAt,
+                    updatedAt: _cycle.updatedAt,
+                  );
+                  _pertes = 0;
+                });
+                Navigator.pop(context);
+              },
+              child: Text(
+                'Confirmer',
+                style: AppTextStyles.button.copyWith(
+                  color: AppColors.error,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -140,16 +246,36 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
     );
   }
 
+  Color _getTypeColor(String type) {
+    switch (type) {
+      case 'CHAIR': return AppColors.primary;
+      case 'PONDEUSE': return AppColors.warning;
+      case 'LOCAL': return AppColors.success;
+      default: return AppColors.textHint;
+    }
+  }
+
+  String _getTypeLabel(String type) {
+    switch (type) {
+      case 'CHAIR': return 'Chair';
+      case 'PONDEUSE': return 'Pondeuse';
+      case 'LOCAL': return 'Local';
+      default: return type;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final cycle = widget.cycle;
-    final isActif = cycle['actif'] ?? true;
-    final progression = cycle['progression']?.toDouble() ?? 0;
-    final dateDebut = cycle['dateDebut'] ?? '01/07/2026';
-    final age = cycle['age'] ?? 0;
-    final type = cycle['type'] ?? 'CHAIR';
-    final typeLabel = type == 'CHAIR' ? 'Chair' : type == 'PONDEUSE' ? 'Pondeuse' : 'Local';
-    final mortalite = cycle['mortalite'] ?? 5.0;
+    final isActif = _cycle.isActive && !_cycle.isArchived;
+    final progression = _cycle.progression ?? 0;
+    final age = _cycle.joursEcoules ?? 0;
+    final typeLabel = _getTypeLabel(_cycle.type);
+    final typeColor = _getTypeColor(_cycle.type);
+    final mortalite = _cycle.tauxMortalite ?? 0;
+    final totalDepenses = _cycle.totalDepenses ?? 0;
+    final totalVentes = _cycle.totalVentes ?? 0;
+    final benefice = _cycle.benefice ?? 0;
+    final dateDebut = DateFormat('dd/MM/yyyy').format(_cycle.dateDebut);
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -161,7 +287,7 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          cycle['nom'] ?? 'Cycle',
+          _cycle.nom,
           style: const TextStyle(
             color: AppColors.textPrimary,
             fontSize: 18,
@@ -186,48 +312,26 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
                         leading: const Icon(Icons.bar_chart, color: AppColors.primary),
                         title: const Text('Rapport de performance'),
                         onTap: () {
-                          print('🟢 Clic sur Rapport de performance');
-                          print('🟢 Cycle ID: ${widget.cycle['id']}');
-                          print('🟢 Cycle data: ${widget.cycle}');
                           Navigator.pop(context);
                           Navigator.pushNamed(
                             context,
-                            '/cycle/report/${widget.cycle['id']}',
-                            arguments: widget.cycle,
+                            '/cycle/report/${_cycle.id}',
+                            arguments: widget.cycleData,
                           );
                         },
                       ),
                       ListTile(
-                        leading: const Icon(Icons.edit_outlined, color: AppColors.primary),
-                        title: const Text('Modifier le cycle'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          // TODO: Page 18
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.assessment_outlined, color: AppColors.primary),
-                        title: const Text('Prévisions'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          // TODO: Page 19
-                        },
-                      ),
-
-                      // Dans le menu (more_vert)
-                      ListTile(
                         leading: const Icon(Icons.note_alt_outlined, color: AppColors.primary),
-                        title: const Text('Soumettre un rapport'),
+                        title: const Text('Soumettre un rapport de suivi'),
                         onTap: () {
                           Navigator.pop(context);
                           Navigator.pushNamed(
                             context,
                             '/cycle/report/form',
-                            arguments: widget.cycle,
+                            arguments: widget.cycleData,
                           );
                         },
                       ),
-
                       ListTile(
                         leading: const Icon(Icons.edit_outlined, color: AppColors.primary),
                         title: const Text('Modifier le cycle'),
@@ -236,7 +340,7 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
                           Navigator.pushNamed(
                             context,
                             '/cycle/edit',
-                            arguments: widget.cycle,
+                            arguments: widget.cycleData,
                           );
                         },
                       ),
@@ -248,6 +352,18 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
                           Navigator.pushNamed(context, '/rapports');
                         },
                       ),
+                      // Supprimer (seulement si cycle a moins de 48h)
+                      if (_canDeleteCycle())
+                        ListTile(
+                          leading: const Icon(Icons.delete_outline, color: AppColors.error),
+                          title: const Text('Supprimer le cycle',
+                            style: TextStyle(color: AppColors.error),
+                          ),
+                          onTap: () {
+                            Navigator.pop(context);
+                            _showDeleteConfirmation();
+                          },
+                        ),
                     ],
                   ),
                 ),
@@ -264,12 +380,12 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
             const SizedBox(height: AppSpacing.md),
 
             // ============================================================
-            // HEADER : Nom + Âge + Effectif
+            // HEADER
             // ============================================================
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  padding: const EdgeInsets.all(AppSpacing.xs),
                   decoration: BoxDecoration(
                     color: isActif
                         ? AppColors.success.withOpacity(0.1)
@@ -291,13 +407,13 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
                     vertical: AppSpacing.xs,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: typeColor.withOpacity(0.1),
                     borderRadius: AppBorders.buttonRadius,
                   ),
                   child: Text(
                     typeLabel,
                     style: AppTextStyles.labelSmall.copyWith(
-                      color: AppColors.primary,
+                      color: typeColor,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -313,7 +429,7 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        cycle['nom'] ?? 'Cycle',
+                        _cycle.nom,
                         style: AppTextStyles.headlineLarge.copyWith(
                           fontSize: 22,
                           color: AppColors.textPrimary,
@@ -333,7 +449,7 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '$_effectifActuel',
+                      '${_cycle.nombreSujetsActuels}',
                       style: AppTextStyles.numberLarge.copyWith(
                         fontSize: 24,
                         color: AppColors.primary,
@@ -370,8 +486,8 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
                         color: progression > 80
                             ? AppColors.error
                             : progression > 50
-                                ? AppColors.warning
-                                : AppColors.success,
+                            ? AppColors.warning
+                            : AppColors.success,
                       ),
                     ),
                   ],
@@ -384,14 +500,27 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
                     progression > 80
                         ? AppColors.error
                         : progression > 50
-                            ? AppColors.warning
-                            : AppColors.success,
+                        ? AppColors.warning
+                        : AppColors.success,
                   ),
                   minHeight: 8,
                   borderRadius: AppBorders.buttonRadius,
                 ),
               ],
             ),
+            const SizedBox(height: AppSpacing.xxl),
+
+            // ============================================================
+            // FRISE CHRONOLOGIQUE (F51)
+            // ============================================================
+            Text(
+              'Frise chronologique',
+              style: AppTextStyles.subtitleLarge.copyWith(
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            _buildFriseChronologique(),
             const SizedBox(height: AppSpacing.xxl),
 
             // ============================================================
@@ -413,7 +542,6 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
               mainAxisSpacing: AppSpacing.md,
               childAspectRatio: 1.4,
               children: [
-                // Perte
                 _buildQuickAction(
                   label: 'Déclarer une perte',
                   icon: Icons.warning,
@@ -421,29 +549,32 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
                   bgColor: AppColors.error.withOpacity(0.08),
                   onTap: _declarerPerte,
                 ),
-                // Charge
                 _buildQuickAction(
                   label: 'Noter une charge',
                   icon: Icons.money_off_outlined,
                   color: AppColors.primary,
                   bgColor: AppColors.primary.withOpacity(0.08),
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.pushNamed(context, '/finance/depense');
+                  },
                 ),
-                // Vente
                 _buildQuickAction(
                   label: 'Enregistrer une vente',
                   icon: Icons.payments_outlined,
                   color: AppColors.success,
                   bgColor: AppColors.success.withOpacity(0.08),
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.pushNamed(context, '/finance/vente');
+                  },
                 ),
-                // Observation
                 _buildQuickAction(
                   label: 'Observation',
                   icon: Icons.note_alt_outlined,
                   color: AppColors.warning,
                   bgColor: AppColors.warning.withOpacity(0.08),
-                  onTap: () {},
+                  onTap: () {
+                    // TODO: Écran observation
+                  },
                 ),
               ],
             ),
@@ -470,17 +601,30 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
               ),
               child: Column(
                 children: [
-                  _buildStatRow('Taux de mortalité', '${mortalite.toStringAsFixed(1)}%',
-                      mortalite > 10 ? AppColors.error : AppColors.success),
+                  _buildStatRow(
+                    'Taux de mortalité',
+                    '${mortalite.toStringAsFixed(1)}%',
+                    mortalite > 10 ? AppColors.error : AppColors.success,
+                  ),
                   const Divider(height: AppSpacing.lg),
-                  _buildStatRow('Aliment consommé', '1 250 kg', AppColors.textPrimary),
+                  _buildStatRow(
+                    'Total charges',
+                    '${totalDepenses.toStringAsFixed(0)} FCFA',
+                    AppColors.error,
+                  ),
                   const Divider(height: AppSpacing.lg),
-                  _buildStatRow('Total charges', '245 000 FCFA', AppColors.error),
+                  _buildStatRow(
+                    'Total ventes',
+                    '${totalVentes.toStringAsFixed(0)} FCFA',
+                    AppColors.success,
+                  ),
                   const Divider(height: AppSpacing.lg),
-                  _buildStatRow('Total ventes', '420 000 FCFA', AppColors.success),
-                  const Divider(height: AppSpacing.lg),
-                  _buildStatRow('Bénéfice estimé', '+175 000 FCFA', AppColors.success,
-                      bold: true),
+                  _buildStatRow(
+                    'Bénéfice estimé',
+                    '${benefice >= 0 ? "+" : ""}${benefice.toStringAsFixed(0)} FCFA',
+                    benefice >= 0 ? AppColors.success : AppColors.error,
+                    bold: true,
+                  ),
                 ],
               ),
             ),
@@ -501,7 +645,7 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
                         ),
                         title: const Text('Clôturer le cycle ?'),
                         content: const Text(
-                          'Cette action est irréversible. Les calculs de rentabilité seront figés.',
+                          'Cette action est irréversible.',
                           style: AppTextStyles.bodyMedium,
                         ),
                         actions: [
@@ -517,9 +661,37 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
                           TextButton(
                             onPressed: () {
                               Navigator.pop(context);
+                              setState(() {
+                                _cycle = Cycle(
+                                  id: _cycle.id,
+                                  nom: _cycle.nom,
+                                  poulailler: _cycle.poulailler,
+                                  poulaillerNom: _cycle.poulaillerNom,
+                                  type: _cycle.type,
+                                  dateDebut: _cycle.dateDebut,
+                                  dateFin: DateTime.now(),
+                                  nombreSujetsInitiaux: _cycle.nombreSujetsInitiaux,
+                                  nombreSujetsActuels: _cycle.nombreSujetsActuels,
+                                  dureeEstimeeJours: _cycle.dureeEstimeeJours,
+                                  isActive: false,
+                                  isArchived: true,
+                                  joursEcoules: _cycle.joursEcoules,
+                                  progression: 100,
+                                  mortalites: _cycle.mortalites,
+                                  tauxMortalite: _cycle.tauxMortalite,
+                                  totalDepenses: _cycle.totalDepenses,
+                                  totalVentes: _cycle.totalVentes,
+                                  benefice: _cycle.benefice,
+                                  estRentable: _cycle.estRentable,
+                                  coutProductionUnitaire: _cycle.coutProductionUnitaire,
+                                  prixVenteMoyen: _cycle.prixVenteMoyen,
+                                  createdAt: _cycle.createdAt,
+                                  updatedAt: DateTime.now(),
+                                );
+                              });
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Cycle clôturé avec succès'),
+                                  content: Text('Cycle clôturé'),
                                   backgroundColor: AppColors.success,
                                   behavior: SnackBarBehavior.floating,
                                 ),
@@ -551,6 +723,128 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
     );
   }
 
+  // ============================================================
+  // FRISE CHRONOLOGIQUE (F51)
+  // ============================================================
+  Widget _buildFriseChronologique() {
+    final etapes = _getEtapesFrise();
+    final age = _cycle.joursEcoules ?? 0;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: AppBorders.cardRadius,
+        border: Border.all(color: AppColors.border),
+        boxShadow: AppShadows.shadowCard,
+      ),
+      child: Column(
+        children: [
+          // Ligne du temps
+          SizedBox(
+            height: 60,
+            child: Row(
+              children: etapes.asMap().entries.map((entry) {
+                final index = entry.key;
+                final etape = entry.value;
+                final isPast = age >= etape['age']!;
+                final isCurrent = age < etape['age']! &&
+                    (index == 0 || age >= etapes[index - 1]['age']!);
+
+                return Expanded(
+                  child: Column(
+                    children: [
+                      // Icône
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: isPast
+                              ? AppColors.primary
+                              : isCurrent
+                              ? AppColors.warning
+                              : AppColors.grey200,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          etape['icon'] as IconData,
+                          size: 16,
+                          color: isPast || isCurrent ? Colors.white : AppColors.textHint,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      // Âge
+                      Text(
+                        etape['label'] as String,
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: isPast || isCurrent
+                              ? AppColors.textPrimary
+                              : AppColors.textHint,
+                          fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w400,
+                          fontSize: 9,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          // Barre de progression de la frise
+          const SizedBox(height: AppSpacing.sm),
+          LinearProgressIndicator(
+            value: _getFriseProgression(),
+            backgroundColor: AppColors.grey200,
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+            minHeight: 6,
+            borderRadius: AppBorders.buttonRadius,
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Map<String, dynamic>> _getEtapesFrise() {
+    switch (_cycle.type) {
+      case 'CHAIR':
+        return [
+          {'age': 1, 'label': 'J1', 'icon': Icons.egg},
+          {'age': 21, 'label': 'J21', 'icon': Icons.pets},
+          {'age': 35, 'label': 'J35', 'icon': Icons.restaurant},
+          {'age': 45, 'label': 'J45', 'icon': Icons.check_circle},
+        ];
+      case 'PONDEUSE':
+        return [
+          {'age': 1, 'label': 'Sem.1', 'icon': Icons.egg},
+          {'age': 56, 'label': 'Sem.8', 'icon': Icons.pets},
+          {'age': 126, 'label': 'Sem.18', 'icon': Icons.restaurant},
+          {'age': 490, 'label': 'Sem.70', 'icon': Icons.check_circle},
+        ];
+      case 'LOCAL':
+        return [
+          {'age': 1, 'label': 'J1', 'icon': Icons.egg},
+          {'age': 84, 'label': 'Sem.12', 'icon': Icons.pets},
+          {'age': 168, 'label': 'Sem.24', 'icon': Icons.restaurant},
+          {'age': _cycle.dureeEstimeeJours, 'label': 'Fin', 'icon': Icons.check_circle},
+        ];
+      default:
+        return [
+          {'age': 1, 'label': 'Début', 'icon': Icons.play_arrow},
+          {'age': _cycle.dureeEstimeeJours, 'label': 'Fin', 'icon': Icons.flag},
+        ];
+    }
+  }
+
+  double _getFriseProgression() {
+    final age = _cycle.joursEcoules ?? 0;
+    if (_cycle.dureeEstimeeJours <= 0) return 0;
+    return (age / _cycle.dureeEstimeeJours).clamp(0.0, 1.0);
+  }
+
+  // ============================================================
+  // WIDGETS
+  // ============================================================
   Widget _buildQuickAction({
     required String label,
     required IconData icon,
@@ -602,9 +896,9 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
           style: bold
               ? AppTextStyles.numberMedium.copyWith(color: valueColor)
               : AppTextStyles.bodyMedium.copyWith(
-                  color: valueColor,
-                  fontWeight: FontWeight.w500,
-                ),
+            color: valueColor,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     );

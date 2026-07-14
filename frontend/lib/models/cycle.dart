@@ -54,9 +54,9 @@ class Cycle {
 
   factory Cycle.fromJson(Map<String, dynamic> json) {
     return Cycle(
-      id: json['id'] ?? '',
+      id: json['id']?.toString() ?? '',
       nom: json['nom'] ?? '',
-      poulailler: json['poulailler'] ?? '',
+      poulailler: json['poulailler']?.toString() ?? '',
       poulaillerNom: json['poulailler_nom'],
       type: json['type'] ?? 'CHAIR',
       dateDebut: json['date_debut'] != null ? DateTime.parse(json['date_debut']) : DateTime.now(),
@@ -82,18 +82,23 @@ class Cycle {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
+    final data = <String, dynamic>{
       'nom': nom,
       'poulailler': poulailler,
       'type': type,
-      'date_debut': dateDebut.toIso8601String(),
-      'date_fin': dateFin?.toIso8601String(),
+      'date_debut': dateDebut.toIso8601String().split('T')[0],
       'nombre_sujets_initiaux': nombreSujetsInitiaux,
       'nombre_sujets_actuels': nombreSujetsActuels,
       'duree_estimee_jours': dureeEstimeeJours,
       'is_active': isActive,
       'is_archived': isArchived,
     };
+    if (dateFin != null) {
+      data['date_fin'] = dateFin!.toIso8601String().split('T')[0];
+    }
+    if (id.isNotEmpty) {
+      data['id'] = id;
+    }
+    return data;
   }
 }

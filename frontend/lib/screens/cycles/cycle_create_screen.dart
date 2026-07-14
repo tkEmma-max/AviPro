@@ -9,6 +9,8 @@ import '../../models/poulailler.dart';
 import '../../models/cycle.dart';
 import '../../providers/poulailler_provider.dart';
 import '../../providers/cycle_provider.dart';
+import '../../services/densite_service.dart';
+import '../../services/api_service.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/custom_button.dart';
 
@@ -21,10 +23,11 @@ class CycleCreateScreen extends StatefulWidget {
 
 class _CycleCreateScreenState extends State<CycleCreateScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _apiService = ApiService();
 
   final _nomController = TextEditingController();
   final _nbSujetsController = TextEditingController();
-  final _dureeController = TextEditingController();
+  final _prixUnitaireController = TextEditingController();
 
   String? _selectedPoulaillerId;
   String _selectedType = 'CHAIR';
@@ -32,28 +35,43 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
 
   double _densite = 0;
   bool _isDensiteOk = false;
+  int _capaciteMax = 0;
+  bool _isLoading = false;
 
   final List<String> _types = ['CHAIR', 'PONDEUSE', 'LOCAL'];
+
+  @override
+  void initState() {
+    super.initState();
+    // Rafraîchir la liste des poulaillers pour avoir les statuts à jour
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<PoulaillerProvider>().refreshPoulaillers();
+    });
+  }
 
   @override
   void dispose() {
     _nomController.dispose();
     _nbSujetsController.dispose();
-    _dureeController.dispose();
+    _prixUnitaireController.dispose();
     super.dispose();
   }
 
   void _updateDensite() {
     final nb = int.tryParse(_nbSujetsController.text) ?? 0;
     final poulailler = _getSelectedPoulailler();
-    if (poulailler != null && nb > 0 && poulailler.surface != null) {
+    if (poulailler != null && nb > 0 && poulailler.surface != null && poulailler.surface! > 0) {
+      final densiteMax = DensiteService.getDensiteRecommandee(_selectedType, 0);
+      final capacite = (poulailler.surface! * densiteMax).floor();
       setState(() {
         _densite = nb / poulailler.surface!;
-        _isDensiteOk = _densite <= 10;
+        _capaciteMax = capacite;
+        _isDensiteOk = nb <= capacite;
       });
     } else {
       setState(() {
         _densite = 0;
+        _capaciteMax = 0;
         _isDensiteOk = false;
       });
     }
@@ -70,53 +88,102 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
     }
   }
 
+  int _getDureeEstimee() {
+    switch (_selectedType) {
+      case 'CHAIR': return 45;
+      case 'PONDEUSE': return 490;
+      case 'LOCAL': return 180;
+      default: return 90;
+    }
+  }
+
   void _createCycle() async {
-    if (!_formKey.currentState!.validate()) return;
+    print('🟢 [CREATE CYCLE] Début de la création');
+
+    if (!_formKey.currentState!.validate()) {
+      print('❌ [CREATE CYCLE] Formulaire invalide');
+      return;
+    }
     if (_selectedPoulaillerId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Veuillez sélectionner un poulailler'),
-          backgroundColor: AppColors.warning,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      print('❌ [CREATE CYCLE] Pas de poulailler sélectionné');
       return;
     }
     if (!_isDensiteOk) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Densité excessive !'),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      print('❌ [CREATE CYCLE] Densité non conforme');
       return;
     }
 
-    final cycle = Cycle(
-      id: '',
-      nom: _nomController.text.trim(),
-      poulailler: _selectedPoulaillerId!,
-      type: _selectedType,
-      dateDebut: _selectedDate,
-      dateFin: null,
-      nombreSujetsInitiaux: int.parse(_nbSujetsController.text),
-      nombreSujetsActuels: int.parse(_nbSujetsController.text),
-      dureeEstimeeJours: int.parse(_dureeController.text),
-      isActive: true,
-      isArchived: false,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
+    setState(() => _isLoading = true);
 
     try {
-      final provider = context.read<CycleProvider>();
-      await provider.addCycle(cycle);
+      final nbSujets = int.parse(_nbSujetsController.text);
+      final prixUnitaire = double.parse(_prixUnitaireController.text);
 
+      print('📊 [CREATE CYCLE] nbSujets=$nbSujets, prixUnitaire=$prixUnitaire, type=$_selectedType');
+
+      // 1. Créer le cycle
+      final cycle = Cycle(
+        id: '',
+        nom: _nomController.text.trim(),
+        poulailler: _selectedPoulaillerId!,
+        type: _selectedType,
+        dateDebut: _selectedDate,
+        dateFin: null,
+        nombreSujetsInitiaux: nbSujets,
+        nombreSujetsActuels: nbSujets,
+        dureeEstimeeJours: _getDureeEstimee(),
+        isActive: true,
+        isArchived: false,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      final cycleData = cycle.toJson();
+      print('📤 [CREATE CYCLE] POST /cycles/ data: $cycleData');
+
+      final cycleResponse = await _apiService.post('cycles/', data: cycleData);
+      print('📥 [CREATE CYCLE] Réponse POST /cycles/: status=${cycleResponse.statusCode}');
+
+      if (cycleResponse.statusCode != 201) {
+        throw Exception('Erreur création cycle: ${cycleResponse.statusCode}');
+      }
+
+      final cycleCreated = Cycle.fromJson(cycleResponse.data);
+      final cycleId = cycleCreated.id;
+      print('✅ [CREATE CYCLE] Cycle créé: id=$cycleId');
+
+      // 2. Créer la dépense d'achat des poussins
+      final montantTotal = nbSujets * prixUnitaire;
+      final depenseData = {
+        'cycle': cycleId,
+        'categorie': 'POUSSIN',
+        'montant': (montantTotal.toInt()),
+        'date': _selectedDate.toIso8601String().split('T')[0],
+        'description': 'Achat de $nbSujets poussins à $prixUnitaire FCFA/unité',
+      };
+
+      print('📤 [CREATE CYCLE] POST /depenses/ data: $depenseData');
+
+      final depenseResponse = await _apiService.post('depenses/', data: depenseData);
+      print('📥 [CREATE CYCLE] Réponse POST /depenses/: status=${depenseResponse.statusCode}');
+
+      if (depenseResponse.statusCode != 201) {
+        print('⚠️ [CREATE CYCLE] Échec dépense: ${depenseResponse.data}');
+      } else {
+        print('✅ [CREATE CYCLE] Dépense créée: $montantTotal FCFA');
+      }
+
+      // 3. Rafraîchir
+      // 3. Rafraîchir avec délai pour laisser le backend calculer
       if (mounted) {
+        // Petit délai pour que le backend ait le temps de traiter
+        await Future.delayed(const Duration(milliseconds: 500));
+        await context.read<CycleProvider>().refreshCycles();
+        await context.read<PoulaillerProvider>().refreshPoulaillers();
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cycle créé avec succès !'),
+          SnackBar(
+            content: Text('Cycle créé ! Dépense: ${montantTotal.toInt()} FCFA'),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
           ),
@@ -124,15 +191,20 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
         Navigator.pop(context);
       }
     } catch (e) {
+      print('❌ [CREATE CYCLE] Exception: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: ${e.toString()}'),
+            content: Text('${e.toString().substring(0, 100)}...'),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 6),
           ),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+      print('🏁 [CREATE CYCLE] Fin');
     }
   }
 
@@ -140,13 +212,8 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
   Widget build(BuildContext context) {
     final poulaillerProvider = context.watch<PoulaillerProvider>();
     final poulaillersLibres = poulaillerProvider.poulaillers
-        .where((p) => p.statut == 'LIBRE')
+        .where((p) => p.statut == 'LIBRE' && !p.isArchived)
         .toList();
-
-    final selectedPoulailler = _getSelectedPoulailler();
-    final capaciteMax = selectedPoulailler?.surface != null
-        ? (selectedPoulailler!.surface! * 8).toInt()
-        : 0;
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -266,7 +333,12 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
                   final isSelected = _selectedType == type;
                   return Expanded(
                     child: GestureDetector(
-                      onTap: () => setState(() => _selectedType = type),
+                      onTap: () {
+                        setState(() {
+                          _selectedType = type;
+                          _updateDensite();
+                        });
+                      },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           vertical: AppSpacing.md,
@@ -300,7 +372,7 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
               ),
               const SizedBox(height: AppSpacing.lg),
 
-              // Nombre de sujets
+              // Nombre de sujets + Prix unitaire
               Row(
                 children: [
                   Expanded(
@@ -324,14 +396,14 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
                   Expanded(
                     flex: 1,
                     child: CustomTextField(
-                      controller: _dureeController,
-                      label: 'Durée (jours) *',
-                      hint: '45',
-                      prefixIcon: Icons.timer_outlined,
+                      controller: _prixUnitaireController,
+                      label: 'Prix unit. (FCFA) *',
+                      hint: '500',
+                      prefixIcon: Icons.money_outlined,
                       keyboardType: TextInputType.number,
                       validator: (value) {
                         if (value!.isEmpty) return 'Requis';
-                        final v = int.tryParse(value);
+                        final v = double.tryParse(value);
                         if (v == null || v <= 0) return '> 0';
                         return null;
                       },
@@ -340,7 +412,35 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
                 ],
               ),
 
-              // Densité
+              // Aperçu coût total
+              if (_nbSujetsController.text.isNotEmpty &&
+                  _prixUnitaireController.text.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.only(top: AppSpacing.sm),
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.05),
+                    borderRadius: AppBorders.cardRadius,
+                    border: Border.all(
+                      color: AppColors.primary.withOpacity(0.2),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.receipt_long, color: AppColors.primary, size: 18),
+                      const SizedBox(width: AppSpacing.sm),
+                      Text(
+                        'Coût total poussins: ${(int.parse(_nbSujetsController.text) * double.parse(_prixUnitaireController.text)).toStringAsFixed(0)} FCFA',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              // Alerte densité
               if (_selectedPoulaillerId != null &&
                   _nbSujetsController.text.isNotEmpty)
                 Container(
@@ -368,21 +468,16 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
                       ),
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _isDensiteOk
-                                  ? '🟢 Densité conforme (${_densite.toStringAsFixed(1)} sujets/m²)'
-                                  : '🔴 Surcharge : Capacité maximale de $capaciteMax sujets',
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: _isDensiteOk
-                                    ? AppColors.success
-                                    : AppColors.error,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          _isDensiteOk
+                              ? 'Densité conforme (${_densite.toStringAsFixed(1)} sujets/m²)'
+                              : 'Surcharge : Capacité max $_capaciteMax sujets',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: _isDensiteOk
+                                ? AppColors.success
+                                : AppColors.error,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
@@ -436,8 +531,9 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
 
               // Bouton
               CustomButton(
-                label: 'VALIDER ET LANCER LE CYCLE',
-                onPressed: _createCycle,
+                label: _isLoading ? 'CRÉATION EN COURS...' : 'VALIDER ET LANCER LE CYCLE',
+                onPressed: _isLoading ? null : _createCycle,
+                isLoading: _isLoading,
               ),
               const SizedBox(height: AppSpacing.xxl),
             ],

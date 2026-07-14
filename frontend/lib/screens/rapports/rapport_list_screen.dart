@@ -8,6 +8,7 @@ import '../../core/theme/app_borders.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../providers/rapport_provider.dart';
 import '../../models/rapport.dart';
+import 'rapport_detail_screen.dart';
 
 class RapportListScreen extends StatefulWidget {
   const RapportListScreen({super.key});
@@ -88,87 +89,89 @@ class _RapportListScreenState extends State<RapportListScreen> {
           return _buildRapportCard(rapport);
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Page de création de rapport
-        },
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        child: const Icon(Icons.add),
-      ),
     );
   }
 
   Widget _buildRapportCard(Rapport rapport) {
     final hasMaladie = rapport.maladieObservee != null && rapport.maladieObservee!.isNotEmpty;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.md),
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: AppBorders.cardRadius,
-        border: Border(
-          left: BorderSide(
-            color: hasMaladie ? AppColors.error : AppColors.success,
-            width: 4,
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RapportDetailScreen(rapport: rapport),
           ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.md),
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: AppBorders.cardRadius,
+          border: Border(
+            left: BorderSide(
+              color: hasMaladie ? AppColors.error : AppColors.success,
+              width: 4,
+            ),
+          ),
+          boxShadow: AppShadows.shadowCard,
         ),
-        boxShadow: AppShadows.shadowCard,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '${rapport.periodeDebut.day}/${rapport.periodeDebut.month} - ${rapport.periodeFin.day}/${rapport.periodeFin.month}',
-                  style: AppTextStyles.subtitleLarge,
-                ),
-              ),
-              if (hasMaladie)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: AppSpacing.xs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.error.withOpacity(0.1),
-                    borderRadius: AppBorders.buttonRadius,
-                  ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
                   child: Text(
-                    '⚠️ Maladie',
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: AppColors.error,
-                      fontWeight: FontWeight.w600,
+                    '${rapport.periodeDebut.day}/${rapport.periodeDebut.month} - ${rapport.periodeFin.day}/${rapport.periodeFin.month}',
+                    style: AppTextStyles.subtitleLarge,
+                  ),
+                ),
+                if (hasMaladie)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withOpacity(0.1),
+                      borderRadius: AppBorders.buttonRadius,
+                    ),
+                    child: Text(
+                      '⚠️ Maladie',
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: AppColors.error,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Row(
-            children: [
-              Text(
-                'Aliment: ${rapport.alimentConsomme} kg',
-                style: AppTextStyles.bodySmall,
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Text(
-                'Eau: ${rapport.eauConsommee} L',
-                style: AppTextStyles.bodySmall,
-              ),
-            ],
-          ),
-          if (rapport.cycleNom != null)
-            Text(
-              'Cycle: ${rapport.cycleNom}',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
-              ),
+              ],
             ),
-        ],
+            const SizedBox(height: AppSpacing.xs),
+            Row(
+              children: [
+                Text(
+                  'Aliment: ${rapport.alimentConsomme} kg',
+                  style: AppTextStyles.bodySmall,
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Text(
+                  'Eau: ${rapport.eauConsommee} L',
+                  style: AppTextStyles.bodySmall,
+                ),
+              ],
+            ),
+            if (rapport.cycleNom != null)
+              Text(
+                'Cycle: ${rapport.cycleNom}',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

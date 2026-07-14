@@ -1,9 +1,12 @@
 // lib/screens/finances/finance_depense_screen.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_borders.dart';
+import '../../providers/cycle_provider.dart';
+import '../../services/api_service.dart';
 
 class FinanceDepenseScreen extends StatefulWidget {
   const FinanceDepenseScreen({super.key});
@@ -14,136 +17,148 @@ class FinanceDepenseScreen extends StatefulWidget {
 
 class _FinanceDepenseScreenState extends State<FinanceDepenseScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _apiService = ApiService();
   final _montantController = TextEditingController();
-  final _noteController = TextEditingController();
+  final _descriptionController = TextEditingController();
 
   String? _selectedCategorie;
-  String? _selectedCycle;
+  String? _selectedCycleId;
   DateTime _selectedDate = DateTime.now();
+  bool _isLoading = false;
 
-  final List<String> _categories = [
-    'Alimentation',
-    'Santé/Vaccins',
-    'Infrastructure',
-    "Main d'œuvre",
-    'Transport',
-    'Électricité',
-    'Autre'
-  ];
-
-  final List<String> _cycles = ['Lot Juillet', 'Bande Mars', 'Général'];
+  // Catégories alignées avec le backend
+  final Map<String, String> _categories = {
+    'ALIMENT': 'Aliment',
+    'POUSSIN': 'Achat de poussins',
+    'VACCIN': 'Vaccins et médicaments',
+    'EAU': 'Eau',
+    'ELECTRICITE': 'Électricité',
+    'MAIN_OEUVRE': "Main-d'œuvre",
+    'TRANSPORT': 'Transport',
+    'ENTRETIEN': 'Entretien',
+    'EQUIPEMENT': 'Équipement',
+    'AUTRE': 'Autre',
+  };
 
   @override
   void dispose() {
     _montantController.dispose();
-    _noteController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
-  void _submitForm() {
+  void _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
-
     if (_selectedCategorie == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Veuillez sélectionner une catégorie'),
-          backgroundColor: AppColors.warning,
-          behavior: SnackBarBehavior.floating,
-        ),
+        const SnackBar(content: Text('Sélectionnez une catégorie'), backgroundColor: AppColors.warning),
       );
       return;
     }
-    if (_selectedCycle == null) {
+    if (_selectedCycleId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Veuillez sélectionner un cycle'),
-          backgroundColor: AppColors.warning,
-          behavior: SnackBarBehavior.floating,
-        ),
+        const SnackBar(content: Text('Sélectionnez un cycle'), backgroundColor: AppColors.warning),
       );
       return;
     }
 
-    // TODO: Sauvegarder la dépense
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Dépense enregistrée avec succès !'),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: AppBorders.cardRadius,
-        ),
-      ),
-    );
-    Navigator.pop(context);
+    setState(() => _isLoading = true);
+
+    try {
+      final data = {
+        'cycle': _selectedCycleId,
+        'categorie': _selectedCategorie,
+        'montant': int.parse(_montantController.text),
+        'date': _selectedDate.toIso8601String().split('T')[0],
+        'description': _descriptionController.text.isNotEmpty ? _descriptionController.text : null,
+      };
+
+      print('📤 [DEPENSE] POST data: $data');
+      final response = await _apiService.post('depenses/', data: data);
+      print('📥 [DEPENSE] Réponse: ${response.statusCode}');
+
+      if (response.statusCode == 201 && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Dépense enregistrée !'), backgroundColor: AppColors.success),
+        );
+        Navigator.pop(context);
+      } else {
+        throw Exception('Erreur ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ [DEPENSE] Exception: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e'), backgroundColor: AppColors.error),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final cycleProvider = context.watch<CycleProvider>();
+    final cyclesActifs = cycleProvider.cycles.where((c) => c.isActive && !c.isArchived).toList();
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textPrimary),
+          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Nouvelle dépense',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        title: const Text('Nouvelle dépense', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xxl,
-          vertical: AppSpacing.lg,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ============================================================
-              // CATÉGORIE
-              // ============================================================
-              Text(
-                'Type de charge',
-                style: AppTextStyles.labelLarge.copyWith(
-                  color: AppColors.primary,
-                  fontSize: 13,
-                ),
-              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Cycle
+              Text('Cycle *', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
               const SizedBox(height: AppSpacing.xs),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: AppBorders.inputRadius,
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                decoration: BoxDecoration(color: AppColors.surfaceLight, borderRadius: AppBorders.inputRadius, border: Border.all(color: AppColors.border)),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedCycleId,
+                    hint: Text('Sélectionnez un cycle actif', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint)),
+                    isExpanded: true,
+                    icon: Icon(Icons.arrow_drop_down, color: AppColors.primary),
+                    items: cyclesActifs.map((c) {
+                      return DropdownMenuItem<String>(value: c.id, child: Text(c.nom, style: AppTextStyles.bodyMedium));
+                    }).toList(),
+                    onChanged: (value) => setState(() => _selectedCycleId = value),
+                  ),
                 ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Catégorie
+              Text('Catégorie *', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
+              const SizedBox(height: AppSpacing.xs),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                decoration: BoxDecoration(color: AppColors.surfaceLight, borderRadius: AppBorders.inputRadius, border: Border.all(color: AppColors.border)),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: _selectedCategorie,
-                    hint: Text(
-                      'Sélectionnez une catégorie',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textHint,
-                      ),
-                    ),
+                    hint: Text('Sélectionnez une catégorie', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint)),
                     isExpanded: true,
                     icon: Icon(Icons.arrow_drop_down, color: AppColors.primary),
-                    items: _categories.map((c) {
-                      return DropdownMenuItem<String>(
-                        value: c,
-                        child: Text(c, style: AppTextStyles.bodyMedium),
-                      );
+                    items: _categories.entries.map((e) {
+                      return DropdownMenuItem<String>(value: e.key, child: Text(e.value, style: AppTextStyles.bodyMedium));
                     }).toList(),
                     onChanged: (value) => setState(() => _selectedCategorie = value),
                   ),
@@ -151,147 +166,33 @@ class _FinanceDepenseScreenState extends State<FinanceDepenseScreen> {
               ),
               const SizedBox(height: AppSpacing.lg),
 
-              // ============================================================
-              // MONTANT
-              // ============================================================
-              Text(
-                'Montant (FCFA)',
-                style: AppTextStyles.labelLarge.copyWith(
-                  color: AppColors.primary,
-                  fontSize: 13,
-                ),
-              ),
+              // Montant
+              Text('Montant (FCFA) *', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
               const SizedBox(height: AppSpacing.xs),
               TextFormField(
                 controller: _montantController,
                 keyboardType: TextInputType.number,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textPrimary,
-                ),
-                decoration: InputDecoration(
-                  hintText: '0',
-                  hintStyle: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textHint,
-                  ),
-                  filled: true,
-                  fillColor: const Color(0xFFF1F5F9),
-                  border: OutlineInputBorder(
-                    borderRadius: AppBorders.inputRadius,
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: AppBorders.inputRadius,
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: AppBorders.inputRadius,
-                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: AppBorders.inputRadius,
-                    borderSide: const BorderSide(color: AppColors.error, width: 2),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                    vertical: AppSpacing.md,
-                  ),
-                ),
-                validator: (value) {
-                  if (value!.isEmpty) return 'Ce champ est requis';
-                  if (double.tryParse(value) == null) {
-                    return 'Veuillez saisir un montant numérique valide';
-                  }
-                  if (double.parse(value) <= 0) {
-                    return 'Le montant doit être supérieur à 0';
-                  }
-                  return null;
-                },
+                decoration: _inputDecoration('0'),
+                validator: (v) => v!.isEmpty || int.tryParse(v) == null || int.parse(v) <= 0 ? 'Montant valide requis' : null,
               ),
               const SizedBox(height: AppSpacing.lg),
 
-              // ============================================================
-              // CYCLE
-              // ============================================================
-              Text(
-                'Assignation au cycle',
-                style: AppTextStyles.labelLarge.copyWith(
-                  color: AppColors.primary,
-                  fontSize: 13,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: AppBorders.inputRadius,
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedCycle,
-                    hint: Text(
-                      'Choisissez un cycle',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textHint,
-                      ),
-                    ),
-                    isExpanded: true,
-                    icon: Icon(Icons.arrow_drop_down, color: AppColors.primary),
-                    items: _cycles.map((c) {
-                      return DropdownMenuItem<String>(
-                        value: c,
-                        child: Text(c, style: AppTextStyles.bodyMedium),
-                      );
-                    }).toList(),
-                    onChanged: (value) => setState(() => _selectedCycle = value),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-
-              // ============================================================
-              // DATE
-              // ============================================================
-              Text(
-                'Date',
-                style: AppTextStyles.labelLarge.copyWith(
-                  color: AppColors.primary,
-                  fontSize: 13,
-                ),
-              ),
+              // Date
+              Text('Date', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
               const SizedBox(height: AppSpacing.xs),
               GestureDetector(
                 onTap: () async {
-                  final date = await showDatePicker(
-                    context: context,
-                    initialDate: _selectedDate,
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime.now(),
-                    locale: const Locale('fr', 'FR'),
-                  );
+                  final date = await showDatePicker(context: context, initialDate: _selectedDate, firstDate: DateTime(2020), lastDate: DateTime.now());
                   if (date != null) setState(() => _selectedDate = date);
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                    vertical: AppSpacing.md,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: AppBorders.inputRadius,
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(color: AppColors.surfaceLight, borderRadius: AppBorders.inputRadius, border: Border.all(color: AppColors.border)),
                   child: Row(
                     children: [
                       Icon(Icons.calendar_today, color: AppColors.textHint),
                       const SizedBox(width: AppSpacing.md),
-                      Text(
-                        '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
+                      Text('${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}', style: AppTextStyles.bodyMedium),
                       const Spacer(),
                       Icon(Icons.arrow_drop_down, color: AppColors.textHint),
                     ],
@@ -300,67 +201,19 @@ class _FinanceDepenseScreenState extends State<FinanceDepenseScreen> {
               ),
               const SizedBox(height: AppSpacing.lg),
 
-              // ============================================================
-              // NOTE (optionnelle)
-              // ============================================================
-              Text(
-                'Note / Commentaire (optionnel)',
-                style: AppTextStyles.labelLarge.copyWith(
-                  color: AppColors.primary,
-                  fontSize: 13,
-                ),
-              ),
+              // Description
+              Text('Description (optionnel)', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
               const SizedBox(height: AppSpacing.xs),
-              TextFormField(
-                controller: _noteController,
-                maxLines: 3,
-                style: AppTextStyles.bodyMedium,
-                decoration: InputDecoration(
-                  hintText: 'Ajoutez une note...',
-                  hintStyle: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textHint,
-                  ),
-                  filled: true,
-                  fillColor: const Color(0xFFF1F5F9),
-                  border: OutlineInputBorder(
-                    borderRadius: AppBorders.inputRadius,
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: AppBorders.inputRadius,
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: AppBorders.inputRadius,
-                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
-                  ),
-                  contentPadding: const EdgeInsets.all(AppSpacing.md),
-                ),
-              ),
+              TextFormField(controller: _descriptionController, maxLines: 3, decoration: _inputDecoration('Note...')),
               const SizedBox(height: AppSpacing.xxl),
 
-              // ============================================================
-              // BOUTON VALIDER
-              // ============================================================
+              // Bouton
               SizedBox(
-                width: double.infinity,
-                height: 52,
+                width: double.infinity, height: 52,
                 child: ElevatedButton(
-                  onPressed: _submitForm,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppBorders.buttonRadius,
-                    ),
-                  ),
-                  child: const Text(
-                    'ENREGISTRER LA DÉPENSE',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
+                  onPressed: _isLoading ? null : _submitForm,
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: AppBorders.buttonRadius)),
+                  child: Text(_isLoading ? 'ENREGISTREMENT...' : 'ENREGISTRER LA DÉPENSE', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -368,6 +221,17 @@ class _FinanceDepenseScreenState extends State<FinanceDepenseScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint, hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint),
+      filled: true, fillColor: AppColors.surfaceLight,
+      border: OutlineInputBorder(borderRadius: AppBorders.inputRadius, borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+      enabledBorder: OutlineInputBorder(borderRadius: AppBorders.inputRadius, borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+      focusedBorder: OutlineInputBorder(borderRadius: AppBorders.inputRadius, borderSide: const BorderSide(color: AppColors.primary, width: 2)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
     );
   }
 }

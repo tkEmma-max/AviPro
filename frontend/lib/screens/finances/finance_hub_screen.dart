@@ -6,8 +6,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_borders.dart';
 import '../../core/theme/app_shadows.dart';
-import 'pret_list_screen.dart';
-
+import '../../services/api_service.dart';
 
 class FinanceHubScreen extends StatefulWidget {
   const FinanceHubScreen({super.key});
@@ -17,39 +16,90 @@ class FinanceHubScreen extends StatefulWidget {
 }
 
 class _FinanceHubScreenState extends State<FinanceHubScreen> {
+  final _apiService = ApiService();
   String _selectedFilter = 'Toutes';
-  DateTime _selectedDate = DateTime.now();
+  bool _isLoading = true;
 
-  // Données simulées
-  final List<Map<String, dynamic>> _transactions = [
-    {'type': 'vente', 'libelle': 'Vente de poulets', 'montant': 250000, 'date': '2026-07-08', 'cycle': 'Lot Juillet'},
-    {'type': 'depense', 'libelle': 'Aliment pondeuse', 'montant': 85000, 'date': '2026-07-07', 'cycle': 'Bande Mars'},
-    {'type': 'vente', 'libelle': "Vente d'œufs", 'montant': 120000, 'date': '2026-07-06', 'cycle': 'Bande Mars'},
-    {'type': 'depense', 'libelle': 'Vaccins Gumboro', 'montant': 45000, 'date': '2026-07-05', 'cycle': 'Lot Juillet'},
-    {'type': 'vente', 'libelle': 'Vente poulets locaux', 'montant': 180000, 'date': '2026-07-04', 'cycle': 'Poulets Fév'},
-    {'type': 'depense', 'libelle': 'Électricité', 'montant': 32000, 'date': '2026-07-03', 'cycle': 'Général'},
-  ];
+  List<Map<String, dynamic>> _allTransactions = [];
+  double _totalVentes = 0;
+  double _totalDepenses = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTransactions();
+  }
+
+  Future<void> _loadTransactions() async {
+    setState(() => _isLoading = true);
+    try {
+      // Charger dépenses
+      final depensesResponse = await _apiService.get('depenses/');
+      final ventesResponse = await _apiService.get('ventes/');
+
+      final List<Map<String, dynamic>> transactions = [];
+
+      if (depensesResponse.statusCode == 200) {
+        final data = depensesResponse.data;
+        if (data['results'] != null) {
+          for (var d in data['results']) {
+            transactions.add({
+              'type': 'depense',
+              'libelle': d['categorie_label'] ?? d['categorie'] ?? 'Dépense',
+              'montant': double.tryParse(d['montant']?.toString() ?? '0') ?? 0,
+              'date': d['date'] ?? '',
+              'cycle': d['cycle_nom'] ?? 'Sans cycle',
+            });
+          }
+        }
+      }
+
+      if (ventesResponse.statusCode == 200) {
+        final data = ventesResponse.data;
+        if (data['results'] != null) {
+          for (var v in data['results']) {
+            transactions.add({
+              'type': 'vente',
+              'libelle': v['type_label'] ?? v['type'] ?? 'Vente',
+              'montant': double.tryParse(v['montant_total']?.toString() ?? '0') ?? 0,
+              'date': v['date'] ?? '',
+              'cycle': v['cycle_nom'] ?? 'Sans cycle',
+            });
+          }
+        }
+      }
+
+      // Trier par date (plus récent en premier)
+      transactions.sort((a, b) => (b['date'] as String).compareTo(a['date'] as String));
+
+      final ventes = transactions
+          .where((t) => t['type'] == 'vente')
+          .fold<double>(0, (sum, t) => sum + (t['montant'] as double));
+      final depenses = transactions
+          .where((t) => t['type'] == 'depense')
+          .fold<double>(0, (sum, t) => sum + (t['montant'] as double));
+
+      if (mounted) {
+        setState(() {
+          _allTransactions = transactions;
+          _totalVentes = ventes;
+          _totalDepenses = depenses;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('❌ [FINANCE] Erreur chargement: $e');
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   List<Map<String, dynamic>> get _filteredTransactions {
-    var list = _transactions;
     if (_selectedFilter == 'Ventes') {
-      list = list.where((t) => t['type'] == 'vente').toList();
+      return _allTransactions.where((t) => t['type'] == 'vente').toList();
     } else if (_selectedFilter == 'Dépenses') {
-      list = list.where((t) => t['type'] == 'depense').toList();
+      return _allTransactions.where((t) => t['type'] == 'depense').toList();
     }
-    return list;
-  }
-
-  double get _totalVentes {
-    return _transactions
-        .where((t) => t['type'] == 'vente')
-        .fold(0, (sum, t) => sum + t['montant']);
-  }
-
-  double get _totalDepenses {
-    return _transactions
-        .where((t) => t['type'] == 'depense')
-        .fold(0, (sum, t) => sum + t['montant']);
+    return _allTransactions;
   }
 
   double get _soldeNet => _totalVentes - _totalDepenses;
@@ -58,10 +108,41 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      body: Column(
+      appBar: AppBar(
+        backgroundColor: AppColors.primary,
+        elevation: 0,
+        title: Text('Finances', style: AppTextStyles.headlineMedium.copyWith(color: Colors.white, fontSize: 22)),
+        centerTitle: false,
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: Colors.white),
+            onSelected: (value) {
+              switch (value) {
+                case 'depense':
+                  Navigator.pushNamed(context, '/finance/depense').then((_) => _loadTransactions());
+                  break;
+                case 'vente':
+                  Navigator.pushNamed(context, '/finance/vente').then((_) => _loadTransactions());
+                  break;
+                case 'pret':
+                  Navigator.pushNamed(context, '/prets');
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'depense', child: ListTile(leading: Icon(Icons.remove_circle_outline, color: AppColors.error), title: Text('Nouvelle dépense'), dense: true)),
+              const PopupMenuItem(value: 'vente', child: ListTile(leading: Icon(Icons.add_circle_outline, color: AppColors.success), title: Text('Nouvelle vente'), dense: true)),
+              const PopupMenuItem(value: 'pret', child: ListTile(leading: Icon(Icons.credit_card_outlined, color: AppColors.primary), title: Text('Gestion des prêts'), dense: true)),
+            ],
+          ),
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
         children: [
           // ============================================================
-          // HEADER - Carte de Synthèse (25%)
+          // HEADER - Carte de Synthèse
           // ============================================================
           Container(
             padding: const EdgeInsets.all(AppSpacing.lg),
@@ -75,141 +156,43 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: AppSpacing.md),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Finances',
-                      style: AppTextStyles.headlineMedium.copyWith(
-                        color: Colors.white,
-                        fontSize: 22,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () async {
-                        final date = await showDatePicker(
-                          context: context,
-                          initialDate: _selectedDate,
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime.now(),
-                          locale: const Locale('fr', 'FR'),
-                        );
-                        if (date != null) setState(() => _selectedDate = date);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                          vertical: AppSpacing.sm,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: AppBorders.buttonRadius,
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.calendar_today,
-                              size: 14,
-                              color: Colors.white.withOpacity(0.8),
-                            ),
-                            const SizedBox(width: AppSpacing.xs),
-                            Text(
-                              DateFormat('MMM yyyy', 'fr_FR').format(_selectedDate),
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: Colors.white.withOpacity(0.9),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-
                 // Solde net
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
                       '${_soldeNet.toStringAsFixed(0)} FCFA',
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                     const SizedBox(width: AppSpacing.sm),
                     if (_soldeNet < 0)
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: AppBorders.buttonRadius,
-                        ),
-                        child: Text(
-                          'Débit',
-                          style: AppTextStyles.labelSmall.copyWith(
-                            color: Colors.white.withOpacity(0.8),
-                          ),
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
+                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: AppBorders.buttonRadius),
+                        child: Text('Débit', style: AppTextStyles.labelSmall.copyWith(color: Colors.white.withOpacity(0.8))),
                       ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'Solde net du mois',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: Colors.white.withOpacity(0.7),
-                  ),
-                ),
-
+                Text('Solde net global', style: AppTextStyles.bodySmall.copyWith(color: Colors.white.withOpacity(0.7))),
                 const SizedBox(height: AppSpacing.md),
 
                 // Ligne Ventes / Dépenses
                 Row(
                   children: [
                     Expanded(
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.trending_up,
-                            size: 16,
-                            color: AppColors.success,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${_totalVentes.toStringAsFixed(0)} FCFA',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.success,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
+                      child: Row(children: [
+                        const Icon(Icons.trending_up, size: 16, color: Colors.white70),
+                        const SizedBox(width: 4),
+                        Text('${_totalVentes.toStringAsFixed(0)} FCFA', style: AppTextStyles.bodyMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+                      ]),
                     ),
                     Expanded(
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.trending_down,
-                            size: 16,
-                            color: AppColors.error,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${_totalDepenses.toStringAsFixed(0)} FCFA',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.error,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
+                      child: Row(children: [
+                        const Icon(Icons.trending_down, size: 16, color: Colors.white70),
+                        const SizedBox(width: 4),
+                        Text('${_totalDepenses.toStringAsFixed(0)} FCFA', style: AppTextStyles.bodyMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+                      ]),
                     ),
                   ],
                 ),
@@ -218,215 +201,85 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
           ),
 
           // ============================================================
-          // BODY - Liste des transactions (60%)
+          // FILTRES
           // ============================================================
-          Expanded(
-            child: Column(
-              children: [
-                // Filtres
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg,
-                    vertical: AppSpacing.md,
-                  ),
-                  child: Row(
-                    children: ['Toutes', 'Ventes', 'Dépenses'].map((filter) {
-                      final isSelected = _selectedFilter == filter;
-                      return Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() => _selectedFilter = filter),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: AppSpacing.sm,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : Colors.transparent,
-                              borderRadius: AppBorders.buttonRadius,
-                            ),
-                            child: Center(
-                              child: Text(
-                                filter,
-                                style: AppTextStyles.labelMedium.copyWith(
-                                  color: isSelected
-                                      ? Colors.white
-                                      : AppColors.textSecondary,
-                                  fontWeight:
-                                  isSelected ? FontWeight.w600 : FontWeight.w400,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-
-                // Liste des transactions
-                Expanded(
-                  child: _filteredTransactions.isEmpty
-                      ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.receipt_long_outlined,
-                          size: 60,
-                          color: AppColors.textHint,
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                        Text(
-                          'Aucune transaction ce mois-ci',
-                          style: AppTextStyles.headline4.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          'Enregistrez votre premier flux ci-dessous.',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.textHint,
-                          ),
-                        ),
-                      ],
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+            child: Row(
+              children: ['Toutes', 'Ventes', 'Dépenses'].map((filter) {
+                final isSelected = _selectedFilter == filter;
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selectedFilter = filter),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                      decoration: BoxDecoration(
+                        color: isSelected ? AppColors.primary : Colors.transparent,
+                        borderRadius: AppBorders.buttonRadius,
+                      ),
+                      child: Center(
+                        child: Text(filter, style: AppTextStyles.labelMedium.copyWith(
+                          color: isSelected ? Colors.white : AppColors.textSecondary,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                        )),
+                      ),
                     ),
-                  )
-                      : ListView.separated(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.lg,
-                    ),
-                    itemCount: _filteredTransactions.length,
-                    separatorBuilder: (_, __) =>
-                    const SizedBox(height: AppSpacing.sm),
-                    itemBuilder: (context, index) {
-                      final t = _filteredTransactions[index];
-                      final isVente = t['type'] == 'vente';
-                      final color = isVente ? AppColors.success : AppColors.error;
-
-                      return GestureDetector(
-                        onTap: () {
-                          // TODO: Ouvrir détail de la transaction
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(AppSpacing.md),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: AppBorders.cardRadius,
-                            border: Border.all(
-                              color: AppColors.border,
-                              width: 1,
-                            ),
-                            boxShadow: AppShadows.shadowCard,
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 4,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: color,
-                                  borderRadius: AppBorders.radiusSmall,
-                                ),
-                              ),
-                              const SizedBox(width: AppSpacing.md),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      t['libelle'],
-                                      style: AppTextStyles.subtitleMedium,
-                                    ),
-                                    Text(
-                                      '${t['date']} • ${t['cycle']}',
-                                      style: AppTextStyles.bodySmall,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Text(
-                                '${isVente ? '+' : '-'} ${t['montant']} FCFA',
-                                style: AppTextStyles.numberMedium.copyWith(
-                                  color: color,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
                   ),
-                ),
-              ],
+                );
+              }).toList(),
             ),
           ),
 
           // ============================================================
-// FOOTER - Barre d'actions fixes (15%)
-// ============================================================
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: AppSpacing.md,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border(
-                top: BorderSide(color: AppColors.border, width: 1),
-              ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/finance/depense');
-                    },
-                    icon: const Icon(Icons.remove_circle_outline, size: 18),
-                    label: const Text('Dépense'),
-                    // ...
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/finance/vente');
-                    },
-                    icon: const Icon(Icons.add_circle_outline, size: 18),
-                    label: const Text('Vente'),
-                    // ...
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
+          // LISTE DES TRANSACTIONS
+          // ============================================================
+          Expanded(
+            child: _filteredTransactions.isEmpty
+                ? Center(
+              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Icon(Icons.receipt_long_outlined, size: 60, color: AppColors.textHint),
+                const SizedBox(height: AppSpacing.lg),
+                Text('Aucune transaction', style: AppTextStyles.headline4.copyWith(color: AppColors.textSecondary)),
+              ]),
+            )
+                : RefreshIndicator(
+              onRefresh: _loadTransactions,
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                itemCount: _filteredTransactions.length,
+                separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+                itemBuilder: (context, index) {
+                  final t = _filteredTransactions[index];
+                  final isVente = t['type'] == 'vente';
+                  final color = isVente ? AppColors.success : AppColors.error;
 
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PretListScreen(),  // <--- SUPPRIMER "const"
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.credit_card_outlined, size: 18),
-                    label: const Text('Prêts'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primary,
-                      side: const BorderSide(color: AppColors.primary),
-                      minimumSize: const Size(0, 44),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: AppBorders.buttonRadius,
-                      ),
+                  return Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: AppBorders.cardRadius,
+                      border: Border.all(color: AppColors.border),
+                      boxShadow: AppShadows.shadowCard,
                     ),
-                  ),
-                ),
-              ],
+                    child: Row(
+                      children: [
+                        Container(width: 4, height: 40, decoration: BoxDecoration(color: color, borderRadius: AppBorders.radiusSmall)),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Text(t['libelle'] as String, style: AppTextStyles.subtitleMedium),
+                            Text('${t['date']} • ${t['cycle']}', style: AppTextStyles.bodySmall),
+                          ]),
+                        ),
+                        Text(
+                          '${isVente ? '+' : '-'} ${(t['montant'] as double).toStringAsFixed(0)} FCFA',
+                          style: AppTextStyles.numberMedium.copyWith(color: color, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
           ),
         ],

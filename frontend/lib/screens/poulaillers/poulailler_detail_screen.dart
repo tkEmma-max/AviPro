@@ -7,9 +7,14 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_borders.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../models/poulailler.dart';
+import '../../models/cycle.dart';
 import '../../providers/poulailler_provider.dart';
+import '../../providers/cycle_provider.dart';
+import '../../services/densite_service.dart';
+import '../../services/equipement_service.dart';
+import 'poulailler_edit_screen.dart';
 
-class PoulaillerDetailScreen extends StatelessWidget {
+class PoulaillerDetailScreen extends StatefulWidget {
   final Poulailler poulailler;
 
   const PoulaillerDetailScreen({
@@ -18,42 +23,117 @@ class PoulaillerDetailScreen extends StatelessWidget {
   });
 
   @override
+  State<PoulaillerDetailScreen> createState() => _PoulaillerDetailScreenState();
+}
+
+class _PoulaillerDetailScreenState extends State<PoulaillerDetailScreen> {
+  List<Cycle> _cyclesPoulailler = [];
+  bool _isLoadingCycles = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadCycles();
+    });
+  }
+
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Recharger les cycles quand on revient sur l'écran
+    _loadCycles();
+  }
+
+  Future<void> _loadCycles() async {
+    setState(() => _isLoadingCycles = true);
+
+    print('🔍 [DETAIL] Chargement cycles pour poulailler: ${widget.poulailler.id}');
+
+    final cycleProvider = context.read<CycleProvider>();
+    final cycles = await cycleProvider.fetchCyclesByPoulailler(widget.poulailler.id);
+
+    print('🔍 [DETAIL] ${cycles.length} cycles reçus');
+
+    if (mounted) {
+      setState(() {
+        _cyclesPoulailler = cycles;
+        _isLoadingCycles = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isOccupied = poulailler.statut == 'OCCUPÉ';
+    final isOccupied = widget.poulailler.statut == 'OCCUPÉ';
     final statutColor = isOccupied ? AppColors.warning : AppColors.success;
     final statutLabel = isOccupied ? 'OCCUPÉ' : 'LIBRE';
     final statutBg = isOccupied
         ? AppColors.warning.withOpacity(0.1)
         : AppColors.success.withOpacity(0.1);
 
-    // Vérification équipements (F49)
-    final nbMangeoiresRecommandees = (poulailler.nbPouletsActuels / 50).ceil();
-    final nbAbreuvoirsRecommandes = (poulailler.nbPouletsActuels / 30).ceil();
-    final alerteMangeoires = poulailler.nbPouletsActuels > 0 &&
-        poulailler.nombreMangeoires < nbMangeoiresRecommandees;
-    final alerteAbreuvoirs = poulailler.nbPouletsActuels > 0 &&
-        poulailler.nombreAbreuvoirs < nbAbreuvoirsRecommandes;
-    final hasAlerteEquipement = alerteMangeoires || alerteAbreuvoirs;
+    // Surface
+    final surfaceValue = widget.poulailler.surface ?? 0;
 
-    // Densité
-    final densite = poulailler.densiteActuelle ?? 0;
-    Color densiteColor;
-    String densiteLabel;
-    if (densite < 5) {
-      densiteColor = AppColors.success;
-      densiteLabel = 'OK';
-    } else if (densite < 10) {
-      densiteColor = AppColors.warning;
-      densiteLabel = 'Élevée';
+    // Cycle actif et densité
+    final cycleProvider = context.watch<CycleProvider>();
+    final cycleActif = cycleProvider.getCycleActif(widget.poulailler.id);
+    final String typeElevage = cycleActif?.type ?? 'CHAIR';
+    final int ageJours = cycleActif?.joursEcoules ?? 0;
+
+    // Densité intelligente (RG2, RG3)
+    final double densiteRecommandee = DensiteService.getDensiteRecommandee(typeElevage, ageJours);
+    final int capaciteMax = DensiteService.getCapaciteMax(surfaceValue, typeElevage, ageJours);
+    final int niveauAlerte = DensiteService.getNiveauAlerte(surfaceValue, widget.poulailler.nbPouletsActuels, typeElevage, ageJours);
+    final double densite = widget.poulailler.densiteActuelle ?? 0;
+
+    // Équipements (F49) - Calcul dynamique (APRÈS les déclarations ci-dessus)
+    int nbMangeoiresRecommandees;
+    int nbAbreuvoirsRecommandes;
+
+    if (isOccupied && cycleActif != null) {
+      nbMangeoiresRecommandees = EquipementService.getMangeoiresRecommandees(
+          widget.poulailler.nbPouletsActuels, typeElevage, ageJours);
+      nbAbreuvoirsRecommandes = EquipementService.getAbreuvoirsRecommandes(
+          widget.poulailler.nbPouletsActuels, typeElevage, ageJours);
+    } else if (!isOccupied && surfaceValue > 0) {
+      final recommandations = EquipementService.getRecommandationsPoulaillerVide(surfaceValue);
+      nbMangeoiresRecommandees = recommandations['mangeoires']!;
+      nbAbreuvoirsRecommandes = recommandations['abreuvoirs']!;
     } else {
-      densiteColor = AppColors.error;
-      densiteLabel = 'Critique';
+      nbMangeoiresRecommandees = 0;
+      nbAbreuvoirsRecommandes = 0;
     }
 
-    // Occupation (pour la jauge)
-    final capaciteMax = poulailler.surface ?? 0 * 8;
+    final alerteMangeoires = widget.poulailler.nbPouletsActuels > 0 &&
+        widget.poulailler.nombreMangeoires < nbMangeoiresRecommandees;
+    final alerteAbreuvoirs = widget.poulailler.nbPouletsActuels > 0 &&
+        widget.poulailler.nombreAbreuvoirs < nbAbreuvoirsRecommandes;
+    final hasAlerteEquipement = alerteMangeoires || alerteAbreuvoirs;
+
+    Color densiteColor;
+    String densiteLabel;
+    switch (niveauAlerte) {
+      case 0:
+        densiteColor = AppColors.success;
+        densiteLabel = 'OK';
+        break;
+      case 1:
+        densiteColor = AppColors.warning;
+        densiteLabel = 'Élevée';
+        break;
+      case 2:
+        densiteColor = AppColors.error;
+        densiteLabel = 'Critique';
+        break;
+      default:
+        densiteColor = AppColors.success;
+        densiteLabel = 'OK';
+    }
+
     final tauxOccupation = capaciteMax > 0
-        ? (poulailler.nbPouletsActuels / capaciteMax).clamp(0.0, 1.0)
+        ? (widget.poulailler.nbPouletsActuels / capaciteMax).clamp(0.0, 1.0)
         : 0.0;
 
     return Scaffold(
@@ -83,7 +163,7 @@ class PoulaillerDetailScreen extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
 
             // ============================================================
-            // EN-TÊTE DYNAMIQUE
+            // EN-TÊTE
             // ============================================================
             Row(
               children: [
@@ -92,7 +172,7 @@ class PoulaillerDetailScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        poulailler.nom,
+                        widget.poulailler.nom,
                         style: AppTextStyles.headlineLarge.copyWith(
                           fontSize: 22,
                           color: AppColors.textPrimary,
@@ -135,7 +215,7 @@ class PoulaillerDetailScreen extends StatelessWidget {
                           if (isOccupied) ...[
                             const SizedBox(width: AppSpacing.sm),
                             Text(
-                              '• Bande en cours',
+                              '• ${widget.poulailler.nbPouletsActuels} sujets',
                               style: AppTextStyles.bodySmall.copyWith(
                                 color: AppColors.textSecondary,
                               ),
@@ -183,6 +263,15 @@ class PoulaillerDetailScreen extends StatelessWidget {
                                 color: densiteColor,
                               ),
                             ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Recommandé: ${densiteRecommandee.toStringAsFixed(1)} sujets/m²'
+                                  '${cycleActif != null ? " (${typeElevage.toLowerCase()}, ${cycleActif.joursEcoules}j)" : ""}',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.textHint,
+                                fontSize: 10,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -215,7 +304,7 @@ class PoulaillerDetailScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Occupation',
+                            'Occupation (max: $capaciteMax sujets à ${cycleActif?.joursEcoules ?? 0} jours)',
                             style: AppTextStyles.bodySmall.copyWith(
                               color: AppColors.textSecondary,
                             ),
@@ -236,8 +325,8 @@ class PoulaillerDetailScreen extends StatelessWidget {
                           tauxOccupation > 0.8
                               ? AppColors.error
                               : tauxOccupation > 0.6
-                                  ? AppColors.warning
-                                  : AppColors.success,
+                              ? AppColors.warning
+                              : AppColors.success,
                         ),
                         minHeight: 8,
                         borderRadius: AppBorders.buttonRadius,
@@ -260,7 +349,7 @@ class PoulaillerDetailScreen extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              '${poulailler.nombreMangeoires}',
+                              '${widget.poulailler.nombreMangeoires}',
                               style: AppTextStyles.numberSmall.copyWith(
                                 color: alerteMangeoires
                                     ? AppColors.error
@@ -281,7 +370,7 @@ class PoulaillerDetailScreen extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              '${poulailler.nombreAbreuvoirs}',
+                              '${widget.poulailler.nombreAbreuvoirs}',
                               style: AppTextStyles.numberSmall.copyWith(
                                 color: alerteAbreuvoirs
                                     ? AppColors.error
@@ -302,7 +391,7 @@ class PoulaillerDetailScreen extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              '${poulailler.surface?.toStringAsFixed(1) ?? '0'} m²',
+                              '${widget.poulailler.surface?.toStringAsFixed(1) ?? "0"} m²',
                               style: AppTextStyles.numberSmall,
                             ),
                           ],
@@ -339,7 +428,9 @@ class PoulaillerDetailScreen extends StatelessWidget {
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
-                        '⚠️ Matériel insuffisant : ${alerteMangeoires ? 'Ajoutez au moins ${nbMangeoiresRecommandees - poulailler.nombreMangeoires} mangeoires' : ''}${alerteMangeoires && alerteAbreuvoirs ? ' et ' : ''}${alerteAbreuvoirs ? 'Ajoutez au moins ${nbAbreuvoirsRecommandes - poulailler.nombreAbreuvoirs} abreuvoirs' : ''} pour ce volume de sujets.',
+                        'Matériel insuffisant :'
+                            '${alerteMangeoires ? ' Ajoutez au moins ${nbMangeoiresRecommandees - widget.poulailler.nombreMangeoires} mangeoires.' : ''}'
+                            '${alerteAbreuvoirs ? ' Ajoutez au moins ${nbAbreuvoirsRecommandes - widget.poulailler.nombreAbreuvoirs} abreuvoirs.' : ''}',
                         style: AppTextStyles.bodySmall.copyWith(
                           color: AppColors.textPrimary,
                         ),
@@ -351,7 +442,7 @@ class PoulaillerDetailScreen extends StatelessWidget {
             const SizedBox(height: AppSpacing.lg),
 
             // ============================================================
-            // HISTORIQUE DES CYCLES PASSÉS
+            // HISTORIQUE DES CYCLES
             // ============================================================
             Text(
               'Historique des cycles',
@@ -361,47 +452,60 @@ class PoulaillerDetailScreen extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.md),
 
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: AppBorders.cardRadius,
-                border: Border.all(color: AppColors.border, width: 1),
-                boxShadow: AppShadows.shadowCard,
+            if (_isLoadingCycles)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(AppSpacing.xl),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (_cyclesPoulailler.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: AppBorders.cardRadius,
+                  border: Border.all(color: AppColors.border, width: 1),
+                  boxShadow: AppShadows.shadowCard,
+                ),
+                child: Center(
+                  child: Text(
+                    'Aucun cycle enregistré pour ce poulailler.',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.textHint,
+                    ),
+                  ),
+                ),
+              )
+            else
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: AppBorders.cardRadius,
+                  border: Border.all(color: AppColors.border, width: 1),
+                  boxShadow: AppShadows.shadowCard,
+                ),
+                child: Column(
+                  children: _cyclesPoulailler.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final cycle = entry.value;
+                    final isLast = index == _cyclesPoulailler.length - 1;
+                    return Column(
+                      children: [
+                        _buildCycleHistoriqueItem(cycle),
+                        if (!isLast)
+                          const Divider(height: AppSpacing.lg),
+                      ],
+                    );
+                  }).toList(),
+                ),
               ),
-              child: Column(
-                children: [
-                  _buildHistoriqueItem(
-                    nom: 'Bande Championne 2',
-                    periode: '15 Jan - 28 Fév 2026',
-                    mortalite: '5%',
-                    benefice: '+245 000 FCFA',
-                  ),
-                  const Divider(height: AppSpacing.lg),
-                  _buildHistoriqueItem(
-                    nom: 'Lot Poussins Décembre',
-                    periode: '01 Déc - 14 Jan 2026',
-                    mortalite: '8%',
-                    benefice: '+180 000 FCFA',
-                  ),
-                  const Divider(height: AppSpacing.lg),
-                  _buildHistoriqueItem(
-                    nom: 'Bande Automne 2025',
-                    periode: '15 Sep - 30 Oct 2025',
-                    mortalite: '3%',
-                    benefice: '+320 000 FCFA',
-                  ),
-                ],
-              ),
-            ),
             const SizedBox(height: AppSpacing.xxxl),
           ],
         ),
       ),
 
-      // ============================================================
-      // BARRE D'ACTIONS FLOTTANTE
-      // ============================================================
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg,
@@ -415,21 +519,28 @@ class PoulaillerDetailScreen extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Modifier
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.pushNamed(
+                onPressed: () async {
+                  final result = await Navigator.push(
                     context,
-                    '/poulailler/edit',
-                    arguments: poulailler,
+                    MaterialPageRoute(
+                      builder: (context) => PoulaillerEditScreen(
+                        poulailler: widget.poulailler,
+                      ),
+                    ),
                   );
+                  if (result == true && mounted) {
+                    final provider = context.read<PoulaillerProvider>();
+                    await provider.refreshPoulaillers();
+                    _loadCycles();
+                  }
                 },
                 icon: const Icon(Icons.edit_outlined, size: 18),
                 label: const Text('Modifier'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primary,
-                  side: BorderSide(color: AppColors.primary),
+                  side: const BorderSide(color: AppColors.primary),
                   minimumSize: const Size(0, 44),
                   shape: RoundedRectangleBorder(
                     borderRadius: AppBorders.buttonRadius,
@@ -438,24 +549,23 @@ class PoulaillerDetailScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
-
-            // Migrer
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: isOccupied
                     ? () {
-                        Navigator.pushNamed(
-                          context,
-                          '/poulailler/migration',
-                          arguments: poulailler,
-                        );
-                      }
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const Placeholder(),
+                    ),
+                  );
+                }
                     : null,
                 icon: const Icon(Icons.swap_horiz, size: 18),
                 label: const Text('Migrer'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primary,
-                  side: BorderSide(color: AppColors.primary),
+                  side: const BorderSide(color: AppColors.primary),
                   minimumSize: const Size(0, 44),
                   shape: RoundedRectangleBorder(
                     borderRadius: AppBorders.buttonRadius,
@@ -464,18 +574,16 @@ class PoulaillerDetailScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
-
-            // Supprimer
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: !isOccupied && poulailler.nbPouletsActuels == 0
+                onPressed: !isOccupied && widget.poulailler.nbPouletsActuels == 0
                     ? () => _showDeleteConfirmation(context)
                     : null,
                 icon: const Icon(Icons.delete_outline, size: 18),
                 label: const Text('Supprimer'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.error,
-                  side: BorderSide(color: AppColors.error),
+                  side: const BorderSide(color: AppColors.error),
                   minimumSize: const Size(0, 44),
                   shape: RoundedRectangleBorder(
                     borderRadius: AppBorders.buttonRadius,
@@ -489,20 +597,30 @@ class PoulaillerDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHistoriqueItem({
-    required String nom,
-    required String periode,
-    required String mortalite,
-    required String benefice,
-  }) {
-    final isPositif = benefice.startsWith('+');
+  Widget _buildCycleHistoriqueItem(Cycle cycle) {
+    final dateDebut = '${cycle.dateDebut.day}/${cycle.dateDebut.month}/${cycle.dateDebut.year}';
+    final dateFin = cycle.dateFin != null
+        ? '${cycle.dateFin!.day}/${cycle.dateFin!.month}/${cycle.dateFin!.year}'
+        : 'En cours';
+    final periode = '$dateDebut - $dateFin';
+    final mortalite = cycle.tauxMortalite != null
+        ? '${cycle.tauxMortalite!.toStringAsFixed(1)}%'
+        : 'N/A';
+    final benefice = cycle.benefice ?? 0;
+    final isPositif = benefice >= 0;
+    final beneficeStr = isPositif
+        ? '+${benefice.toStringAsFixed(0)} FCFA'
+        : '${benefice.toStringAsFixed(0)} FCFA';
+
     return Row(
       children: [
         Container(
           width: 4,
           height: 40,
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.3),
+            color: cycle.isActive
+                ? AppColors.success.withOpacity(0.5)
+                : AppColors.primary.withOpacity(0.3),
             borderRadius: AppBorders.radiusSmall,
           ),
         ),
@@ -511,8 +629,42 @@ class PoulaillerDetailScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(nom, style: AppTextStyles.subtitleMedium),
-              Text(periode, style: AppTextStyles.bodySmall),
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      cycle.nom,
+                      style: AppTextStyles.subtitleMedium,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (cycle.isActive) ...[
+                    const SizedBox(width: AppSpacing.xs),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.success.withOpacity(0.1),
+                        borderRadius: AppBorders.radiusSmall,
+                      ),
+                      child: Text(
+                        'Actif',
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.success,
+                          fontSize: 9,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 2),
+              Text(
+                periode,
+                style: AppTextStyles.bodySmall,
+              ),
             ],
           ),
         ),
@@ -526,7 +678,7 @@ class PoulaillerDetailScreen extends StatelessWidget {
               ),
             ),
             Text(
-              benefice,
+              beneficeStr,
               style: AppTextStyles.subtitleMedium.copyWith(
                 color: isPositif ? AppColors.success : AppColors.error,
               ),
@@ -546,7 +698,7 @@ class PoulaillerDetailScreen extends StatelessWidget {
         ),
         title: const Text('Supprimer le poulailler ?'),
         content: Text(
-          'Voulez-vous vraiment supprimer le poulailler "${poulailler.nom}" ? Cette action est irréversible.',
+          'Voulez-vous vraiment supprimer le poulailler "${widget.poulailler.nom}" ? Cette action est irréversible.',
           style: AppTextStyles.bodyMedium,
         ),
         actions: [
@@ -560,21 +712,23 @@ class PoulaillerDetailScreen extends StatelessWidget {
             ),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               final provider = context.read<PoulaillerProvider>();
-              provider.deletePoulailler(poulailler.id);
-              Navigator.pop(context);
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Poulailler "${poulailler.nom}" supprimé.'),
-                  backgroundColor: AppColors.error,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: AppBorders.cardRadius,
+              await provider.deletePoulailler(widget.poulailler.id);
+              if (context.mounted) {
+                Navigator.pop(context);
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Poulailler "${widget.poulailler.nom}" supprimé.'),
+                    backgroundColor: AppColors.error,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppBorders.cardRadius,
+                    ),
                   ),
-                ),
-              );
+                );
+              }
             },
             child: Text(
               'Supprimer',
