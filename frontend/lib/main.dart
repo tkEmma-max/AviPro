@@ -42,7 +42,7 @@ import 'screens/notifications_screen.dart';
 import 'screens/profile_settings_screen.dart';
 import 'core/theme/app_theme.dart';
 import 'models/poulailler.dart';
-
+import 'models/pret.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('fr_FR', null);
@@ -100,7 +100,7 @@ class MyApp extends StatelessWidget {
           '/finance/loan/list': (context) => const FinanceLoanListScreen(),
           '/finance/pret/create': (context) => const FinanceLoanCreateScreen(),
           '/finance/pret': (context) => FinanceLoanDetailScreen(
-            pret: ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>,
+            pret: ModalRoute.of(context)!.settings.arguments as Pret,
           ),
           '/finance/echeance/create': (context) => FinanceEcheanceCreateScreen(
             pret: ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>,

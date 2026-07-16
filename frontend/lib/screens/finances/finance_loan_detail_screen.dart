@@ -1,13 +1,16 @@
 // lib/screens/finances/finance_loan_detail_screen.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_borders.dart';
 import '../../core/theme/app_shadows.dart';
+import '../../models/pret.dart';
+import '../../providers/pret_provider.dart';
 
 class FinanceLoanDetailScreen extends StatefulWidget {
-  final Map<String, dynamic> pret;
+  final Pret pret;
 
   const FinanceLoanDetailScreen({
     super.key,
@@ -15,479 +18,194 @@ class FinanceLoanDetailScreen extends StatefulWidget {
   });
 
   @override
-  State<FinanceLoanDetailScreen> createState() =>
-      _FinanceLoanDetailScreenState();
+  State<FinanceLoanDetailScreen> createState() => _FinanceLoanDetailScreenState();
 }
 
-class _FinanceLoanDetailScreenState extends State<FinanceLoanDetailScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  // Données simulées
-  final List<Map<String, dynamic>> _echeances = [
-    {'date': '2026-07-20', 'montant': 85000, 'statut': 'Payée'},
-    {'date': '2026-07-05', 'montant': 85000, 'statut': 'En retard'},
-    {'date': '2026-06-20', 'montant': 85000, 'statut': 'Payée'},
-  ];
-
-  final List<Map<String, dynamic>> _historique = [
-    {'date': '2026-06-22', 'montant': 85000, 'source': 'Vente poulets'},
-    {'date': '2026-06-10', 'montant': 50000, 'source': 'Manuel'},
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
+class _FinanceLoanDetailScreenState extends State<FinanceLoanDetailScreen> {
+  final _montantController = TextEditingController();
+  bool _showRemboursement = false;
+  bool _isLoading = false;
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _montantController.dispose();
     super.dispose();
   }
 
-  double get _totalRembourse {
-    return _historique.fold(0, (sum, h) => sum + h['montant']);
+  double get _progression {
+    if (widget.pret.montantTotal <= 0) return 0;
+    final rembourse = widget.pret.montantTotal - widget.pret.montantRestant;
+    return (rembourse / widget.pret.montantTotal) * 100;
   }
 
-  double get _montantTotal => widget.pret['montant_total'] ?? 0;
-  double get _montantRestant => widget.pret['montant_restant'] ?? 0;
-  double get _progression => _montantTotal > 0
-      ? (_totalRembourse / _montantTotal) * 100
-      : 0;
+  Future<void> _rembourser() async {
+    final montant = double.tryParse(_montantController.text) ?? 0;
+    if (montant <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Montant invalide'), backgroundColor: AppColors.warning));
+      return;
+    }
+    if (montant > widget.pret.montantRestant) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Max: ${widget.pret.montantRestant.toInt()} FCFA'), backgroundColor: AppColors.warning));
+      return;
+    }
 
-  bool get _estRembourse => _montantRestant <= 0;
+    setState(() => _isLoading = true);
+    final provider = context.read<PretProvider>();
+    final success = await provider.addRemboursement(widget.pret.id, montant);
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        _showRemboursement = false;
+      });
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Remboursement enregistré !'), backgroundColor: AppColors.success));
+        Navigator.pop(context, true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Erreur'), backgroundColor: AppColors.error));
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final pret = widget.pret;
-    final isFlexible = pret['mode'] == 'Flexible';
+    final p = widget.pret;
+    final rembourse = p.montantTotal - p.montantRestant;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Détails du prêt',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        backgroundColor: Colors.transparent, elevation: 0,
+        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary), onPressed: () => Navigator.pop(context)),
+        title: const Text('Détails du prêt', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
         centerTitle: true,
       ),
-      body: Column(
-        children: [
-          // ============================================================
-          // HEADER - Fiche d'identité & Jauge (30%)
-          // ============================================================
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const SizedBox(height: AppSpacing.md),
+
+          // HEADER
           Container(
             padding: const EdgeInsets.all(AppSpacing.lg),
-            margin: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: AppSpacing.md,
-            ),
             decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: AppBorders.cardRadius,
-              boxShadow: AppShadows.shadowMedium,
+              gradient: LinearGradient(colors: [AppColors.primary, AppColors.primary.withOpacity(0.7)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+              borderRadius: AppBorders.cardRadius, boxShadow: AppShadows.shadowMedium,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            pret['preteur'] ?? 'Prêteur',
-                            style: AppTextStyles.headlineMedium.copyWith(
-                              color: Colors.white,
-                              fontSize: 20,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${pret['type'] ?? 'N/A'} • ${pret['taux'] ?? 0}% • ${pret['date_deblocage'] ?? 'N/A'}',
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: Colors.white.withOpacity(0.7),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (_estRembourse)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                          vertical: AppSpacing.xs,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: AppBorders.buttonRadius,
-                        ),
-                        child: Text(
-                          'REMBOURSÉ',
-                          style: AppTextStyles.labelSmall.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Restant dû',
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: Colors.white.withOpacity(0.7),
-                            ),
-                          ),
-                          Text(
-                            '${_montantRestant.toStringAsFixed(0)} FCFA',
-                            style: AppTextStyles.numberLarge.copyWith(
-                              fontSize: 22,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          '${_progression.toStringAsFixed(0)}%',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: Colors.white.withOpacity(0.8),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(
-                          'remboursé',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: Colors.white.withOpacity(0.6),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                LinearProgressIndicator(
-                  value: _progression / 100,
-                  backgroundColor: Colors.white.withOpacity(0.2),
-                  color: Colors.white,
-                  minHeight: 6,
-                  borderRadius: AppBorders.buttonRadius,
-                ),
-              ],
-            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(p.preteur, style: AppTextStyles.headlineMedium.copyWith(color: Colors.white, fontSize: 20)),
+                  const SizedBox(height: 4),
+                  Text('${p.typePreteur} • ${p.tauxInteret}% ${p.typeTaux}', style: AppTextStyles.bodySmall.copyWith(color: Colors.white70)),
+                ])),
+                if (p.isRembourse)
+                  Container(padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs), decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: AppBorders.buttonRadius),
+                      child: Text('REMBOURSÉ', style: AppTextStyles.labelSmall.copyWith(color: Colors.white, fontWeight: FontWeight.w600))),
+              ]),
+              const SizedBox(height: AppSpacing.lg),
+              Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Restant dû', style: AppTextStyles.bodySmall.copyWith(color: Colors.white70)),
+                  Text('${p.montantRestant.toInt()} FCFA', style: AppTextStyles.numberLarge.copyWith(fontSize: 22, color: Colors.white)),
+                ])),
+                Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  Text('${_progression.toInt()}%', style: AppTextStyles.bodyMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+                  Text('remboursé', style: AppTextStyles.bodySmall.copyWith(color: Colors.white60)),
+                ]),
+              ]),
+              const SizedBox(height: AppSpacing.sm),
+              LinearProgressIndicator(value: _progression / 100, backgroundColor: Colors.white.withOpacity(0.2), color: Colors.white, minHeight: 6, borderRadius: AppBorders.buttonRadius),
+            ]),
           ),
+          const SizedBox(height: AppSpacing.lg),
 
-          // ============================================================
-          // BODY - TabBar (55%)
-          // ============================================================
-          Expanded(
-            child: Column(
-              children: [
-                TabBar(
-                  controller: _tabController,
-                  indicatorColor: AppColors.primary,
-                  indicatorWeight: 3,
-                  labelColor: AppColors.primary,
-                  unselectedLabelColor: AppColors.textSecondary,
-                  tabs: const [
-                    Tab(text: 'Échéancier'),
-                    Tab(text: 'Historique'),
-                  ],
-                ),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      // Onglet 1 : Échéancier
-                      isFlexible
-                          ? Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(AppSpacing.xl),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.info_outline,
-                                      size: 48,
-                                      color: AppColors.textHint,
-                                    ),
-                                    const SizedBox(height: AppSpacing.md),
-                                    Text(
-                                      'Prêt Flexible',
-                                      style: AppTextStyles.headline4.copyWith(
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                                    const SizedBox(height: AppSpacing.xs),
-                                    Text(
-                                      'Ce financement ne dispose d\'aucun échéancier imposé. Vous remboursez librement selon votre trésorerie.',
-                                      style: AppTextStyles.bodyMedium.copyWith(
-                                        color: AppColors.textHint,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            )
-                          : ListView.builder(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.lg,
-                                vertical: AppSpacing.sm,
-                              ),
-                              itemCount: _echeances.length,
-                              itemBuilder: (context, index) {
-                                final e = _echeances[index];
-                                return _buildEcheanceCard(e);
-                              },
-                            ),
-
-                      // Onglet 2 : Historique
-                      _historique.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.history,
-                                    size: 48,
-                                    color: AppColors.textHint,
-                                  ),
-                                  const SizedBox(height: AppSpacing.md),
-                                  Text(
-                                    'Aucun remboursement enregistré',
-                                    style: AppTextStyles.bodyMedium.copyWith(
-                                      color: AppColors.textHint,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : ListView.builder(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.lg,
-                                vertical: AppSpacing.sm,
-                              ),
-                              itemCount: _historique.length,
-                              itemBuilder: (context, index) {
-                                final h = _historique[index];
-                                return _buildHistoriqueCard(h);
-                              },
-                            ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      // ============================================================
-      // FOOTER (15%)
-      // ============================================================
-      bottomNavigationBar: _estRembourse
-          ? null
-          : Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.lg,
-                vertical: AppSpacing.md,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border(
-                  top: BorderSide(color: AppColors.border, width: 1),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.pushNamed(
-                          context,
-                          '/finance/echeance/create',
-                          arguments: widget.pret,
-                        );
-                      },
-                      icon: const Icon(Icons.calendar_month_outlined, size: 18),
-                      label: const Text('+ Échéance'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primary,
-                        side: const BorderSide(color: AppColors.primary),
-                        minimumSize: const Size(0, 44),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: AppBorders.buttonRadius,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pushNamed(
-                          context,
-                          '/finance/remboursement/create',
-                          arguments: widget.pret,
-                        );
-                      },
-                      icon: const Icon(Icons.payments_outlined, size: 18),
-                      label: const Text('Remboursement'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.success,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(0, 44),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: AppBorders.buttonRadius,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-    );
-  }
-
-  Widget _buildEcheanceCard(Map<String, dynamic> echeance) {
-    final statut = echeance['statut'];
-    Color bgColor;
-    Color textColor;
-
-    switch (statut) {
-      case 'Payée':
-        bgColor = const Color(0xFFD1FAE5);
-        textColor = const Color(0xFF065F46);
-        break;
-      case 'En retard':
-        bgColor = const Color(0xFFFEE2E2);
-        textColor = const Color(0xFF991B1B);
-        break;
-      default:
-        bgColor = const Color(0xFFFEF3C7);
-        textColor = const Color(0xFFD97706);
-        break;
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: AppBorders.cardRadius,
-        border: Border.all(color: AppColors.border, width: 1),
-        boxShadow: AppShadows.shadowCard,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Échéance: ${echeance['date']}',
-                  style: AppTextStyles.subtitleMedium,
-                ),
-                Text(
-                  '${echeance['montant']} FCFA',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // INFOS
+          _buildSectionTitle('Informations'),
+          const SizedBox(height: AppSpacing.md),
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.sm,
-              vertical: 2,
-            ),
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: AppBorders.buttonRadius,
-            ),
-            child: Text(
-              statut,
-              style: AppTextStyles.labelSmall.copyWith(
-                color: textColor,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.border), boxShadow: AppShadows.shadowCard),
+            child: Column(children: [
+              _buildInfoRow('Capital emprunté', '${p.montantTotal.toInt()} FCFA'),
+              const Divider(),
+              _buildInfoRow('Total remboursé', '${rembourse.toInt()} FCFA'),
+              const Divider(),
+              _buildInfoRow('Taux d\'intérêt', '${p.tauxInteret}% ${p.typeTaux == "MENSUEL" ? "mensuel" : "annuel"}'),
+              const Divider(),
+              _buildInfoRow('Date de déblocage', '${p.dateDeblocage.day}/${p.dateDeblocage.month}/${p.dateDeblocage.year}'),
+              const Divider(),
+              _buildInfoRow('Date limite', p.dateLimite != null ? '${p.dateLimite!.day}/${p.dateLimite!.month}/${p.dateLimite!.year}' : 'Non définie'),
+              const Divider(),
+              _buildInfoRow('Mode', p.modeRemboursement == 'IMPOSE' ? 'Échéances imposées' : 'Remboursement libre'),
+              const Divider(),
+              _buildInfoRow('Durée estimée', p.dureeTotaleMois != null ? '${p.dureeTotaleMois} mois' : 'Non définie'),
+            ]),
           ),
-        ],
+          const SizedBox(height: AppSpacing.xl),
+
+          // REMBOURSEMENT
+          if (!p.isRembourse) ...[
+            _buildSectionTitle('Remboursement'),
+            const SizedBox(height: AppSpacing.md),
+            if (!_showRemboursement)
+              SizedBox(width: double.infinity, height: 48,
+                child: ElevatedButton.icon(
+                  onPressed: () => setState(() => _showRemboursement = true),
+                  icon: const Icon(Icons.payments_outlined),
+                  label: const Text('EFFECTUER UN REMBOURSEMENT'),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: AppBorders.buttonRadius)),
+                ),
+              )
+            else
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.success.withOpacity(0.3))),
+                child: Column(children: [
+                  Text('Montant à rembourser', style: AppTextStyles.subtitleMedium),
+                  const SizedBox(height: AppSpacing.md),
+                  TextFormField(
+                    controller: _montantController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: 'Max: ${p.montantRestant.toInt()} FCFA',
+                      border: OutlineInputBorder(borderRadius: AppBorders.inputRadius),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Row(children: [
+                    Expanded(child: OutlinedButton(onPressed: () => setState(() { _showRemboursement = false; _montantController.clear(); }), child: const Text('Annuler'))),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(child: ElevatedButton(onPressed: _isLoading ? null : _rembourser, style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, foregroundColor: Colors.white), child: Text(_isLoading ? '...' : 'Confirmer'))),
+                  ]),
+                ]),
+              ),
+            const SizedBox(height: AppSpacing.lg),
+          ],
+        ]),
       ),
     );
   }
 
-  Widget _buildHistoriqueCard(Map<String, dynamic> historique) {
+  Widget _buildSectionTitle(String title) {
     return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: AppBorders.cardRadius,
-        border: Border.all(color: AppColors.border, width: 1),
-        boxShadow: AppShadows.shadowCard,
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 4,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.success,
-              borderRadius: AppBorders.radiusSmall,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${historique['montant']} FCFA',
-                  style: AppTextStyles.subtitleMedium,
-                ),
-                Text(
-                  '${historique['date']} • ${historique['source']}',
-                  style: AppTextStyles.bodySmall,
-                ),
-              ],
-            ),
-          ),
-          const Icon(
-            Icons.check_circle,
-            color: AppColors.success,
-            size: 20,
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.only(left: AppSpacing.sm),
+      decoration: BoxDecoration(border: Border(left: BorderSide(color: AppColors.primary, width: 3))),
+      child: Text(title, style: AppTextStyles.subtitleLarge.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600)),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        Text(label, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+        Text(value, style: AppTextStyles.subtitleMedium),
+      ]),
     );
   }
 }

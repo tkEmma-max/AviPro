@@ -8,6 +8,7 @@ import '../../core/theme/app_borders.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../providers/pret_provider.dart';
 import 'finance_loan_create_screen.dart';
+import 'finance_loan_detail_screen.dart';
 
 class FinanceLoanDashboardScreen extends StatefulWidget {
   const FinanceLoanDashboardScreen({super.key});
@@ -79,10 +80,19 @@ class _FinanceLoanDashboardScreenState extends State<FinanceLoanDashboardScreen>
               return Card(
                 margin: const EdgeInsets.only(bottom: AppSpacing.md),
                 child: ListTile(
-                  leading: CircleAvatar(backgroundColor: p.isRembourse ? AppColors.success : AppColors.primary, child: Icon(p.isRembourse ? Icons.check : Icons.pending, color: Colors.white)),
+                  leading: CircleAvatar(
+                    backgroundColor: p.isRembourse ? AppColors.success : AppColors.primary,
+                    child: Icon(p.isRembourse ? Icons.check : Icons.pending, color: Colors.white),
+                  ),
                   title: Text(p.preteur, style: AppTextStyles.subtitleMedium),
                   subtitle: Text('${p.montantRestant.toInt()} FCFA restants • ${p.typePreteur}'),
                   trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => FinanceLoanDetailScreen(pret: p)),
+                    ).then((_) => context.read<PretProvider>().refreshPrets());
+                  },
                 ),
               );
             },

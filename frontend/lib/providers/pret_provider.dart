@@ -53,4 +53,20 @@ class PretProvider extends ChangeNotifier {
       rethrow;
     }
   }
+
+  Future<bool> addRemboursement(String pretId, double montant, {String? description}) async {
+    try {
+      final response = await _apiService.post('prets/remboursements/', data: {
+        'pret': pretId,
+        'montant': montant.toInt(),
+        'date': DateTime.now().toIso8601String().split('T')[0],
+        'source': 'manuel',
+        'description': description ?? 'Remboursement manuel',
+      });
+      return response.statusCode == 201;
+    } catch (e) {
+      print('Erreur remboursement: $e');
+      return false;
+    }
+  }
 }
