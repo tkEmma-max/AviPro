@@ -728,12 +728,13 @@ class PeuplerDBView(APIView):
             fin = debut + timedelta(days=duree) if archive else None
             c, created = Cycle.objects.get_or_create(nom=nom, poulailler=poul, defaults={
                 'type_poulet': tp, 'date_debut': debut, 'date_fin': fin,
-                'nombre_sujets_initiaux': nb, 'nombre_sujets_actuels': nb - random.randint(5, 15) if archive else nb,
+                'nombre_sujets_initiaux': nb,
                 'duree_estimee_jours': duree, 'is_active': not archive, 'is_archived': archive, 'created_by': user,
             })
             if created:
-                SousBande.objects.create(cycle=c, poulailler=c.poulailler, nombre_sujets=c.nombre_sujets_actuels)
+                SousBande.objects.create(cycle=c, poulailler=c.poulailler, nombre_sujets=nb - random.randint(5, 15) if archive else nb)
             cycles.append(c)
+
         result['actions'].append(f'{len(cycles)} cycles')
 
         # Dépenses
