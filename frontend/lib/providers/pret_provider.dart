@@ -56,8 +56,7 @@ class PretProvider extends ChangeNotifier {
 
   Future<bool> addRemboursement(String pretId, double montant, {String? description}) async {
     try {
-      final response = await _apiService.post('prets/remboursements/', data: {
-        'pret': pretId,
+      final response = await _apiService.post('prets/$pretId/enregistrer_remboursement/', data: {
         'montant': montant.toInt(),
         'date': DateTime.now().toIso8601String().split('T')[0],
         'source': 'manuel',
