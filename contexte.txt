@@ -1,0 +1,80 @@
+📅 MINI-RAPPORT DE SESSION — 15 JUILLET 2026
+
+---
+
+✅ FAIT
+
+Module Détail
+Dashboard Stats réelles (solde, dépenses, cycles, prêts), graphique, dernières transactions
+PostgreSQL Migration réussie, données persistantes
+Base de données Refactorisation complète de tous les modèles backend
+Modèles TypePoulet, TypeVente, CategorieDepense, TypeMaladie ajoutés (tous CRUDables)
+Champs visionnaires metadata, mobile_money, transaction_mobile_id, vendeur, annonce_id, etc.
+Accès admin Tous les ViewSets : admin voit tout, utilisateur voit ses données
+Synchronisation App sync créée avec PendingSync + API fonctionnelle
+Poulaillers Densité intelligente, équipements dynamiques, historique cycles
+Cycles CRUD complet, dépense auto au lancement, frise chronologique, stats réelles
+Dépenses Formulaire avec catégories backend, lié aux cycles actifs
+Ventes Formulaire avec types backend, alerte vente à perte, prix suggérés
+Finance Hub Transactions réelles, menu actions ⋮
+Rapports Création (date pré-remplie, observations obligatoires), liste, fiche détail
+Design System Tous les écrans utilisent AppColors, AppTextStyles, AppSpacing, etc.
+
+---
+
+🔧 EN COURS / À FAIRE
+
+Priorité Tâche
+🔴 CRUD Prêts — Frontend Flutter à créer (formulaire, liste, détail, remboursement)
+🔴 Prévisions (F34-F37) — Backend + Frontend
+🟠 Dépenses de routine (F29) — Backend + Frontend
+🟠 Migration poulets (F7) — Écran Flutter
+🟡 Notifications — Firebase Cloud Messaging
+🟡 Paramètres utilisateur — Fréquence rapports, langue, etc.
+🟢 Stock — Gestion des stocks d'aliment et médicaments
+
+---
+
+⚠️ POINTS D'ATTENTION
+
+Point Détail
+Token JWT Stocké dans SharedPreferences, intercepteur Dio, refresh auto
+Base URL https://avipro-backend.onrender.com/api/
+Compte admin admin@avipro.com / Avipro2026!
+PostgreSQL Actif et persistant, DATABASE_URL configuré
+Design System lib/core/theme/ — À utiliser IMPÉRATIVEMENT
+Routes Utiliser MaterialPageRoute au lieu de pushNamed
+
+---
+
+📋 PROCHAINE SESSION
+
+1. CRUD Prêts Flutter (formulaire création, liste, fiche détail, échéancier, remboursement)
+2. Dashboard — Afficher les vrais prêts au lieu de 0
+3. Tests — Vérifier que tout fonctionne avec la nouvelle base PostgreSQL
+
+---
+
+📁 FICHIERS MODIFIÉS (BACKEND)
+
+App Fichiers
+sync/ models.py, views.py, urls.py, serializers.py
+users/ models.py
+cycles/ models.py, serializers.py, views.py, urls.py, admin.py
+ventes/ models.py, serializers.py, views.py, urls.py, admin.py
+depenses/ models.py, serializers.py, views.py, urls.py, admin.py
+prets/ models.py, serializers.py, views.py, admin.py
+poulaillers/ models.py
+rapports/ models.py, serializers.py, views.py, urls.py, admin.py
+clients/ models.py, serializers.py, views.py, urls.py, admin.py
+fournisseurs/ models.py, serializers.py, views.py, urls.py, admin.py
+backend/ urls.py
+
+---
+
+
+📅 Session du 15/07/2026
+✅ BACKEND MVP TERMINÉ À 100%
+🔧 Frontend : Prêts, Dashboard prêts, Paramètres, Stock à faire
+📋 Prochaine session : Frontend Flutter (Prêts)
+

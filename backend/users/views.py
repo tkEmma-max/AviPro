@@ -5,8 +5,11 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import User
-from .serializers import UserSerializer, UserListSerializer, ChangePasswordSerializer
+from .models import User, ParametreUtilisateur
+from .serializers import (
+    UserSerializer, UserListSerializer,
+    ChangePasswordSerializer, ParametreUtilisateurSerializer
+)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -27,7 +30,6 @@ class UserViewSet(viewsets.ModelViewSet):
         return UserSerializer
 
     def get_queryset(self):
-        """Les utilisateurs normaux ne voient que leur propre profil"""
         if self.request.user.is_superuser:
             return User.objects.filter(is_active=True)
         return User.objects.filter(id=self.request.user.id)
@@ -48,6 +50,22 @@ class UserViewSet(viewsets.ModelViewSet):
             user.save()
             return Response({'message': 'Mot de passe changé avec succès.'})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get', 'patch'])
+    def parametres(self, request):
+        """Récupère ou met à jour les paramètres de l'utilisateur connecté"""
+        params, created = ParametreUtilisateur.objects.get_or_create(user=request.user)
+
+        if request.method == 'GET':
+            serializer = ParametreUtilisateurSerializer(params)
+            return Response(serializer.data)
+
+        elif request.method == 'PATCH':
+            serializer = ParametreUtilisateurSerializer(params, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class RegisterView(generics.CreateAPIView):

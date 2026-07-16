@@ -19,7 +19,8 @@ class PoulaillerSerializer(serializers.ModelSerializer):
                     'localisation', 'type_sol', 'surface',
                     'nombre_mangeoires', 'nombre_abreuvoirs',
                     'statut', 'nb_poulets_actuels', 'densite_actuelle',
-                    'is_archived', 'created_at', 'updated_at', 'created_by'
+                    'is_archived', 'created_at', 'updated_at', 'created_by', 'metadata', 'capacite_max_recommandee', 'date_construction', 
+                    'cout_construction',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'created_by']
 

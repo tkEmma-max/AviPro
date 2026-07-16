@@ -1,15 +1,19 @@
 # cycles/serializers.py
 from rest_framework import serializers
-from .models import Cycle
-from depenses.models import Depense
-from ventes.models import Vente
+from .models import Cycle, TypePoulet
+from .models import SousBande, Migration
+
+
+class TypePouletSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TypePoulet
+        fields = '__all__'
+        read_only_fields = ('id', 'created_at', 'updated_at', 'created_by')
 
 
 class CycleSerializer(serializers.ModelSerializer):
-    """
-    Serializer pour les cycles
-    """
     poulailler_nom = serializers.ReadOnlyField(source='poulailler.nom')
+    type_poulet_nom = serializers.ReadOnlyField(source='type_poulet.nom')
     jours_ecoules = serializers.ReadOnlyField()
     progression = serializers.ReadOnlyField()
     mortalites = serializers.ReadOnlyField()
@@ -24,39 +28,38 @@ class CycleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cycle
         fields = [
-            'id', 'nom', 'poulailler', 'poulailler_nom', 'type',
+            'id', 'nom', 'poulailler', 'poulailler_nom',
+            'type', 'type_poulet', 'type_poulet_nom',
             'date_debut', 'date_fin', 'duree_estimee_jours',
             'nombre_sujets_initiaux', 'nombre_sujets_actuels',
             'jours_ecoules', 'progression', 'mortalites', 'taux_mortalite',
             'total_depenses', 'total_ventes', 'benefice', 'est_rentable',
             'cout_production_unitaire', 'prix_vente_moyen',
-            'is_active', 'is_archived', 'created_at', 'updated_at'
+            'is_active', 'is_archived',
+            'metadata', 'est_publie_marketplace',
+            'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
 
 class CycleListSerializer(serializers.ModelSerializer):
-    """
-    Serializer simplifié pour la liste des cycles
-    """
     poulailler_nom = serializers.ReadOnlyField(source='poulailler.nom')
+    type_poulet_nom = serializers.ReadOnlyField(source='type_poulet.nom')
     progression = serializers.ReadOnlyField()
     benefice = serializers.ReadOnlyField()
 
     class Meta:
         model = Cycle
         fields = [
-            'id', 'nom', 'poulailler_nom', 'type',
+            'id', 'nom', 'poulailler_nom', 'type', 'type_poulet_nom',
             'date_debut', 'progression', 'benefice',
             'is_active', 'is_archived'
         ]
 
 
 class CycleDetailSerializer(serializers.ModelSerializer):
-    """
-    Serializer détaillé pour un cycle avec dépenses et ventes
-    """
     poulailler_nom = serializers.ReadOnlyField(source='poulailler.nom')
+    type_poulet_nom = serializers.ReadOnlyField(source='type_poulet.nom')
     jours_ecoules = serializers.ReadOnlyField()
     progression = serializers.ReadOnlyField()
     mortalites = serializers.ReadOnlyField()
@@ -67,21 +70,21 @@ class CycleDetailSerializer(serializers.ModelSerializer):
     est_rentable = serializers.ReadOnlyField()
     cout_production_unitaire = serializers.ReadOnlyField()
     prix_vente_moyen = serializers.ReadOnlyField()
-
-    # Dépenses et ventes incluses
     depenses = serializers.SerializerMethodField()
     ventes = serializers.SerializerMethodField()
 
     class Meta:
         model = Cycle
         fields = [
-            'id', 'nom', 'poulailler', 'poulailler_nom', 'type',
+            'id', 'nom', 'poulailler', 'poulailler_nom',
+            'type', 'type_poulet', 'type_poulet_nom',
             'date_debut', 'date_fin', 'duree_estimee_jours',
             'nombre_sujets_initiaux', 'nombre_sujets_actuels',
             'jours_ecoules', 'progression', 'mortalites', 'taux_mortalite',
             'total_depenses', 'total_ventes', 'benefice', 'est_rentable',
             'cout_production_unitaire', 'prix_vente_moyen',
             'depenses', 'ventes',
+            'metadata', 'est_publie_marketplace',
             'is_active', 'is_archived', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
@@ -98,9 +101,6 @@ class CycleDetailSerializer(serializers.ModelSerializer):
 
 
 class CycleStatsSerializer(serializers.Serializer):
-    """
-    Serializer pour les statistiques d'un cycle
-    """
     id = serializers.UUIDField()
     nom = serializers.CharField()
     jours_ecoules = serializers.IntegerField()
@@ -111,3 +111,28 @@ class CycleStatsSerializer(serializers.Serializer):
     benefice = serializers.DecimalField(max_digits=12, decimal_places=0)
     est_rentable = serializers.BooleanField()
     cout_production_unitaire = serializers.DecimalField(max_digits=12, decimal_places=0)
+
+
+class SousBandeSerializer(serializers.ModelSerializer):
+    poulailler_nom = serializers.ReadOnlyField(source='poulailler.nom')
+
+    class Meta:
+        model = SousBande
+        fields = ['id', 'cycle', 'poulailler', 'poulailler_nom', 'nombre_sujets', 'est_active', 'date_creation']
+        read_only_fields = ('id', 'date_creation')
+
+
+class MigrationSerializer(serializers.ModelSerializer):
+    poulailler_source_nom = serializers.ReadOnlyField(source='poulailler_source.nom')
+    poulailler_cible_nom = serializers.ReadOnlyField(source='poulailler_cible.nom')
+    cycle_nom = serializers.ReadOnlyField(source='cycle.nom')
+
+    class Meta:
+        model = Migration
+        fields = [
+            'id', 'cycle', 'cycle_nom',
+            'poulailler_source', 'poulailler_source_nom',
+            'poulailler_cible', 'poulailler_cible_nom',
+            'nombre_sujets', 'age_sujets', 'raison', 'date'
+        ]
+        read_only_fields = ('id', 'date')

@@ -52,6 +52,8 @@ INSTALLED_APPS = [
     'rapports',
     'clients',
     'fournisseurs',
+    'sync',
+    'stock',
 ]
 
 MIDDLEWARE = [
@@ -113,7 +115,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 LANGUAGE_CODE = 'fr-fr'
-TIME_ZONE = 'Africa/Douala'
+TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 

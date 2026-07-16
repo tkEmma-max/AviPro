@@ -38,6 +38,11 @@ class PoulaillerAdmin(admin.ModelAdmin):
             'fields': ('id', 'created_at', 'updated_at', 'created_by'),
             'classes': ('collapse',)
         }),
+        
+        ('Champs visionnaires', {
+            'fields': ('metadata', 'capacite_max_recommandee', 'date_construction', 'cout_construction'),
+            'classes': ('collapse',)
+        }),
     )
 
     def get_queryset(self, request):

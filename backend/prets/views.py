@@ -33,7 +33,13 @@ class PretViewSet(viewsets.ModelViewSet):
         elif self.action == 'create':
             return PretCreateSerializer
         return PretSerializer
-
+        
+    def get_queryset(self):
+        if self.request.user.is_staff:
+            return Pret.objects.filter(is_deleted=False)
+        return Pret.objects.filter(created_by=self.request.user, is_deleted=False)
+    
+    
     def perform_create(self, serializer):
         """Crée un prêt avec le montant restant initial"""
         serializer.save(

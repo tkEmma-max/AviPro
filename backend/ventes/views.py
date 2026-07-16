@@ -2,24 +2,52 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Sum
 from django.utils import timezone
-from .models import Vente
-from .serializers import VenteSerializer, VenteListSerializer, VenteCreateSerializer, VenteStatsSerializer
+from .models import Vente, TypeVente
+from .serializers import (
+    VenteSerializer, VenteListSerializer, VenteCreateSerializer,
+    VenteStatsSerializer, TypeVenteSerializer
+)
+
+
+class TypeVenteViewSet(viewsets.ModelViewSet):
+    """
+    CRUD pour les types de ventes.
+    - Utilisateurs authentifiés : GET (lecture seule)
+    - Admin : GET, POST, PUT, DELETE
+    """
+    queryset = TypeVente.objects.filter(is_active=True)
+    serializer_class = TypeVenteSerializer
+
+    def get_permissions(self):
+        if self.action in ('create', 'update', 'partial_update', 'destroy'):
+            return [IsAdminUser()]
+        return [IsAuthenticated()]
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+    def get_queryset(self):
+        if self.request.user.is_staff and self.request.query_params.get('show_all'):
+            return TypeVente.objects.all()
+        return TypeVente.objects.filter(is_active=True)
 
 
 class VenteViewSet(viewsets.ModelViewSet):
     """
-    ViewSet pour la gestion des ventes
+    ViewSet pour la gestion des ventes.
+    - Utilisateurs : CRUD sur leurs propres ventes
+    - Admin : accès à TOUTES les ventes
     """
     queryset = Vente.objects.filter(is_deleted=False)
     serializer_class = VenteSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['cycle', 'type', 'client', 'date']
+    filterset_fields = ['cycle', 'type', 'type_vente', 'client', 'date']
     search_fields = ['description', 'facture_numero']
     ordering_fields = ['-date', 'montant_total']
     ordering = ['-date']
@@ -32,55 +60,23 @@ class VenteViewSet(viewsets.ModelViewSet):
         return VenteSerializer
 
     def get_queryset(self):
-        queryset = Vente.objects.filter(
-            created_by=self.request.user,
-            is_deleted=False
-        )
-        cycle_id = self.request.query_params.get('cycle')
-        if cycle_id:
-            queryset = queryset.filter(cycle_id=cycle_id)
-        return queryset
+        if self.request.user.is_staff:
+            return Vente.objects.filter(is_deleted=False)
+        return Vente.objects.filter(created_by=self.request.user, is_deleted=False)
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
     @action(detail=False, methods=['get'])
     def statistiques(self, request):
-        """
-        Récupère les statistiques des ventes
-        """
-        # Total des ventes
-        total = Vente.objects.filter(is_deleted=False).aggregate(
-            total=Sum('montant_total')
-        )['total'] or 0
-
-        # Total par type
-        par_type = Vente.objects.filter(is_deleted=False).values('type').annotate(
-            total=Sum('montant_total')
-        ).order_by('-total')
-
-        # Ventes du mois en cours
+        total = Vente.objects.filter(is_deleted=False).aggregate(total=Sum('montant_total'))['total'] or 0
+        par_type = Vente.objects.filter(is_deleted=False).values('type_vente__nom').annotate(total=Sum('montant_total')).order_by('-total')
         mois_courant = timezone.now().month
         annee_courante = timezone.now().year
-        ventes_mois = Vente.objects.filter(
-            is_deleted=False,
-            date__month=mois_courant,
-            date__year=annee_courante
-        ).aggregate(total=Sum('montant_total'))['total'] or 0
-
-        # Ventes du cycle en cours (si spécifié)
-        cycle_id = request.query_params.get('cycle')
-        ventes_cycle = 0
-        if cycle_id:
-            ventes_cycle = Vente.objects.filter(
-                is_deleted=False,
-                cycle_id=cycle_id
-            ).aggregate(total=Sum('montant_total'))['total'] or 0
-
+        ventes_mois = Vente.objects.filter(is_deleted=False, date__month=mois_courant, date__year=annee_courante).aggregate(total=Sum('montant_total'))['total'] or 0
         data = {
             'total_ventes': total,
             'ventes_mois_courant': ventes_mois,
-            'ventes_cycle': ventes_cycle,
             'par_type': list(par_type),
             'nombre_transactions': Vente.objects.filter(is_deleted=False).count()
         }
@@ -88,22 +84,15 @@ class VenteViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def supprimer(self, request, pk=None):
-        """
-        Suppression logique d'une vente
-        """
         vente = self.get_object()
         vente.is_deleted = True
         vente.save()
-        return Response({'message': 'Vente supprimée avec succès.'})
+        return Response({'message': 'Vente supprimée.'})
 
     @action(detail=False, methods=['get'])
     def analyse_prix(self, request):
-        """
-        Analyse les prix de vente par rapport aux prix de revient
-        """
         ventes = Vente.objects.filter(is_deleted=False)
         data = []
-
         for vente in ventes:
             data.append({
                 'id': str(vente.id),
@@ -113,5 +102,4 @@ class VenteViewSet(viewsets.ModelViewSet):
                 'marge': vente.marge_unitaire,
                 'est_rentable': vente.est_rentable
             })
-
         return Response(data)

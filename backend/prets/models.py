@@ -36,6 +36,8 @@ class Pret(models.Model):
         related_name='prets',
         blank=True
     )
+    # Champs visionnaires
+    metadata = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
@@ -97,6 +99,9 @@ class Echeance(models.Model):
     montant_due = models.DecimalField(max_digits=12, decimal_places=0)
     est_payee = models.BooleanField(default=False)
     date_paiement = models.DateField(null=True, blank=True)
+    # Lien futur vers transaction mobile
+    transaction_mobile_id = models.UUIDField(null=True, blank=True, help_text="ID de la transaction mobile associée")
+    metadata = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -17,6 +17,13 @@ class Poulailler(models.Model):
     nombre_abreuvoirs = models.IntegerField(default=0)
     is_archived = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
+    
+    # Champs visionnaires
+    metadata = models.JSONField(default=dict, blank=True)
+    capacite_max_recommandee = models.IntegerField(null=True, blank=True, help_text="Capacité max recommandée selon le type")
+    date_construction = models.DateField(null=True, blank=True)
+    cout_construction = models.DecimalField(max_digits=12, decimal_places=0, null=True, blank=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
@@ -38,16 +45,10 @@ class Poulailler(models.Model):
 
     @property
     def surface(self):
-        """Calcule la surface en m²"""
         return self.longueur * self.largeur
 
     @property
     def statut(self):
-        """
-        Calcul automatique du statut :
-        - LIBRE si pas de cycle actif ou nb poulets = 0
-        - OCCUPÉ si cycle actif avec poulets > 0
-        """
         cycle_actif = self.cycles.filter(is_active=True, is_archived=False).first()
         if cycle_actif and cycle_actif.nombre_sujets_actuels > 0:
             return "OCCUPÉ"
@@ -55,13 +56,11 @@ class Poulailler(models.Model):
 
     @property
     def nb_poulets_actuels(self):
-        """Récupère le nombre de poulets actuellement dans le poulailler"""
         cycle_actif = self.cycles.filter(is_active=True, is_archived=False).first()
         return cycle_actif.nombre_sujets_actuels if cycle_actif else 0
 
     @property
     def densite_actuelle(self):
-        """Calcule la densité actuelle (poulets/m²)"""
         if self.surface > 0 and self.nb_poulets_actuels > 0:
             return self.nb_poulets_actuels / self.surface
         return 0

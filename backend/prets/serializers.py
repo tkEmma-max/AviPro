@@ -32,7 +32,7 @@ class RemboursementPretSerializer(serializers.ModelSerializer):
             'source', 'cycle_source', 'vente_source',
             'echeance', 'echeance_date',
             'description', 'is_manually_confirmed',
-            'created_at'
+            'created_at', 'transaction_mobile_id', 'metadata',
         ]
         read_only_fields = ['id', 'created_at']
 
@@ -58,7 +58,8 @@ class PretSerializer(serializers.ModelSerializer):
             'prochaine_echeance', 'est_en_retard',
             'is_rembourse', 'cycles_affectes',
             'echeances', 'remboursements',
-            'created_at', 'updated_at'
+            'created_at', 'updated_at',
+            'metadata',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
