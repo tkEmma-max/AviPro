@@ -2,6 +2,7 @@
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import CustomTokenObtainPairView, RegisterView, SyncView, StatsView
+from .views import PeuplerDBView
 
 urlpatterns = [
     # Authentification
@@ -14,4 +15,5 @@ urlpatterns = [
 
     # Statistiques globales
     path('stats/', StatsView.as_view(), name='stats'),
+    path('peupler/', PeuplerDBView.as_view(), name='peupler-db'),
 ]

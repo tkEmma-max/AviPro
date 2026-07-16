@@ -672,3 +672,112 @@ class SyncView(APIView):
         # Mettre à jour synced_at pour les modèles qui ont ce champ
         for model in [Depense, Vente, RapportSuivi]:
             model.objects.filter(id__in=processed).update(synced_at=timezone.now())
+
+
+
+# ═══════════════════════════════════════════════
+# PEUPLEMENT DE LA BASE (ENDPOINT TEMPORAIRE)
+# ═══════════════════════════════════════════════
+class PeuplerDBView(APIView):
+    """Endpoint temporaire pour peupler la base de données de test"""
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        email = request.query_params.get('email', 'admin@avipro.com')
+        from datetime import date, timedelta
+        import random
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({'error': f'Utilisateur {email} introuvable'}, status=404)
+
+        aujourdhui = date.today()
+        result = {'actions': []}
+
+        # Types de poulets
+        from cycles.models import TypePoulet, SousBande
+        type_chair, _ = TypePoulet.objects.get_or_create(nom='Poulet de chair', defaults={'duree_estimee_jours': 45, 'densite_recommandee': 8.0, 'prix_poussin_moyen': 500})
+        type_pondeuse, _ = TypePoulet.objects.get_or_create(nom='Poule pondeuse', defaults={'duree_estimee_jours': 490, 'densite_recommandee': 6.0, 'prix_poussin_moyen': 1500})
+        result['actions'].append('Types poulets OK')
+
+        # Catégories
+        from depenses.models import CategorieDepense
+        cats = {}
+        for code, nom in [('POUSSIN', 'Achat de poussins'), ('ALIMENT', 'Aliment'), ('VACCIN', 'Vaccins'), ('LITIERE', 'Litière'), ('TRANSPORT', 'Transport'), ('CHAUFFAGE', 'Chauffage')]:
+            cats[code], _ = CategorieDepense.objects.get_or_create(nom=nom)
+        result['actions'].append('Categories OK')
+
+        # Poulaillers
+        poulaillers = []
+        for i, (nom, l, la) in enumerate([('Poulailler A', 10, 5), ('Poulailler B', 8, 4), ('Poulailler C', 12, 6)]):
+            p, _ = Poulailler.objects.get_or_create(nom=nom, defaults={'longueur': l, 'largeur': la, 'nombre_mangeoires': 5, 'nombre_abreuvoirs': 3, 'created_by': user})
+            poulaillers.append(p)
+        result['actions'].append(f'{len(poulaillers)} poulaillers')
+
+        # Cycles
+        cycles = []
+        configs = [
+            ('Bande Chair Mars', poulaillers[0], type_chair, 300, -35, 45, False),
+            ('Bande Chair Février', poulaillers[1], type_chair, 250, -60, 45, True),
+            ('Pondeuses Avril', poulaillers[2], type_pondeuse, 200, -30, 490, False),
+            ('Bande Chair Janvier', poulaillers[0], type_chair, 400, -90, 45, True),
+        ]
+        for nom, poul, tp, nb, offset, duree, archive in configs:
+            debut = aujourdhui + timedelta(days=offset)
+            fin = debut + timedelta(days=duree) if archive else None
+            c, created = Cycle.objects.get_or_create(nom=nom, poulailler=poul, defaults={
+                'type_poulet': tp, 'date_debut': debut, 'date_fin': fin,
+                'nombre_sujets_initiaux': nb, 'nombre_sujets_actuels': nb - random.randint(5, 15) if archive else nb,
+                'duree_estimee_jours': duree, 'is_active': not archive, 'is_archived': archive, 'created_by': user,
+            })
+            if created:
+                SousBande.objects.create(cycle=c, poulailler=c.poulailler, nombre_sujets=c.nombre_sujets_actuels)
+            cycles.append(c)
+        result['actions'].append(f'{len(cycles)} cycles')
+
+        # Dépenses
+        dep_configs = [
+            (cycles[0], cats['POUSSIN'], 500 * 300, 'Achat poussins', 0),
+            (cycles[0], cats['ALIMENT'], 80000, 'Aliment demarrage', 0),
+            (cycles[0], cats['VACCIN'], 30000, 'Vaccin J1', 1),
+            (cycles[0], cats['CHAUFFAGE'], 25000, 'Chauffage', 0),
+            (cycles[0], cats['ALIMENT'], 60000, 'Aliment croissance', 14),
+            (cycles[0], cats['VACCIN'], 30000, 'Vaccin J21', 21),
+            (cycles[1], cats['POUSSIN'], 500 * 250, 'Achat poussins', 0),
+            (cycles[1], cats['ALIMENT'], 120000, 'Aliment total', 0),
+            (cycles[1], cats['VACCIN'], 25000, 'Vaccins', 1),
+            (cycles[1], cats['TRANSPORT'], 15000, 'Transport', 0),
+            (cycles[2], cats['POUSSIN'], 1500 * 200, 'Achat poulettes', 0),
+            (cycles[2], cats['ALIMENT'], 90000, 'Aliment ponte', 0),
+            (cycles[3], cats['POUSSIN'], 500 * 400, 'Achat poussins', 0),
+            (cycles[3], cats['ALIMENT'], 180000, 'Aliment total', 0),
+            (cycles[3], cats['VACCIN'], 40000, 'Vaccins', 1),
+        ]
+        for cycle, cat, montant, desc, offset_j in dep_configs:
+            Depense.objects.get_or_create(cycle=cycle, categorie_depense=cat, date=cycle.date_debut + timedelta(days=offset_j), defaults={'montant': montant, 'description': desc, 'created_by': user})
+        result['actions'].append(f'{len(dep_configs)} depenses')
+
+        # Ventes
+        from ventes.models import Vente
+        for cycle_idx, nb, prix, offset_j in [(1, 100, 3500, 40), (1, 120, 3400, 43), (3, 180, 3500, 40), (3, 195, 3400, 43)]:
+            Vente.objects.get_or_create(cycle=cycles[cycle_idx], date=cycles[cycle_idx].date_debut + timedelta(days=offset_j), defaults={'quantite': nb, 'prix_unitaire': prix, 'montant_total': nb * prix, 'created_by': user})
+        result['actions'].append('4 ventes')
+
+        # Rapports
+        from rapports.models import RapportSuivi
+        nb_rap = 0
+        for cycle in cycles:
+            for r in range(random.randint(1, 2)):
+                offset = 7 * (r + 1)
+                debut = cycle.date_debut + timedelta(days=offset)
+                fin = debut + timedelta(days=7)
+                if fin > aujourdhui: continue
+                aliment = round(random.uniform(0.04, 0.07) * cycle.nombre_sujets_actuels * 7, 1)
+                RapportSuivi.objects.get_or_create(cycle=cycle, periode_debut=debut, periode_fin=fin, defaults={'aliment_consomme': aliment, 'eau_consommee': round(aliment * 2, 1), 'observations': 'Rapport auto', 'created_by': user})
+                nb_rap += 1
+        result['actions'].append(f'{nb_rap} rapports')
+
+        result['status'] = 'success'
+        result['message'] = f'Base peuplée pour {user.email} ! Rafraîchis le dashboard !'
+        return Response(result)

@@ -92,7 +92,7 @@ class ApiService {
   Future<Response> login(String email, String password) async {
     print('🔐 Tentative de login: $email');
     return await _dio.post(
-      'auth/login/',
+      'auth/auth/login/',
       data: {'email': email, 'password': password},
     );
   }
