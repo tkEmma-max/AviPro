@@ -7,6 +7,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_borders.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../services/api_service.dart';
+import 'finance_loan_dashboard_screen.dart';
 
 class FinanceHubScreen extends StatefulWidget {
   const FinanceHubScreen({super.key});
@@ -125,7 +126,12 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
                   Navigator.pushNamed(context, '/finance/vente').then((_) => _loadTransactions());
                   break;
                 case 'pret':
-                  Navigator.pushNamed(context, '/prets');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const FinanceLoanDashboardScreen(),
+                    ),
+                  );
                   break;
               }
             },

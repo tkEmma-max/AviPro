@@ -36,6 +36,16 @@ class Pret(models.Model):
         related_name='prets',
         blank=True
     )
+
+    # Type de taux d'intérêt
+    type_taux = models.CharField(
+        max_length=10, default='MENSUEL',
+        choices=[('MENSUEL', 'Mensuel'), ('ANNUEL', 'Annuel')]
+    )
+
+    # Date limite de remboursement
+    date_limite = models.DateField(null=True, blank=True)
+
     # Champs visionnaires
     metadata = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
