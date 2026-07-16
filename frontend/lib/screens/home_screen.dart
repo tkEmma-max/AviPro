@@ -73,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 // ============================================================
-// CONTENU DU DASHBOARD
+// CONTENU DU DASHBOARD (chargement progressif)
 // ============================================================
 class _DashboardContent extends StatefulWidget {
   const _DashboardContent();
@@ -84,7 +84,7 @@ class _DashboardContent extends StatefulWidget {
 
 class _DashboardContentState extends State<_DashboardContent> {
   final _apiService = ApiService();
-  bool _isLoading = true;
+  bool _isFirstLoad = true;
 
   double _totalVentes = 0;
   double _totalDepenses = 0;
@@ -100,7 +100,7 @@ class _DashboardContentState extends State<_DashboardContent> {
   }
 
   Future<void> _loadDashboardData() async {
-    setState(() => _isLoading = true);
+    // Plus de setState(() => _isLoading = true) → pas de blocage
     try {
       final poulaillerProvider = context.read<PoulaillerProvider>();
       final cycleProvider = context.read<CycleProvider>();
@@ -121,12 +121,10 @@ class _DashboardContentState extends State<_DashboardContent> {
       for (var c in cycles) {
         if (c.isActive && !c.isArchived) actifs++;
       }
-
       for (var p in prets) {
         pretsRest += p.montantRestant ?? 0;
       }
 
-      // Charger TOUTES les transactions
       final transactions = <Map<String, dynamic>>[];
       double totalVentes = 0;
       double totalDepenses = 0;
@@ -136,12 +134,7 @@ class _DashboardContentState extends State<_DashboardContent> {
         for (var d in depResponse.data['results']) {
           final montant = double.tryParse(d['montant']?.toString() ?? '0') ?? 0;
           totalDepenses += montant;
-          transactions.add({
-            'type': 'depense',
-            'label': d['categorie_label'] ?? 'Depense',
-            'montant': montant,
-            'date': d['date']?.toString() ?? '',
-          });
+          transactions.add({'type': 'depense', 'label': d['categorie_label'] ?? 'Depense', 'montant': montant, 'date': d['date']?.toString() ?? ''});
         }
       }
 
@@ -150,30 +143,17 @@ class _DashboardContentState extends State<_DashboardContent> {
         for (var v in venteResponse.data['results']) {
           final montant = double.tryParse(v['montant_total']?.toString() ?? '0') ?? 0;
           totalVentes += montant;
-          transactions.add({
-            'type': 'vente',
-            'label': v['type_label'] ?? 'Vente',
-            'montant': montant,
-            'date': v['date']?.toString() ?? '',
-          });
+          transactions.add({'type': 'vente', 'label': v['type_label'] ?? 'Vente', 'montant': montant, 'date': v['date']?.toString() ?? ''});
         }
       }
-
       transactions.sort((a, b) => (b['date'] as String).compareTo(a['date'] as String));
 
-      // Charger les échéances
       final echeances = <Map<String, dynamic>>[];
       if (prets.isNotEmpty) {
         for (var p in prets.where((p) => p.montantRestant != null && p.montantRestant! > 0)) {
-          echeances.add({
-            'preteur': p.preteur,
-            'montant': p.montantRestant,
-            'statut': 'normal',
-          });
+          echeances.add({'preteur': p.preteur, 'montant': p.montantRestant, 'statut': 'normal'});
         }
       }
-
-      print('📊 [DASHBOARD] Ventes=$totalVentes, Depenses=$totalDepenses, Actifs=$actifs');
 
       if (mounted) {
         setState(() {
@@ -183,12 +163,12 @@ class _DashboardContentState extends State<_DashboardContent> {
           _pretsRestants = pretsRest;
           _dernieresTransactions = transactions.take(3).toList();
           _echeances = echeances.take(3).toList();
-          _isLoading = false;
+          _isFirstLoad = false;
         });
       }
     } catch (e) {
       print('❌ Erreur dashboard: $e');
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() => _isFirstLoad = false);
     }
   }
 
@@ -200,10 +180,6 @@ class _DashboardContentState extends State<_DashboardContent> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
     final solde = _totalVentes - _totalDepenses;
 
     return Scaffold(
@@ -235,9 +211,7 @@ class _DashboardContentState extends State<_DashboardContent> {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Row(children: [
                       Consumer<AuthProvider>(
-                        builder: (context, auth, child) {
-                          return Text('Bonjour, ${auth.user?['first_name'] ?? 'Utilisateur'}', style: AppTextStyles.headlineSmall.copyWith(fontSize: 16, color: AppColors.textPrimary));
-                        },
+                        builder: (context, auth, child) => Text('Bonjour, ${auth.user?['first_name'] ?? 'Utilisateur'}', style: AppTextStyles.headlineSmall.copyWith(fontSize: 16, color: AppColors.textPrimary)),
                       ),
                       const SizedBox(width: 6),
                       const Text('👋', style: TextStyle(fontSize: 14)),
@@ -251,15 +225,6 @@ class _DashboardContentState extends State<_DashboardContent> {
                     decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 3))]),
                     child: IconButton(icon: const Icon(Icons.notifications_none_rounded), color: AppColors.textPrimary, onPressed: () => Navigator.pushNamed(context, '/notifications')),
                   ),
-                  if (_echeances.isNotEmpty)
-                    Positioned(
-                      right: 6, top: 6,
-                      child: Container(
-                        width: 18, height: 18,
-                        decoration: BoxDecoration(color: AppColors.error, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)),
-                        child: Center(child: Text('${_echeances.length}', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold))),
-                      ),
-                    ),
                 ]),
               ]),
             ),
@@ -271,10 +236,10 @@ class _DashboardContentState extends State<_DashboardContent> {
                 shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
                 crossAxisCount: 2, crossAxisSpacing: AppSpacing.md, mainAxisSpacing: AppSpacing.md, childAspectRatio: 1.55,
                 children: [
-                  _buildStatCard(title: 'Solde net', value: '${_formatMoney(solde.toInt())} FCFA', icon: Icons.account_balance_wallet_rounded, isPrimary: true),
-                  _buildStatCard(title: 'Dépenses totales', value: '${_formatMoney(_totalDepenses.toInt())} FCFA', icon: Icons.trending_down_rounded, accentColor: AppColors.error),
-                  _buildStatCard(title: 'Cycles actifs', value: '$_cyclesActifs bandes', icon: Icons.egg_rounded, accentColor: AppColors.primary),
-                  _buildStatCard(title: 'Prêts en cours', value: '${_formatMoney(_pretsRestants.toInt())} FCFA', icon: Icons.credit_card_rounded, accentColor: AppColors.warning),
+                  _buildStatCard(title: 'Solde net', value: _isFirstLoad ? '...' : '${_formatMoney(solde.toInt())} FCFA', icon: Icons.account_balance_wallet_rounded, isPrimary: true),
+                  _buildStatCard(title: 'Dépenses totales', value: _isFirstLoad ? '...' : '${_formatMoney(_totalDepenses.toInt())} FCFA', icon: Icons.trending_down_rounded, accentColor: AppColors.error),
+                  _buildStatCard(title: 'Cycles actifs', value: _isFirstLoad ? '...' : '$_cyclesActifs bandes', icon: Icons.egg_rounded, accentColor: AppColors.primary),
+                  _buildStatCard(title: 'Prêts en cours', value: _isFirstLoad ? '...' : '${_formatMoney(_pretsRestants.toInt())} FCFA', icon: Icons.credit_card_rounded, accentColor: AppColors.warning),
                 ],
               ),
             ),
@@ -290,54 +255,27 @@ class _DashboardContentState extends State<_DashboardContent> {
                     const SizedBox(width: 8),
                     Text('Flux de tresorerie', style: AppTextStyles.subtitleLarge.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
                   ]),
-                  Row(children: [
-                    _buildLegend('Gains', AppColors.success),
-                    const SizedBox(width: AppSpacing.md),
-                    _buildLegend('Depenses', AppColors.error),
-                  ]),
+                  Row(children: [_buildLegend('Gains', AppColors.success), const SizedBox(width: AppSpacing.md), _buildLegend('Depenses', AppColors.error)]),
                 ]),
                 const SizedBox(height: AppSpacing.lg),
-                SizedBox(height: 160, child: _buildGraphique()),
+                SizedBox(height: 160, child: _isFirstLoad ? const Center(child: CircularProgressIndicator()) : _buildGraphique()),
               ]),
             ),
             const SizedBox(height: AppSpacing.xl),
 
-            // DERNIERES TRANSACTIONS
+            // TRANSACTIONS
             _buildSectionHeader(title: 'Dernieres transactions', icon: Icons.receipt_long_rounded),
             const SizedBox(height: AppSpacing.md),
-            if (_dernieresTransactions.isEmpty)
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.border), boxShadow: AppShadows.shadowCard),
-                child: Center(child: Text('Aucune transaction', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint))),
-              )
+            if (_isFirstLoad)
+              const Center(child: Padding(padding: EdgeInsets.all(AppSpacing.lg), child: CircularProgressIndicator()))
+            else if (_dernieresTransactions.isEmpty)
+              Container(padding: const EdgeInsets.all(AppSpacing.lg), decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.border)), child: Center(child: Text('Aucune transaction', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint))))
             else
               ..._dernieresTransactions.map((t) => Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                child: _buildTransactionCard(
-                  label: t['label'] as String,
-                  montant: '${t['type'] == 'vente' ? '+' : '-'} ${_formatMoney((t['montant'] as double).toInt())} FCFA',
-                  date: t['date'] as String,
-                  isVente: t['type'] == 'vente',
-                  icon: t['type'] == 'vente' ? Icons.sell_rounded : Icons.restaurant_rounded,
-                ),
+                child: _buildTransactionCard(label: t['label'] as String, montant: '${t['type'] == 'vente' ? '+' : '-'} ${_formatMoney((t['montant'] as double).toInt())} FCFA', date: t['date'] as String, isVente: t['type'] == 'vente', icon: t['type'] == 'vente' ? Icons.sell_rounded : Icons.restaurant_rounded),
               )),
-            const SizedBox(height: AppSpacing.xl),
 
-            // ECHEANCES
-            _buildSectionHeader(title: 'Echeances prets', icon: Icons.event_note_rounded),
-            const SizedBox(height: AppSpacing.md),
-            if (_echeances.isEmpty)
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.border), boxShadow: AppShadows.shadowCard),
-                child: Center(child: Text('Aucune echeance', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint))),
-              )
-            else
-              ..._echeances.map((e) => Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                child: _buildEcheanceCard(preteur: e['preteur'] as String, montant: (e['montant'] as double).toInt(), statut: e['statut'] as String),
-              )),
             const SizedBox(height: AppSpacing.xxl),
           ]),
         ),
@@ -348,133 +286,70 @@ class _DashboardContentState extends State<_DashboardContent> {
   Widget _buildGraphique() {
     final maxY = (_totalVentes > _totalDepenses ? _totalVentes : _totalDepenses) * 1.3;
     if (maxY == 0) {
-      return Center(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.show_chart, size: 40, color: AppColors.textHint),
-          const SizedBox(height: AppSpacing.sm),
-          Text('Ajoutez des transactions\npour voir le graphique', textAlign: TextAlign.center, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint)),
-        ]),
-      );
+      return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Icon(Icons.show_chart, size: 40, color: AppColors.textHint),
+        const SizedBox(height: AppSpacing.sm),
+        Text('Ajoutez des transactions\npour voir le graphique', textAlign: TextAlign.center, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint)),
+      ]));
     }
-
-    return LineChart(
-      LineChartData(
-        gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (value) => FlLine(color: AppColors.border.withOpacity(0.4), strokeWidth: 1, dashArray: [4, 4])),
-        titlesData: FlTitlesData(
-          leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 45, getTitlesWidget: (value, meta) => Text('${(value/1000).toInt()}k', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textHint, fontSize: 10)))),
-          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 20, getTitlesWidget: (value, meta) {
-            if (value == 0) return Text('Debut', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textHint, fontSize: 10));
-            if (value == 1) return Text('Fin', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textHint, fontSize: 10));
-            return const Text('');
-          })),
-        ),
-        borderData: FlBorderData(show: false),
-        lineBarsData: [
-          LineChartBarData(spots: [const FlSpot(0, 0), FlSpot(1, _totalVentes)], isCurved: true, curveSmoothness: 0.3, color: AppColors.success, dotData: FlDotData(show: true), barWidth: 3, belowBarData: BarAreaData(show: true, gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.success.withOpacity(0.2), AppColors.success.withOpacity(0.0)]))),
-          LineChartBarData(spots: [const FlSpot(0, 0), FlSpot(1, _totalDepenses)], isCurved: true, curveSmoothness: 0.3, color: AppColors.error, dotData: FlDotData(show: true), barWidth: 3, belowBarData: BarAreaData(show: true, gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.error.withOpacity(0.15), AppColors.error.withOpacity(0.0)]))),
-        ],
-        minX: 0, maxX: 1, minY: 0, maxY: maxY,
+    return LineChart(LineChartData(
+      gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (value) => FlLine(color: AppColors.border.withOpacity(0.4), strokeWidth: 1, dashArray: [4, 4])),
+      titlesData: FlTitlesData(
+        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 45, getTitlesWidget: (value, meta) => Text('${(value/1000).toInt()}k', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textHint, fontSize: 10)))),
+        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 20, getTitlesWidget: (value, meta) => Text(value == 0 ? 'Debut' : 'Fin', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textHint, fontSize: 10)))),
       ),
-    );
+      borderData: FlBorderData(show: false),
+      lineBarsData: [
+        LineChartBarData(spots: [const FlSpot(0, 0), FlSpot(1, _totalVentes)], isCurved: true, curveSmoothness: 0.3, color: AppColors.success, dotData: FlDotData(show: true), barWidth: 3, belowBarData: BarAreaData(show: true, gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.success.withOpacity(0.2), AppColors.success.withOpacity(0.0)]))),
+        LineChartBarData(spots: [const FlSpot(0, 0), FlSpot(1, _totalDepenses)], isCurved: true, curveSmoothness: 0.3, color: AppColors.error, dotData: FlDotData(show: true), barWidth: 3, belowBarData: BarAreaData(show: true, gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.error.withOpacity(0.15), AppColors.error.withOpacity(0.0)]))),
+      ],
+      minX: 0, maxX: 1, minY: 0, maxY: maxY,
+    ));
   }
 
-  String _formatMoney(int value) {
-    return value.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]} ');
-  }
+  String _formatMoney(int value) => value.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]} ');
 
-  Widget _buildSectionHeader({required String title, required IconData icon}) {
-    return Row(children: [
-      Container(width: 4, height: 18, decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(4))),
-      const SizedBox(width: 8),
-      Text(title, style: AppTextStyles.subtitleLarge.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
-    ]);
-  }
+  Widget _buildSectionHeader({required String title, required IconData icon}) => Row(children: [
+    Container(width: 4, height: 18, decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(4))),
+    const SizedBox(width: 8),
+    Text(title, style: AppTextStyles.subtitleLarge.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+  ]);
 
   Widget _buildStatCard({required String title, required String value, required IconData icon, bool isPrimary = false, Color accentColor = AppColors.textPrimary}) {
     if (isPrimary) {
-      return Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [AppColors.primary, _darken(AppColors.primary, 0.14)]),
-          borderRadius: AppBorders.radiusLarge,
-          boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.35), blurRadius: 16, offset: const Offset(0, 6))],
-        ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-          Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: Colors.white.withOpacity(0.18), borderRadius: BorderRadius.circular(8)), child: Icon(icon, color: Colors.white, size: 18)),
-          const SizedBox(height: AppSpacing.xs),
-          Text(value, style: AppTextStyles.numberMedium.copyWith(fontSize: 18, color: Colors.white), overflow: TextOverflow.ellipsis),
-          Text(title, style: AppTextStyles.bodySmall.copyWith(color: Colors.white.withOpacity(0.85))),
-        ]),
-      );
+      return Container(padding: const EdgeInsets.all(AppSpacing.md), decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [AppColors.primary, _darken(AppColors.primary, 0.14)]), borderRadius: AppBorders.radiusLarge, boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.35), blurRadius: 16, offset: const Offset(0, 6))]),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
+            Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: Colors.white.withOpacity(0.18), borderRadius: BorderRadius.circular(8)), child: Icon(icon, color: Colors.white, size: 18)),
+            const SizedBox(height: AppSpacing.xs),
+            Text(value, style: AppTextStyles.numberMedium.copyWith(fontSize: 18, color: Colors.white), overflow: TextOverflow.ellipsis),
+            Text(title, style: AppTextStyles.bodySmall.copyWith(color: Colors.white.withOpacity(0.85))),
+          ]));
     }
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.radiusLarge, border: Border.all(color: AppColors.border.withOpacity(0.6)), boxShadow: AppShadows.shadowCard),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-        Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: accentColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Icon(icon, color: accentColor, size: 18)),
-        const SizedBox(height: AppSpacing.xs),
-        Text(value, style: AppTextStyles.numberMedium.copyWith(fontSize: 18, color: accentColor), overflow: TextOverflow.ellipsis),
-        Text(title, style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
-      ]),
-    );
+    return Container(padding: const EdgeInsets.all(AppSpacing.md), decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.radiusLarge, border: Border.all(color: AppColors.border.withOpacity(0.6)), boxShadow: AppShadows.shadowCard),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
+          Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: accentColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Icon(icon, color: accentColor, size: 18)),
+          const SizedBox(height: AppSpacing.xs),
+          Text(value, style: AppTextStyles.numberMedium.copyWith(fontSize: 18, color: accentColor), overflow: TextOverflow.ellipsis),
+          Text(title, style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
+        ]));
   }
 
-  Widget _buildLegend(String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(20)),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-        const SizedBox(width: 5),
-        Text(label, style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
-      ]),
-    );
-  }
+  Widget _buildLegend(String label, Color color) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(20)),
+    child: Row(mainAxisSize: MainAxisSize.min, children: [Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)), const SizedBox(width: 5), Text(label, style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary, fontWeight: FontWeight.w600))]),
+  );
 
   Widget _buildTransactionCard({required String label, required String montant, required String date, required bool isVente, required IconData icon}) {
     final color = isVente ? AppColors.success : AppColors.error;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.border.withOpacity(0.6)), boxShadow: AppShadows.shadowCard),
-      child: Row(children: [
-        Container(width: 42, height: 42, decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: color, size: 20)),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: AppTextStyles.subtitleMedium.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 2),
-          Text(date, style: AppTextStyles.bodySmall.copyWith(color: AppColors.textHint)),
-        ])),
-        Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(8)), child: Text(montant, style: AppTextStyles.numberMedium.copyWith(color: color, fontSize: 14))),
-      ]),
-    );
-  }
-
-  Widget _buildEcheanceCard({required String preteur, required int montant, required String statut}) {
-    final isUrgent = statut == 'urgent';
-    final color = isUrgent ? AppColors.error : AppColors.warning;
-    return Container(
-      decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: isUrgent ? AppColors.error.withOpacity(0.3) : AppColors.border.withOpacity(0.6)), boxShadow: AppShadows.shadowCard),
-      child: ClipRRect(
-        borderRadius: AppBorders.cardRadius,
-        child: IntrinsicHeight(
-          child: Row(children: [
-            Container(width: 4, color: color),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
-                child: Row(children: [
-                  Container(padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 4), decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: AppBorders.buttonRadius), child: Text(isUrgent ? 'Urgent' : 'A venir', style: AppTextStyles.labelSmall.copyWith(color: color, fontWeight: FontWeight.w700))),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(child: Text(preteur, style: AppTextStyles.subtitleMedium.copyWith(fontWeight: FontWeight.w600))),
-                  Text('${_formatMoney(montant)} FCFA', style: AppTextStyles.numberSmall.copyWith(color: color, fontWeight: FontWeight.bold)),
-                ]),
-              ),
-            ),
-          ]),
-        ),
-      ),
-    );
+    return Container(padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md), decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.border.withOpacity(0.6)), boxShadow: AppShadows.shadowCard),
+        child: Row(children: [
+          Container(width: 42, height: 42, decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: color, size: 20)),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(label, style: AppTextStyles.subtitleMedium.copyWith(fontWeight: FontWeight.w600)), const SizedBox(height: 2), Text(date, style: AppTextStyles.bodySmall.copyWith(color: AppColors.textHint))])),
+          Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(8)), child: Text(montant, style: AppTextStyles.numberMedium.copyWith(color: color, fontSize: 14))),
+        ]));
   }
 }

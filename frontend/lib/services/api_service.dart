@@ -110,6 +110,11 @@ class ApiService {
       },
     );
   }
+
+  Future<Response> patch(String endpoint, {Map<String, dynamic>? data}) async {
+    return _dio.patch(endpoint, data: data);
+  }
+
   String getErrorMessage(DioException error) {
     if (error.response != null) {
       final data = error.response!.data;

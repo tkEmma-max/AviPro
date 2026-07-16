@@ -136,4 +136,13 @@ class AuthProvider extends ChangeNotifier {
     await prefs.remove(AppConstants.storageRefreshToken);
     notifyListeners();
   }
+
+  Future<void> tryAutoLogin() async {
+    await _loadToken();
+    if (_token != null) {
+      await getUserProfile();
+    }
+  }
+
+
 }

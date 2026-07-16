@@ -49,4 +49,16 @@ class RapportProvider extends ChangeNotifier {
       rethrow;
     }
   }
+
+  DateTime? _lastFetch;
+  static const _cacheDuration = Duration(seconds: 30);
+
+  bool get _isCacheValid => _lastFetch != null && DateTime.now().difference(_lastFetch!) < _cacheDuration;
+
+  Future<void> refreshIfNeeded() async {
+    if (!_isCacheValid) {
+      await refreshRapports();
+      _lastFetch = DateTime.now();
+    }
+  }
 }

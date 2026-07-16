@@ -108,6 +108,8 @@ class Vente(models.Model):
 
     @property
     def marge_unitaire(self):
-        if self.prix_de_revient > 0:
-            return self.prix_unitaire - self.prix_de_revient
-        return self.prix_unitaire
+        """Marge par unité vendue (prix vente - prix de revient)"""
+        prix_revient = float(self.prix_de_revient)
+        if prix_revient > 0:
+            return self.prix_unitaire - prix_revient
+        return float(self.prix_unitaire)

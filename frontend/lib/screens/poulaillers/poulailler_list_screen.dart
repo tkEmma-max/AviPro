@@ -26,11 +26,8 @@ class _PoulaillerListScreenState extends State<PoulaillerListScreen> {
   @override
   void initState() {
     super.initState();
-    print('🟢 [PoulaillerListScreen] initState');
-    // Forcer le chargement après le premier build
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      print('🔄 [PoulaillerListScreen] PostFrameCallback - refresh');
-      context.read<PoulaillerProvider>().refreshPoulaillers();
+      context.read<PoulaillerProvider>().refreshIfNeeded();
     });
   }
 

@@ -43,6 +43,8 @@ import 'screens/profile_settings_screen.dart';
 import 'core/theme/app_theme.dart';
 import 'models/poulailler.dart';
 import 'models/pret.dart';
+import 'screens/splash_screen.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('fr_FR', null);
@@ -74,7 +76,7 @@ class MyApp extends StatelessWidget {
         supportedLocales: const [
           Locale('fr', 'FR'),
         ],
-        initialRoute: '/home',
+        initialRoute: '/splash',  // Au lieu de '/home'
         routes: {
           '/login': (context) => const LoginScreen(),
           '/register': (context) => const RegisterScreen(),
@@ -121,6 +123,8 @@ class MyApp extends StatelessWidget {
           '/settings': (context) => const ProfileSettingsScreen(),
           '/prets': (context) => const PretListScreen(),
           '/rapports': (context) => const RapportListScreen(),
+
+          '/splash': (context) => SplashScreen(),  // sans const
         },
         onGenerateRoute: (settings) {
           if (settings.name?.startsWith('/cycle/report/') ?? false) {

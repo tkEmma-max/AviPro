@@ -68,4 +68,16 @@ class PretProvider extends ChangeNotifier {
       return false;
     }
   }
+
+  DateTime? _lastFetch;
+  static const _cacheDuration = Duration(seconds: 30);
+
+  bool get _isCacheValid => _lastFetch != null && DateTime.now().difference(_lastFetch!) < _cacheDuration;
+
+  Future<void> refreshIfNeeded() async {
+    if (!_isCacheValid) {
+      await refreshPrets();
+      _lastFetch = DateTime.now();
+    }
+  }
 }

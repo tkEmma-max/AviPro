@@ -143,4 +143,16 @@ class PoulaillerProvider extends ChangeNotifier {
     print('🔍 [PoulaillerProvider] get occupes');
     return _poulaillers.where((p) => p.statut == 'OCCUPÉ').toList();
   }
+
+  DateTime? _lastFetch;
+  static const _cacheDuration = Duration(seconds: 30);
+
+  bool get _isCacheValid => _lastFetch != null && DateTime.now().difference(_lastFetch!) < _cacheDuration;
+
+  Future<void> refreshIfNeeded() async {
+    if (!_isCacheValid) {
+      await refreshPoulaillers();
+      _lastFetch = DateTime.now();
+    }
+  }
 }
