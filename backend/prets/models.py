@@ -47,7 +47,9 @@ class Pret(models.Model):
     date_limite = models.DateField(null=True, blank=True)
 
     # Champs visionnaires
+    transaction_mobile_id = models.UUIDField(null=True, blank=True)
     metadata = models.JSONField(default=dict, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
@@ -109,9 +111,11 @@ class Echeance(models.Model):
     montant_due = models.DecimalField(max_digits=12, decimal_places=0)
     est_payee = models.BooleanField(default=False)
     date_paiement = models.DateField(null=True, blank=True)
-    # Lien futur vers transaction mobile
+
+    # Champs visionnaires
     transaction_mobile_id = models.UUIDField(null=True, blank=True, help_text="ID de la transaction mobile associée")
     metadata = models.JSONField(default=dict, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -173,6 +177,11 @@ class RemboursementPret(models.Model):
     )
     description = models.TextField(blank=True, null=True)
     is_manually_confirmed = models.BooleanField(default=False)
+
+    # Champs visionnaires
+    transaction_mobile_id = models.UUIDField(null=True, blank=True, help_text="ID de la transaction mobile associée")
+    metadata = models.JSONField(default=dict, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
         'users.User',
@@ -194,7 +203,6 @@ class RemboursementPret(models.Model):
     def save(self, *args, **kwargs):
         """Met à jour le montant restant du prêt après sauvegarde"""
         super().save(*args, **kwargs)
-        # Mettre à jour le montant restant du prêt
         self.pret.montant_restant = self.pret.montant_total - self.pret.total_rembourse
         if self.pret.montant_restant <= 0:
             self.pret.montant_restant = 0
