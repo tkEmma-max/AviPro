@@ -1,17 +1,19 @@
 #!/bin/bash
 
-echo "🧹 Nettoyage de la base de données..."
+echo "📦 Installation des dépendances..."
+pip install --upgrade pip
+pip install -r requirements.txt
 
-# Supprimer l'ancienne base SQLite si elle existe
+echo "🧹 Nettoyage de la base de données..."
 rm -f db.sqlite3
 
-# Appliquer les migrations sur une base vierge
+echo "🔄 Migrations..."
 python manage.py migrate --noinput
 
-# Collecter les fichiers statiques
+echo "📁 Fichiers statiques..."
 python manage.py collectstatic --noinput
 
-# Créer le superuser automatiquement
+echo "👤 Création du superuser..."
 echo "from users.models import User; User.objects.create_superuser(email='admin@avipro.com', first_name='Admin', password='Avipro2026!')" | python manage.py shell
 
-echo "✅ Build terminé ! Superuser créé : admin@avipro.com / Avipro2026!"
+echo "✅ Build terminé !"
