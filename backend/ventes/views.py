@@ -7,6 +7,7 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Sum
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from .models import Vente, TypeVente
 from .serializers import (
     VenteSerializer, VenteListSerializer, VenteCreateSerializer,
@@ -65,7 +66,25 @@ class VenteViewSet(viewsets.ModelViewSet):
         return Vente.objects.filter(created_by=self.request.user, is_deleted=False)
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        vente = serializer.save(created_by=self.request.user)
+
+        # Déduire les sujets vendus du cycle (sauf pour les œufs)
+        est_oeuf = vente.type_vente and vente.type_vente.nom.upper() in ['OEUFS', 'ŒUFS']
+        if not est_oeuf and vente.cycle:
+            cycle = vente.cycle
+            if vente.quantite > cycle.nombre_sujets_actuels:
+                raise ValidationError({
+                    'quantite': f'Stock insuffisant. Disponible : {cycle.nombre_sujets_actuels} sujets.'
+                })
+
+            # Déduire de la sous-bande active
+            sous_bande = cycle.sous_bandes.filter(est_active=True).first()
+            if sous_bande:
+                sous_bande.nombre_sujets -= int(vente.quantite)
+                if sous_bande.nombre_sujets <= 0:
+                    sous_bande.nombre_sujets = 0
+                    sous_bande.est_active = False
+                sous_bande.save()
 
     @action(detail=False, methods=['get'])
     def statistiques(self, request):
