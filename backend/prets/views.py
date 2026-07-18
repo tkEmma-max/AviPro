@@ -74,10 +74,11 @@ class PretViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        serializer = RemboursementPretSerializer(data=request.data)
+        data = request.data.copy()
+        data['pret'] = str(pret.id)
+        serializer = RemboursementPretSerializer(data=data)
         if serializer.is_valid():
-            serializer.save(pret=pret, created_by=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            serializer.save(created_by=request.user)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['get'])
