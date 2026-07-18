@@ -78,9 +78,10 @@ class PretViewSet(viewsets.ModelViewSet):
         data['pret'] = str(pret.id)
         serializer = RemboursementPretSerializer(data=data)
         if serializer.is_valid():
-            serializer.save(created_by=request.user)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+            remboursement = serializer.save(created_by=request.user)
+        return Response(RemboursementPretSerializer(remboursement).data, status=status.HTTP_201_CREATED)
+        
+return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     @action(detail=True, methods=['get'])
     def echeances(self, request, pk=None):
         """
