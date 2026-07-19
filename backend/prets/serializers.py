@@ -53,6 +53,7 @@ class PretSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'preteur', 'type_preteur',
             'montant_total', 'date_deblocage', 'taux_interet',
+            'type_taux', 'date_limite',
             'mode_remboursement', 'duree_totale_mois', 'periodicite',
             'montant_restant', 'total_rembourse', 'montant_restant_calcule',
             'prochaine_echeance', 'est_en_retard',
