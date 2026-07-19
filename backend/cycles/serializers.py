@@ -47,13 +47,15 @@ class CycleListSerializer(serializers.ModelSerializer):
     type_poulet_nom = serializers.ReadOnlyField(source='type_poulet.nom')
     progression = serializers.ReadOnlyField()
     benefice = serializers.ReadOnlyField()
+    jours_ecoules = serializers.ReadOnlyField()
 
     class Meta:
         model = Cycle
         fields = [
             'id', 'nom', 'poulailler_nom', 'type', 'type_poulet_nom',
-            'date_debut', 'progression', 'benefice',
-            'is_active', 'is_archived'
+            'date_debut', 'progression', 'benefice', 'jours_ecoules',
+            'is_active', 'is_archived', 'cout_production_unitaire', 'mortalites'
+            'taux_mortalite', 'est_rentable', 'nombre_sujets_actuels', 
         ]
 
 

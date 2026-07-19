@@ -111,7 +111,6 @@ class CycleViewSet(viewsets.ModelViewSet):
                 {'error': f'Il n\'y a que {cycle.nombre_sujets_actuels} sujets actifs.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        # Réduire la première sous-bande active
         sous_bande = cycle.sous_bandes.filter(est_active=True).first()
         if sous_bande:
             sous_bande.nombre_sujets -= nb_morts
@@ -163,62 +162,46 @@ class CycleViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def migrer(self, request, pk=None):
-        """
-        Migre des poulets d'un poulailler à un autre.
-        Body : { poulailler_cible, nombre_sujets, raison }
-        """
         cycle = self.get_object()
         poulailler_cible_id = request.data.get('poulailler_cible')
         nombre_sujets = request.data.get('nombre_sujets')
         raison = request.data.get('raison', '')
-
         if not poulailler_cible_id:
             return Response({'error': 'poulailler_cible requis'}, status=status.HTTP_400_BAD_REQUEST)
         if not nombre_sujets or int(nombre_sujets) <= 0:
             return Response({'error': 'nombre_sujets doit être > 0'}, status=status.HTTP_400_BAD_REQUEST)
-
         nombre_sujets = int(nombre_sujets)
-
         try:
             poulailler_cible = Poulailler.objects.get(id=poulailler_cible_id)
         except Poulailler.DoesNotExist:
             return Response({'error': 'Poulailler cible introuvable'}, status=status.HTTP_404_NOT_FOUND)
-
         sous_bande_source = cycle.sous_bandes.filter(est_active=True).first()
         if not sous_bande_source:
             return Response({'error': 'Aucune sous-bande active trouvée'}, status=status.HTTP_400_BAD_REQUEST)
-
         if nombre_sujets > sous_bande_source.nombre_sujets:
             return Response(
                 {'error': f'Pas assez de sujets. Disponible: {sous_bande_source.nombre_sujets}'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
         conflit = SousBande.objects.filter(
             poulailler=poulailler_cible, est_active=True
         ).exclude(cycle=cycle).exists()
-
         if conflit:
             return Response(
                 {'error': 'Le poulailler cible est déjà occupé par un autre cycle'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
         alerte_age = False
         sous_bande_existante = cycle.sous_bandes.filter(
             poulailler=poulailler_cible, est_active=True
         ).first()
-
         if sous_bande_existante:
             alerte_age = True
-
         age = cycle.jours_ecoules
-
         if nombre_sujets == sous_bande_source.nombre_sujets:
             sous_bande_source.est_active = False
         sous_bande_source.nombre_sujets -= nombre_sujets
         sous_bande_source.save()
-
         if sous_bande_existante:
             sous_bande_existante.nombre_sujets += nombre_sujets
             sous_bande_existante.save()
@@ -228,7 +211,6 @@ class CycleViewSet(viewsets.ModelViewSet):
                 poulailler=poulailler_cible,
                 nombre_sujets=nombre_sujets
             )
-
         Migration.objects.create(
             cycle=cycle,
             poulailler_source=sous_bande_source.poulailler,
@@ -238,7 +220,6 @@ class CycleViewSet(viewsets.ModelViewSet):
             raison=raison,
             created_by=request.user
         )
-
         return Response({
             'message': f'{nombre_sujets} sujets migrés vers {poulailler_cible.nom}',
             'age_sujets': age,
@@ -259,3 +240,45 @@ class CycleViewSet(viewsets.ModelViewSet):
         cycle = self.get_object()
         migrations = cycle.migrations.all().order_by('-date')
         return Response(MigrationSerializer(migrations, many=True).data)
+
+    @action(detail=True, methods=['post'])
+    def declarer_perte(self, request, pk=None):
+        cycle = self.get_object()
+        nb_morts = request.data.get('nombre', 0)
+        if nb_morts <= 0:
+            return Response(
+                {'error': 'Le nombre de pertes doit être supérieur à 0.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if nb_morts > cycle.nombre_sujets_actuels:
+            return Response(
+                {'error': f'Il n\'y a que {cycle.nombre_sujets_actuels} sujets actifs.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        raison = request.data.get('raison', 'Mortalité déclarée')
+        cycle.nb_morts += nb_morts
+        cycle.save()
+        sous_bande = cycle.sous_bandes.filter(est_active=True).first()
+        if sous_bande:
+            sous_bande.nombre_sujets -= nb_morts
+            if sous_bande.nombre_sujets <= 0:
+                sous_bande.nombre_sujets = 0
+                sous_bande.est_active = False
+            sous_bande.save()
+        from depenses.models import Depense, CategorieDepense
+        categorie, _ = CategorieDepense.objects.get_or_create(nom='Pertes')
+        prix_unitaire = cycle.cout_production_unitaire if cycle.cout_production_unitaire > 0 else 500
+        Depense.objects.create(
+            cycle=cycle,
+            categorie_depense=categorie,
+            montant=int(nb_morts * prix_unitaire),
+            date=timezone.now().date(),
+            description=f'Perte de {nb_morts} sujets : {raison}',
+            created_by=request.user
+        )
+        return Response({
+            'message': f'{nb_morts} perte(s) déclarée(s).',
+            'sujets_restants': cycle.nombre_sujets_actuels,
+            'total_morts': cycle.nb_morts,
+            'depense_creee': True
+        })

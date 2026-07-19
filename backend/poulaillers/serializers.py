@@ -31,10 +31,11 @@ class PoulaillerListSerializer(serializers.ModelSerializer):
     """
     statut = serializers.ReadOnlyField()
     nb_poulets_actuels = serializers.ReadOnlyField()
+    densite_actuelle = serializers.ReadOnlyField()
 
     class Meta:
         model = Poulailler
         fields = [
                     'id', 'nom', 'longueur', 'largeur', 'surface',  # ✅ AJOUTER CES CHAMPS
-                    'statut', 'nb_poulets_actuels', 'localisation', 'is_archived'
+                    'statut', 'nb_poulets_actuels', 'localisation', 'is_archived', 'densite_actuelle',
         ]

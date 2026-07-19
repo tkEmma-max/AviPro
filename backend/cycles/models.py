@@ -71,6 +71,7 @@ class Cycle(models.Model):
         'users.User', on_delete=models.SET_NULL, null=True, blank=True,
         related_name='cycles_crees'
     )
+    nb_morts = models.IntegerField(default=0, help_text="Nombre de sujets morts (maladie, accident)")
 
     class Meta:
         db_table = 'cycles'
@@ -96,12 +97,11 @@ class Cycle(models.Model):
 
     @property
     def mortalites(self):
-        return self.nombre_sujets_initiaux - self.nombre_sujets_actuels
-
+        return self.nb_morts
     @property
     def taux_mortalite(self):
         if self.nombre_sujets_initiaux > 0:
-            return (self.mortalites / self.nombre_sujets_initiaux) * 100
+            return (self.nb_morts / self.nombre_sujets_initiaux) * 100
         return 0
 
     @property
