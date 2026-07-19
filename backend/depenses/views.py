@@ -10,6 +10,9 @@ from django.utils import timezone
 from django.db import transaction
 from .models import Depense, CategorieDepense, RoutineDepense, RoutineAppliquee
 from cycles.models import Cycle
+from django.db import transaction
+from django.core.exceptions import ValidationError
+
 from .serializers import (
     DepenseSerializer, DepenseListSerializer, DepenseCreateSerializer,
     CategorieDepenseSerializer,
@@ -212,8 +215,13 @@ class DepenseViewSet(viewsets.ModelViewSet):
             return Depense.objects.filter(is_deleted=False)
         return Depense.objects.filter(created_by=self.request.user, is_deleted=False)
 
+    @transaction.atomic
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        depense = serializer.save(created_by=self.request.user)
+
+        # Vérifier si le cycle est archivé
+        if depense.cycle and depense.cycle.is_archived:
+            raise ValidationError({'cycle': 'Ce cycle est clôturé. Aucune dépense possible.'})
 
     @action(detail=False, methods=['get'])
     def statistiques(self, request):

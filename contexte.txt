@@ -78,3 +78,69 @@ backend/ urls.py
 🔧 Frontend : Prêts, Dashboard prêts, Paramètres, Stock à faire
 📋 Prochaine session : Frontend Flutter (Prêts)
 
+
+
+📅 RAPPORT DE SESSION — 19 JUILLET 2026
+
+---
+
+✅ FAIT AUJOURD'HUI
+
+Module Action Status
+Prêts Correction remboursement (erreur 500) ✅
+Ventes Déduction automatique des sujets vendus ✅
+Cycles Ajout nb_morts distinct des ventes ✅
+Cycles Endpoint declarer_perte avec dépense auto ✅
+Cycles Correction sérialiseur liste (jours, mortalité, densité) ✅
+Prêts Ajout type_taux, date_limite dans sérialiseur détail ✅
+Rapports Correction fiche détail (surface, sujets, équipements) ✅
+Hors-ligne Création local_db_service.dart (corrigé) ✅
+Hors-ligne Création sync_service.dart (corrigé) ✅
+Hors-ligne Dépendances ajoutées (sqflite, connectivity_plus, uuid) ✅
+Stratégie Login permanente (comme DeepSeek) 📝 Identifié
+Stratégie Remplacement icônes Lucide 📝 Planifié
+
+---
+
+🔧 RESTE À FAIRE (priorité)
+
+# Tâche Quand
+1 Vérifier api_service.dart → refresh token silencieux Android Studio
+2 Bug rapport (pop-up erreur 500 mais OK) Android Studio
+3 Dashboard : données "..." + chargement Android Studio
+4 Graphique adaptatif (dates réelles, échelle auto) Android Studio
+5 Intégrer fichiers hors-ligne aux providers Android Studio
+6 Icônes Lucide Android Studio
+7 Design global Plus tard
+
+---
+
+📊 PROGRESSION GLOBALE
+
+```
+Backend     : ████████████████████ 100%
+Frontend    : ████████████████░░░░  85%
+Hors-ligne  : ██████░░░░░░░░░░░░░░  30%
+Design      : ██████░░░░░░░░░░░░░░  30%
+```
+
+---
+
+⚠️ POINTS D'ATTENTION
+
+· Render : serveur gratuit, s'endort après 15 min d'inactivité
+· Token : expire après 24h, refresh token 7 jours
+· Compte admin : admin@avipro.com / Avipro2026!
+· Base de données : PostgreSQL stable, db.sqlite3 dans .gitignore
+· URL Render : https://avipro-backend.onrender.com/api/
+
+---
+
+🎯 PROCHAINE SESSION
+
+Quand : Dès que tu es sur Android Studio
+Objectif : Corriger les bugs frontend + préparer le hors-ligne
+
+---
+
+Bonne nuit ! 🚀

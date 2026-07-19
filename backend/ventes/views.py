@@ -9,6 +9,8 @@ from django.db.models import Sum
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from .models import Vente, TypeVente
+from django.db import transaction
+
 from .serializers import (
     VenteSerializer, VenteListSerializer, VenteCreateSerializer,
     VenteStatsSerializer, TypeVenteSerializer
@@ -65,19 +67,25 @@ class VenteViewSet(viewsets.ModelViewSet):
             return Vente.objects.filter(is_deleted=False)
         return Vente.objects.filter(created_by=self.request.user, is_deleted=False)
 
+    @transaction.atomic
     def perform_create(self, serializer):
         vente = serializer.save(created_by=self.request.user)
 
-        # Déduire les sujets vendus du cycle (sauf pour les œufs)
         est_oeuf = vente.type_vente and vente.type_vente.nom.upper() in ['OEUFS', 'ŒUFS']
         if not est_oeuf and vente.cycle:
             cycle = vente.cycle
+
+            # Vérifier si le cycle est archivé
+            if cycle.is_archived:
+                raise ValidationError({'cycle': 'Ce cycle est clôturé. Aucune vente possible.'})
+
+            # Vérifier le stock
             if vente.quantite > cycle.nombre_sujets_actuels:
                 raise ValidationError({
                     'quantite': f'Stock insuffisant. Disponible : {cycle.nombre_sujets_actuels} sujets.'
                 })
 
-            # Déduire de la sous-bande active
+            # Déduire les sujets
             sous_bande = cycle.sous_bandes.filter(est_active=True).first()
             if sous_bande:
                 sous_bande.nombre_sujets -= int(vente.quantite)
@@ -86,6 +94,14 @@ class VenteViewSet(viewsets.ModelViewSet):
                     sous_bande.est_active = False
                 sous_bande.save()
 
+            # Archiver si stock = 0
+            if cycle.nombre_sujets_actuels <= 0:
+                cycle.is_active = False
+                cycle.is_archived = True
+                cycle.date_fin = timezone.now().date()
+                cycle.save()
+                
+                
     @action(detail=False, methods=['get'])
     def statistiques(self, request):
         total = Vente.objects.filter(is_deleted=False).aggregate(total=Sum('montant_total'))['total'] or 0
