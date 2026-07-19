@@ -265,6 +265,11 @@ class CycleViewSet(viewsets.ModelViewSet):
                 sous_bande.nombre_sujets = 0
                 sous_bande.est_active = False
             sous_bande.save()
+        if cycle.nombre_sujets_actuels <= 0:
+            cycle.is_active = False
+            cycle.is_archived = True
+            cycle.date_fin = timezone.now().date()
+            cycle.save()
         from depenses.models import Depense, CategorieDepense
         categorie, _ = CategorieDepense.objects.get_or_create(nom='Pertes')
         prix_unitaire = cycle.cout_production_unitaire if cycle.cout_production_unitaire > 0 else 500
