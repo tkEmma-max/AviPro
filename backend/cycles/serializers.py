@@ -43,22 +43,29 @@ class CycleSerializer(serializers.ModelSerializer):
 
 
 class CycleListSerializer(serializers.ModelSerializer):
+    # Tout ce qui est utile pour une carte de cycle
     poulailler_nom = serializers.ReadOnlyField(source='poulailler.nom')
     type_poulet_nom = serializers.ReadOnlyField(source='type_poulet.nom')
     progression = serializers.ReadOnlyField()
     benefice = serializers.ReadOnlyField()
     jours_ecoules = serializers.ReadOnlyField()
+    taux_mortalite = serializers.ReadOnlyField()
+    mortalites = serializers.ReadOnlyField()
+    nombre_sujets_actuels = serializers.ReadOnlyField()
+    cout_production_unitaire = serializers.ReadOnlyField()
+    est_rentable = serializers.ReadOnlyField()
 
     class Meta:
         model = Cycle
         fields = [
             'id', 'nom', 'poulailler_nom', 'type', 'type_poulet_nom',
             'date_debut', 'progression', 'benefice', 'jours_ecoules',
-            'is_active', 'is_archived', 'cout_production_unitaire', 'mortalites'
-            'taux_mortalite', 'est_rentable', 'nombre_sujets_actuels', 
+            'taux_mortalite', 'mortalites', 'nombre_sujets_actuels',
+            'cout_production_unitaire', 'est_rentable',
+            'is_active', 'is_archived',
         ]
-
-
+        
+        
 class CycleDetailSerializer(serializers.ModelSerializer):
     poulailler_nom = serializers.ReadOnlyField(source='poulailler.nom')
     type_poulet_nom = serializers.ReadOnlyField(source='type_poulet.nom')
