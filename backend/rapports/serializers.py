@@ -19,7 +19,12 @@ class RapportSuiviSerializer(serializers.ModelSerializer):
     aliment_par_sujet_par_jour = serializers.ReadOnlyField()
     eau_par_sujet_par_jour = serializers.ReadOnlyField()
     ratio_eau_aliment = serializers.ReadOnlyField()
-
+    # Infos du poulailler (via le cycle)
+    surface = serializers.ReadOnlyField(source='cycle.poulailler.surface')
+    nb_sujets_actuels = serializers.ReadOnlyField(source='cycle.nombre_sujets_actuels')
+    nb_mangeoires = serializers.ReadOnlyField(source='cycle.poulailler.nombre_mangeoires')
+    nb_abreuvoirs = serializers.ReadOnlyField(source='cycle.poulailler.nombre_abreuvoirs')
+    
     class Meta:
         model = RapportSuivi
         fields = [
@@ -32,7 +37,8 @@ class RapportSuiviSerializer(serializers.ModelSerializer):
             'maladie_observee', 'type_maladie', 'type_maladie_nom',
             'medicaments_administres', 'nb_sujets_malades',
             'observations', 'mortalites_periode',
-            'metadata', 'created_at', 'updated_at'
+            'metadata', 'created_at', 'updated_at',
+            'surface', 'nb_sujets_actuels', 'nb_mangeoires', 'nb_abreuvoirs',
         ]
         read_only_fields = ('id', 'created_at', 'updated_at')
 
