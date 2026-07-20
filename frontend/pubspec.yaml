@@ -26,10 +26,12 @@ dependencies:
   fl_chart: ^0.68.0
 
   # Utilitaires
-  uuid: ^4.5.3
-  connectivity_plus: ^6.0.2
+  uuid: ^4.6.0
+  connectivity_plus: ^7.3.0
   flutter_localizations:
     sdk: flutter
+  sqflite: ^2.4.2+1
+  path: ^1.9.1
 
 dev_dependencies:
   flutter_test:
