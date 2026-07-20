@@ -73,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 // ============================================================
-// CONTENU DU DASHBOARD (chargement progressif)
+// CONTENU DU DASHBOARD (avec cache mémoire + graphique réel)
 // ============================================================
 class _DashboardContent extends StatefulWidget {
   const _DashboardContent();
@@ -84,7 +84,17 @@ class _DashboardContent extends StatefulWidget {
 
 class _DashboardContentState extends State<_DashboardContent> {
   final _apiService = ApiService();
-  bool _isFirstLoad = true;
+
+  // Cache statique (gardé entre les navigations)
+  static double _cachedVentes = 0;
+  static double _cachedDepenses = 0;
+  static int _cachedCyclesActifs = 0;
+  static double _cachedPretsRestants = 0;
+  static List<Map<String, dynamic>> _cachedTransactions = [];
+  static List<FlSpot> _cachedSpotsVentes = [];
+  static List<FlSpot> _cachedSpotsDepenses = [];
+  static List<String> _cachedLabels = [];
+  static bool _hasCachedData = false;
 
   double _totalVentes = 0;
   double _totalDepenses = 0;
@@ -92,15 +102,33 @@ class _DashboardContentState extends State<_DashboardContent> {
   double _pretsRestants = 0;
   List<Map<String, dynamic>> _dernieresTransactions = [];
   List<Map<String, dynamic>> _echeances = [];
+  List<FlSpot> _spotsVentes = [];
+  List<FlSpot> _spotsDepenses = [];
+  List<String> _labelsJours = [];
+  bool _isRefreshing = false;
 
   @override
   void initState() {
     super.initState();
-    _loadDashboardData();
+    // Afficher immédiatement les données en cache
+    if (_hasCachedData) {
+      _totalVentes = _cachedVentes;
+      _totalDepenses = _cachedDepenses;
+      _cyclesActifs = _cachedCyclesActifs;
+      _pretsRestants = _cachedPretsRestants;
+      _dernieresTransactions = _cachedTransactions;
+      _spotsVentes = _cachedSpotsVentes;
+      _spotsDepenses = _cachedSpotsDepenses;
+      _labelsJours = _cachedLabels;
+    }
+    // Rafraîchir en arrière-plan
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadDashboardData();
+    });
   }
 
   Future<void> _loadDashboardData() async {
-    // Plus de setState(() => _isLoading = true) → pas de blocage
+    setState(() => _isRefreshing = true);
     try {
       final poulaillerProvider = context.read<PoulaillerProvider>();
       final cycleProvider = context.read<CycleProvider>();
@@ -134,7 +162,7 @@ class _DashboardContentState extends State<_DashboardContent> {
         for (var d in depResponse.data['results']) {
           final montant = double.tryParse(d['montant']?.toString() ?? '0') ?? 0;
           totalDepenses += montant;
-          transactions.add({'type': 'depense', 'label': d['categorie_label'] ?? 'Depense', 'montant': montant, 'date': d['date']?.toString() ?? ''});
+          transactions.add({'type': 'depense', 'label': d['categorie_label'] ?? d['categorie'] ?? 'Dépense', 'montant': montant, 'date': d['date']?.toString() ?? ''});
         }
       }
 
@@ -143,15 +171,69 @@ class _DashboardContentState extends State<_DashboardContent> {
         for (var v in venteResponse.data['results']) {
           final montant = double.tryParse(v['montant_total']?.toString() ?? '0') ?? 0;
           totalVentes += montant;
-          transactions.add({'type': 'vente', 'label': v['type_label'] ?? 'Vente', 'montant': montant, 'date': v['date']?.toString() ?? ''});
+          transactions.add({'type': 'vente', 'label': v['type_label'] ?? v['type'] ?? 'Vente', 'montant': montant, 'date': v['date']?.toString() ?? ''});
         }
       }
       transactions.sort((a, b) => (b['date'] as String).compareTo(a['date'] as String));
 
+      // ═══════════════════════════════════════
+      // AGRÉGER PAR JOUR POUR LE GRAPHIQUE
+      // ═══════════════════════════════════════
+      Map<String, double> ventesParJour = {};
+      Map<String, double> depensesParJour = {};
+
+      for (var t in transactions) {
+        final dateStr = (t['date'] as String).substring(0, 10);
+        if (t['type'] == 'vente') {
+          ventesParJour[dateStr] = (ventesParJour[dateStr] ?? 0) + (t['montant'] as double);
+        } else {
+          depensesParJour[dateStr] = (depensesParJour[dateStr] ?? 0) + (t['montant'] as double);
+        }
+      }
+
+      final tousLesJours = <String>{...ventesParJour.keys, ...depensesParJour.keys}.toList()..sort();
+
+      double cumulVentes = 0;
+      double cumulDepenses = 0;
+      final spotsVentes = <FlSpot>[];
+      final spotsDepenses = <FlSpot>[];
+      final labels = <String>[];
+
+      for (int i = 0; i < tousLesJours.length; i++) {
+        cumulVentes += ventesParJour[tousLesJours[i]] ?? 0;
+        cumulDepenses += depensesParJour[tousLesJours[i]] ?? 0;
+        spotsVentes.add(FlSpot(i.toDouble(), cumulVentes));
+        spotsDepenses.add(FlSpot(i.toDouble(), cumulDepenses));
+        final parts = tousLesJours[i].split('-');
+        labels.add('${parts[2]}/${parts[1]}');
+      }
+
+      // Si < 2 jours de données, fallback
+      if (tousLesJours.length < 2) {
+        spotsVentes.clear();
+        spotsVentes.add(const FlSpot(0, 0));
+        spotsVentes.add(FlSpot(1, totalVentes));
+        spotsDepenses.clear();
+        spotsDepenses.add(const FlSpot(0, 0));
+        spotsDepenses.add(FlSpot(1, totalDepenses));
+        labels.clear();
+        labels.add('Début');
+        labels.add('Fin');
+      }
+
+      // Échéances avec statut calculé
       final echeances = <Map<String, dynamic>>[];
+      final aujourdhui = DateTime.now();
       if (prets.isNotEmpty) {
         for (var p in prets.where((p) => p.montantRestant != null && p.montantRestant! > 0)) {
-          echeances.add({'preteur': p.preteur, 'montant': p.montantRestant, 'statut': 'normal'});
+          final estUrgent = p.prochaineEcheance != null &&
+              p.prochaineEcheance!['date'] != null &&
+              DateTime.parse(p.prochaineEcheance!['date']).isBefore(aujourdhui.add(const Duration(days: 3)));
+          echeances.add({
+            'preteur': p.preteur,
+            'montant': p.montantRestant,
+            'statut': estUrgent ? 'urgent' : 'normal',
+          });
         }
       }
 
@@ -163,12 +245,26 @@ class _DashboardContentState extends State<_DashboardContent> {
           _pretsRestants = pretsRest;
           _dernieresTransactions = transactions.take(3).toList();
           _echeances = echeances.take(3).toList();
-          _isFirstLoad = false;
+          _spotsVentes = spotsVentes;
+          _spotsDepenses = spotsDepenses;
+          _labelsJours = labels;
+          _isRefreshing = false;
         });
+
+        // Mettre en cache
+        _cachedVentes = _totalVentes;
+        _cachedDepenses = _totalDepenses;
+        _cachedCyclesActifs = _cyclesActifs;
+        _cachedPretsRestants = _pretsRestants;
+        _cachedTransactions = _dernieresTransactions;
+        _cachedSpotsVentes = _spotsVentes;
+        _cachedSpotsDepenses = _spotsDepenses;
+        _cachedLabels = _labelsJours;
+        _hasCachedData = true;
       }
     } catch (e) {
       print('❌ Erreur dashboard: $e');
-      if (mounted) setState(() => _isFirstLoad = false);
+      if (mounted) setState(() => _isRefreshing = false);
     }
   }
 
@@ -192,6 +288,8 @@ class _DashboardContentState extends State<_DashboardContent> {
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const SizedBox(height: AppSpacing.md),
+            if (_isRefreshing)
+              const LinearProgressIndicator(minHeight: 2, backgroundColor: AppColors.surface, valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary)),
 
             // HEADER
             Container(
@@ -220,12 +318,6 @@ class _DashboardContentState extends State<_DashboardContent> {
                     Text(DateFormat('EEEE d MMMM yyyy', 'fr_FR').format(DateTime.now()), style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
                   ]),
                 ),
-                Stack(clipBehavior: Clip.none, children: [
-                  Container(
-                    decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 3))]),
-                    child: IconButton(icon: const Icon(Icons.notifications_none_rounded), color: AppColors.textPrimary, onPressed: () => Navigator.pushNamed(context, '/notifications')),
-                  ),
-                ]),
               ]),
             ),
 
@@ -236,10 +328,10 @@ class _DashboardContentState extends State<_DashboardContent> {
                 shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
                 crossAxisCount: 2, crossAxisSpacing: AppSpacing.md, mainAxisSpacing: AppSpacing.md, childAspectRatio: 1.55,
                 children: [
-                  _buildStatCard(title: 'Solde net', value: _isFirstLoad ? '...' : '${_formatMoney(solde.toInt())} FCFA', icon: Icons.account_balance_wallet_rounded, isPrimary: true),
-                  _buildStatCard(title: 'Dépenses totales', value: _isFirstLoad ? '...' : '${_formatMoney(_totalDepenses.toInt())} FCFA', icon: Icons.trending_down_rounded, accentColor: AppColors.error),
-                  _buildStatCard(title: 'Cycles actifs', value: _isFirstLoad ? '...' : '$_cyclesActifs bandes', icon: Icons.egg_rounded, accentColor: AppColors.primary),
-                  _buildStatCard(title: 'Prêts en cours', value: _isFirstLoad ? '...' : '${_formatMoney(_pretsRestants.toInt())} FCFA', icon: Icons.credit_card_rounded, accentColor: AppColors.warning),
+                  _buildStatCard(title: 'Solde net', value: '${_formatMoney(solde.toInt())} FCFA', icon: Icons.account_balance_wallet_rounded, isPrimary: true),
+                  _buildStatCard(title: 'Dépenses totales', value: '${_formatMoney(_totalDepenses.toInt())} FCFA', icon: Icons.trending_down_rounded, accentColor: AppColors.error),
+                  _buildStatCard(title: 'Cycles actifs', value: '$_cyclesActifs bandes', icon: Icons.egg_rounded, accentColor: AppColors.primary),
+                  _buildStatCard(title: 'Prêts en cours', value: '${_formatMoney(_pretsRestants.toInt())} FCFA', icon: Icons.credit_card_rounded, accentColor: AppColors.warning),
                 ],
               ),
             ),
@@ -258,17 +350,15 @@ class _DashboardContentState extends State<_DashboardContent> {
                   Row(children: [_buildLegend('Gains', AppColors.success), const SizedBox(width: AppSpacing.md), _buildLegend('Depenses', AppColors.error)]),
                 ]),
                 const SizedBox(height: AppSpacing.lg),
-                SizedBox(height: 160, child: _isFirstLoad ? const Center(child: CircularProgressIndicator()) : _buildGraphique()),
+                SizedBox(height: 160, child: _buildGraphique()),
               ]),
             ),
             const SizedBox(height: AppSpacing.xl),
 
-            // TRANSACTIONS
+            // DERNIERES TRANSACTIONS
             _buildSectionHeader(title: 'Dernieres transactions', icon: Icons.receipt_long_rounded),
             const SizedBox(height: AppSpacing.md),
-            if (_isFirstLoad)
-              const Center(child: Padding(padding: EdgeInsets.all(AppSpacing.lg), child: CircularProgressIndicator()))
-            else if (_dernieresTransactions.isEmpty)
+            if (_dernieresTransactions.isEmpty)
               Container(padding: const EdgeInsets.all(AppSpacing.lg), decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.border)), child: Center(child: Text('Aucune transaction', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint))))
             else
               ..._dernieresTransactions.map((t) => Padding(
@@ -276,6 +366,16 @@ class _DashboardContentState extends State<_DashboardContent> {
                 child: _buildTransactionCard(label: t['label'] as String, montant: '${t['type'] == 'vente' ? '+' : '-'} ${_formatMoney((t['montant'] as double).toInt())} FCFA', date: t['date'] as String, isVente: t['type'] == 'vente', icon: t['type'] == 'vente' ? Icons.sell_rounded : Icons.restaurant_rounded),
               )),
 
+            // ECHEANCES
+            _buildSectionHeader(title: 'Echeances prets', icon: Icons.event_note_rounded),
+            const SizedBox(height: AppSpacing.md),
+            if (_echeances.isEmpty)
+              Container(padding: const EdgeInsets.all(AppSpacing.lg), decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.border)), child: Center(child: Text('Aucune echeance', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint))))
+            else
+              ..._echeances.map((e) => Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: _buildEcheanceCard(preteur: e['preteur'] as String, montant: (e['montant'] as double).toInt(), statut: e['statut'] as String),
+              )),
             const SizedBox(height: AppSpacing.xxl),
           ]),
         ),
@@ -285,7 +385,7 @@ class _DashboardContentState extends State<_DashboardContent> {
 
   Widget _buildGraphique() {
     final maxY = (_totalVentes > _totalDepenses ? _totalVentes : _totalDepenses) * 1.3;
-    if (maxY == 0) {
+    if (maxY == 0 || _spotsVentes.isEmpty) {
       return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
         Icon(Icons.show_chart, size: 40, color: AppColors.textHint),
         const SizedBox(height: AppSpacing.sm),
@@ -298,14 +398,21 @@ class _DashboardContentState extends State<_DashboardContent> {
         leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 45, getTitlesWidget: (value, meta) => Text('${(value/1000).toInt()}k', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textHint, fontSize: 10)))),
         rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
         topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 20, getTitlesWidget: (value, meta) => Text(value == 0 ? 'Debut' : 'Fin', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textHint, fontSize: 10)))),
+        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 30, interval: 1, getTitlesWidget: (value, meta) {
+          final index = value.toInt();
+          if (index >= 0 && index < _labelsJours.length) {
+            if (_labelsJours.length > 7 && index % 2 != 0) return const Text('');
+            return Text(_labelsJours[index], style: AppTextStyles.bodySmall.copyWith(color: AppColors.textHint, fontSize: 9));
+          }
+          return const Text('');
+        })),
       ),
       borderData: FlBorderData(show: false),
       lineBarsData: [
-        LineChartBarData(spots: [const FlSpot(0, 0), FlSpot(1, _totalVentes)], isCurved: true, curveSmoothness: 0.3, color: AppColors.success, dotData: FlDotData(show: true), barWidth: 3, belowBarData: BarAreaData(show: true, gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.success.withOpacity(0.2), AppColors.success.withOpacity(0.0)]))),
-        LineChartBarData(spots: [const FlSpot(0, 0), FlSpot(1, _totalDepenses)], isCurved: true, curveSmoothness: 0.3, color: AppColors.error, dotData: FlDotData(show: true), barWidth: 3, belowBarData: BarAreaData(show: true, gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.error.withOpacity(0.15), AppColors.error.withOpacity(0.0)]))),
+        LineChartBarData(spots: _spotsVentes, isCurved: true, curveSmoothness: 0.3, color: AppColors.success, dotData: FlDotData(show: false), barWidth: 2.5, belowBarData: BarAreaData(show: true, gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.success.withOpacity(0.2), AppColors.success.withOpacity(0.0)]))),
+        LineChartBarData(spots: _spotsDepenses, isCurved: true, curveSmoothness: 0.3, color: AppColors.error, dotData: FlDotData(show: false), barWidth: 2.5, belowBarData: BarAreaData(show: true, gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.error.withOpacity(0.15), AppColors.error.withOpacity(0.0)]))),
       ],
-      minX: 0, maxX: 1, minY: 0, maxY: maxY,
+      minX: 0, maxX: (_spotsVentes.length - 1).toDouble().clamp(1, 30), minY: 0, maxY: maxY,
     ));
   }
 
@@ -351,5 +458,32 @@ class _DashboardContentState extends State<_DashboardContent> {
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(label, style: AppTextStyles.subtitleMedium.copyWith(fontWeight: FontWeight.w600)), const SizedBox(height: 2), Text(date, style: AppTextStyles.bodySmall.copyWith(color: AppColors.textHint))])),
           Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(8)), child: Text(montant, style: AppTextStyles.numberMedium.copyWith(color: color, fontSize: 14))),
         ]));
+  }
+
+  Widget _buildEcheanceCard({required String preteur, required int montant, required String statut}) {
+    final isUrgent = statut == 'urgent';
+    final color = isUrgent ? AppColors.error : AppColors.warning;
+    return Container(
+      decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: isUrgent ? AppColors.error.withOpacity(0.3) : AppColors.border.withOpacity(0.6)), boxShadow: AppShadows.shadowCard),
+      child: ClipRRect(
+        borderRadius: AppBorders.cardRadius,
+        child: IntrinsicHeight(
+          child: Row(children: [
+            Container(width: 4, color: color),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
+                child: Row(children: [
+                  Container(padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 4), decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: AppBorders.buttonRadius), child: Text(isUrgent ? 'Urgent' : 'A venir', style: AppTextStyles.labelSmall.copyWith(color: color, fontWeight: FontWeight.w700))),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(child: Text(preteur, style: AppTextStyles.subtitleMedium.copyWith(fontWeight: FontWeight.w600))),
+                  Text('${_formatMoney(montant)} FCFA', style: AppTextStyles.numberSmall.copyWith(color: color, fontWeight: FontWeight.bold)),
+                ]),
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
   }
 }

@@ -29,10 +29,10 @@ class AuthProvider extends ChangeNotifier {
   Map<String, dynamic>? get user => _user;
 
   AuthProvider() {
-    _loadToken();
+    loadToken();
   }
 
-  Future<void> _loadToken() async {
+  Future<void> loadToken() async {
     final prefs = await SharedPreferences.getInstance();
     _token = prefs.getString(AppConstants.storageAccessToken);
     notifyListeners();
@@ -137,12 +137,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> tryAutoLogin() async {
-    await _loadToken();
-    if (_token != null) {
-      await getUserProfile();
-    }
-  }
+
 
 
 }
