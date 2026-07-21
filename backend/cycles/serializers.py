@@ -37,7 +37,8 @@ class CycleSerializer(serializers.ModelSerializer):
             'cout_production_unitaire', 'prix_vente_moyen',
             'is_active', 'is_archived',
             'metadata', 'est_publie_marketplace',
-            'created_at', 'updated_at'
+            'created_at', 'updated_at',
+            'nb_mangeoires', 'nb_abreuvoirs',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
@@ -61,6 +62,7 @@ class CycleListSerializer(serializers.ModelSerializer):
             'id', 'nom', 'poulailler_nom', 'type', 'type_poulet_nom',
             'date_debut', 'progression', 'benefice', 'jours_ecoules',
             'taux_mortalite', 'mortalites', 'nombre_sujets_actuels',
+            'nb_mangeoires', 'nb_abreuvoirs',
             'cout_production_unitaire', 'est_rentable',
             'is_active', 'is_archived',
         ]

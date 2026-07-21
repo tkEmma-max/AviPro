@@ -22,8 +22,8 @@ class RapportSuiviSerializer(serializers.ModelSerializer):
     # Infos du poulailler (via le cycle)
     surface = serializers.ReadOnlyField(source='cycle.poulailler.surface')
     nb_sujets_actuels = serializers.ReadOnlyField(source='cycle.nombre_sujets_actuels')
-    nb_mangeoires = serializers.ReadOnlyField(source='cycle.poulailler.nombre_mangeoires')
-    nb_abreuvoirs = serializers.ReadOnlyField(source='cycle.poulailler.nombre_abreuvoirs')
+    nb_mangeoires = serializers.ReadOnlyField(source='cycle.nb_mangeoires')
+    nb_abreuvoirs = serializers.ReadOnlyField(source='cycle.nb_abreuvoirs')
     
     class Meta:
         model = RapportSuivi
