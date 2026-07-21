@@ -49,15 +49,23 @@ class Poulailler(models.Model):
 
     @property
     def statut(self):
-        cycle_actif = self.cycles.filter(is_active=True, is_archived=False).first()
-        if cycle_actif and cycle_actif.nombre_sujets_actuels > 0:
+        # Vérifier si une sous-bande active est dans ce poulailler
+        from cycles.models import SousBande
+        sous_bande_active = SousBande.objects.filter(
+            poulailler=self, est_active=True, nombre_sujets__gt=0
+        ).first()
+        if sous_bande_active:
             return "OCCUPÉ"
         return "LIBRE"
 
     @property
     def nb_poulets_actuels(self):
-        cycle_actif = self.cycles.filter(is_active=True, is_archived=False).first()
-        return cycle_actif.nombre_sujets_actuels if cycle_actif else 0
+        from cycles.models import SousBande
+        from django.db.models import Sum
+        total = SousBande.objects.filter(
+            poulailler=self, est_active=True
+        ).aggregate(total=Sum('nombre_sujets'))['total']
+        return total or 0
 
     @property
     def densite_actuelle(self):

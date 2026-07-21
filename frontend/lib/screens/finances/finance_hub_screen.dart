@@ -16,10 +16,6 @@ class FinanceHubScreen extends StatefulWidget {
   State<FinanceHubScreen> createState() => _FinanceHubScreenState();
 }
 
-DateTime? _lastFetch;
-final _cacheDuration = Duration(seconds: 30);
-bool get _isCacheValid => _lastFetch != null && DateTime.now().difference(_lastFetch!) < _cacheDuration;
-
 class _FinanceHubScreenState extends State<FinanceHubScreen> {
   final _apiService = ApiService();
   String _selectedFilter = 'Toutes';
@@ -29,17 +25,28 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
   double _totalVentes = 0;
   double _totalDepenses = 0;
 
+  // Cache statique
+  static List<Map<String, dynamic>> _cachedTransactions = [];
+  static double _cachedTotalVentes = 0;
+  static double _cachedTotalDepenses = 0;
+  static bool _hasCachedData = false;
+
   @override
   void initState() {
     super.initState();
+    // Afficher immédiatement les données en cache
+    if (_hasCachedData) {
+      _allTransactions = _cachedTransactions;
+      _totalVentes = _cachedTotalVentes;
+      _totalDepenses = _cachedTotalDepenses;
+      _isLoading = false;
+    }
     _loadTransactions();
   }
 
   Future<void> _loadTransactions() async {
-    if (_isCacheValid) return;
     setState(() => _isLoading = true);
     try {
-      // Charger dépenses
       final depensesResponse = await _apiService.get('depenses/');
       final ventesResponse = await _apiService.get('ventes/');
 
@@ -58,8 +65,6 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
             });
           }
         }
-
-        _lastFetch = DateTime.now();
       }
 
       if (ventesResponse.statusCode == 200) {
@@ -77,15 +82,10 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
         }
       }
 
-      // Trier par date (plus récent en premier)
       transactions.sort((a, b) => (b['date'] as String).compareTo(a['date'] as String));
 
-      final ventes = transactions
-          .where((t) => t['type'] == 'vente')
-          .fold<double>(0, (sum, t) => sum + (t['montant'] as double));
-      final depenses = transactions
-          .where((t) => t['type'] == 'depense')
-          .fold<double>(0, (sum, t) => sum + (t['montant'] as double));
+      final ventes = transactions.where((t) => t['type'] == 'vente').fold<double>(0, (sum, t) => sum + (t['montant'] as double));
+      final depenses = transactions.where((t) => t['type'] == 'depense').fold<double>(0, (sum, t) => sum + (t['montant'] as double));
 
       if (mounted) {
         setState(() {
@@ -94,6 +94,11 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
           _totalDepenses = depenses;
           _isLoading = false;
         });
+        // Mettre en cache
+        _cachedTransactions = _allTransactions;
+        _cachedTotalVentes = _totalVentes;
+        _cachedTotalDepenses = _totalDepenses;
+        _hasCachedData = true;
       }
     } catch (e) {
       print('❌ [FINANCE] Erreur chargement: $e');
@@ -102,11 +107,8 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
   }
 
   List<Map<String, dynamic>> get _filteredTransactions {
-    if (_selectedFilter == 'Ventes') {
-      return _allTransactions.where((t) => t['type'] == 'vente').toList();
-    } else if (_selectedFilter == 'Dépenses') {
-      return _allTransactions.where((t) => t['type'] == 'depense').toList();
-    }
+    if (_selectedFilter == 'Ventes') return _allTransactions.where((t) => t['type'] == 'vente').toList();
+    if (_selectedFilter == 'Dépenses') return _allTransactions.where((t) => t['type'] == 'depense').toList();
     return _allTransactions;
   }
 
@@ -117,8 +119,7 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        elevation: 0,
+        backgroundColor: AppColors.primary, elevation: 0,
         title: Text('Finances', style: AppTextStyles.headlineMedium.copyWith(color: Colors.white, fontSize: 22)),
         centerTitle: false,
         actions: [
@@ -126,20 +127,9 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
             icon: const Icon(Icons.more_vert, color: Colors.white),
             onSelected: (value) {
               switch (value) {
-                case 'depense':
-                  Navigator.pushNamed(context, '/finance/depense').then((_) => _loadTransactions());
-                  break;
-                case 'vente':
-                  Navigator.pushNamed(context, '/finance/vente').then((_) => _loadTransactions());
-                  break;
-                case 'pret':
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const FinanceLoanDashboardScreen(),
-                    ),
-                  );
-                  break;
+                case 'depense': Navigator.pushNamed(context, '/finance/depense').then((_) => _loadTransactions()); break;
+                case 'vente': Navigator.pushNamed(context, '/finance/vente').then((_) => _loadTransactions()); break;
+                case 'pret': Navigator.push(context, MaterialPageRoute(builder: (_) => const FinanceLoanDashboardScreen())); break;
               }
             },
             itemBuilder: (context) => [
@@ -150,153 +140,68 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-        children: [
-          // ============================================================
-          // HEADER - Carte de Synthèse
-          // ============================================================
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            decoration: const BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(24),
-                bottomRight: Radius.circular(24),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Solde net
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '${_soldeNet.toStringAsFixed(0)} FCFA',
-                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    if (_soldeNet < 0)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
-                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: AppBorders.buttonRadius),
-                        child: Text('Débit', style: AppTextStyles.labelSmall.copyWith(color: Colors.white.withOpacity(0.8))),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text('Solde net global', style: AppTextStyles.bodySmall.copyWith(color: Colors.white.withOpacity(0.7))),
-                const SizedBox(height: AppSpacing.md),
-
-                // Ligne Ventes / Dépenses
-                Row(
-                  children: [
-                    Expanded(
-                      child: Row(children: [
-                        const Icon(Icons.trending_up, size: 16, color: Colors.white70),
-                        const SizedBox(width: 4),
-                        Text('${_totalVentes.toStringAsFixed(0)} FCFA', style: AppTextStyles.bodyMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
-                      ]),
-                    ),
-                    Expanded(
-                      child: Row(children: [
-                        const Icon(Icons.trending_down, size: 16, color: Colors.white70),
-                        const SizedBox(width: 4),
-                        Text('${_totalDepenses.toStringAsFixed(0)} FCFA', style: AppTextStyles.bodyMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
-                      ]),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // ============================================================
-          // FILTRES
-          // ============================================================
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-            child: Row(
-              children: ['Toutes', 'Ventes', 'Dépenses'].map((filter) {
-                final isSelected = _selectedFilter == filter;
-                return Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() => _selectedFilter = filter),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                      decoration: BoxDecoration(
-                        color: isSelected ? AppColors.primary : Colors.transparent,
-                        borderRadius: AppBorders.buttonRadius,
-                      ),
-                      child: Center(
-                        child: Text(filter, style: AppTextStyles.labelMedium.copyWith(
-                          color: isSelected ? Colors.white : AppColors.textSecondary,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                        )),
-                      ),
-                    ),
-                  ),
+      body: Column(children: [
+        if (_isLoading && _hasCachedData)
+          const LinearProgressIndicator(minHeight: 2, backgroundColor: Colors.transparent, valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary)),
+        // HEADER
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: const BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.only(bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24))),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              Text('${_soldeNet.toStringAsFixed(0)} FCFA', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+              const SizedBox(width: AppSpacing.sm),
+              if (_soldeNet < 0)
+                Container(padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2), decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: AppBorders.buttonRadius), child: Text('Débit', style: AppTextStyles.labelSmall.copyWith(color: Colors.white.withOpacity(0.8)))),
+            ]),
+            const SizedBox(height: AppSpacing.xs),
+            Text('Solde net global', style: AppTextStyles.bodySmall.copyWith(color: Colors.white.withOpacity(0.7))),
+            const SizedBox(height: AppSpacing.md),
+            Row(children: [
+              Expanded(child: Row(children: [const Icon(Icons.trending_up, size: 16, color: Colors.white70), const SizedBox(width: 4), Text('${_totalVentes.toStringAsFixed(0)} FCFA', style: AppTextStyles.bodyMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w600))])),
+              Expanded(child: Row(children: [const Icon(Icons.trending_down, size: 16, color: Colors.white70), const SizedBox(width: 4), Text('${_totalDepenses.toStringAsFixed(0)} FCFA', style: AppTextStyles.bodyMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w600))])),
+            ]),
+          ]),
+        ),
+        // FILTRES
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+          child: Row(children: ['Toutes', 'Ventes', 'Dépenses'].map((filter) {
+            final isSelected = _selectedFilter == filter;
+            return Expanded(child: GestureDetector(
+              onTap: () => setState(() => _selectedFilter = filter),
+              child: Container(padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm), decoration: BoxDecoration(color: isSelected ? AppColors.primary : Colors.transparent, borderRadius: AppBorders.buttonRadius), child: Center(child: Text(filter, style: AppTextStyles.labelMedium.copyWith(color: isSelected ? Colors.white : AppColors.textSecondary, fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400)))),
+            ));
+          }).toList()),
+        ),
+        // LISTE
+        Expanded(
+          child: _filteredTransactions.isEmpty
+              ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.receipt_long_outlined, size: 60, color: AppColors.textHint), const SizedBox(height: AppSpacing.lg), Text('Aucune transaction', style: AppTextStyles.headline4.copyWith(color: AppColors.textSecondary))]))
+              : RefreshIndicator(
+            onRefresh: _loadTransactions,
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              itemCount: _filteredTransactions.length,
+              separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+              itemBuilder: (context, index) {
+                final t = _filteredTransactions[index];
+                final isVente = t['type'] == 'vente';
+                final color = isVente ? AppColors.success : AppColors.error;
+                return Container(
+                  padding: const EdgeInsets.all(AppSpacing.md), decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.border), boxShadow: AppShadows.shadowCard),
+                  child: Row(children: [
+                    Container(width: 4, height: 40, decoration: BoxDecoration(color: color, borderRadius: AppBorders.radiusSmall)),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(t['libelle'] as String, style: AppTextStyles.subtitleMedium), Text('${t['date']} • ${t['cycle']}', style: AppTextStyles.bodySmall)])),
+                    Text('${isVente ? '+' : '-'} ${(t['montant'] as double).toStringAsFixed(0)} FCFA', style: AppTextStyles.numberMedium.copyWith(color: color, fontSize: 16)),
+                  ]),
                 );
-              }).toList(),
+              },
             ),
           ),
-
-          // ============================================================
-          // LISTE DES TRANSACTIONS
-          // ============================================================
-          Expanded(
-            child: _filteredTransactions.isEmpty
-                ? Center(
-              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Icon(Icons.receipt_long_outlined, size: 60, color: AppColors.textHint),
-                const SizedBox(height: AppSpacing.lg),
-                Text('Aucune transaction', style: AppTextStyles.headline4.copyWith(color: AppColors.textSecondary)),
-              ]),
-            )
-                : RefreshIndicator(
-              onRefresh: _loadTransactions,
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                itemCount: _filteredTransactions.length,
-                separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
-                itemBuilder: (context, index) {
-                  final t = _filteredTransactions[index];
-                  final isVente = t['type'] == 'vente';
-                  final color = isVente ? AppColors.success : AppColors.error;
-
-                  return Container(
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: AppBorders.cardRadius,
-                      border: Border.all(color: AppColors.border),
-                      boxShadow: AppShadows.shadowCard,
-                    ),
-                    child: Row(
-                      children: [
-                        Container(width: 4, height: 40, decoration: BoxDecoration(color: color, borderRadius: AppBorders.radiusSmall)),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(t['libelle'] as String, style: AppTextStyles.subtitleMedium),
-                            Text('${t['date']} • ${t['cycle']}', style: AppTextStyles.bodySmall),
-                          ]),
-                        ),
-                        Text(
-                          '${isVente ? '+' : '-'} ${(t['montant'] as double).toStringAsFixed(0)} FCFA',
-                          style: AppTextStyles.numberMedium.copyWith(color: color, fontSize: 16),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ]),
     );
   }
 }

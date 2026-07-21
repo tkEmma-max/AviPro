@@ -33,6 +33,7 @@ class _PoulaillerMigrationScreenState extends State<PoulaillerMigrationScreen> {
   int _agePoulets = 0;
   int _effectifSource = 0;
   bool _isLoading = true;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -86,6 +87,8 @@ class _PoulaillerMigrationScreenState extends State<PoulaillerMigrationScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedTargetId == null || _cycleId == null) return;
 
+    setState(() => _isSubmitting = true);
+
     try {
       final response = await _apiService.post('cycles/$_cycleId/migrer/', data: {
         'poulailler_cible': _selectedTargetId,
@@ -93,18 +96,22 @@ class _PoulaillerMigrationScreenState extends State<PoulaillerMigrationScreen> {
         'raison': _raisonController.text.isNotEmpty ? _raisonController.text : 'Migration',
       });
 
-      if (response.statusCode == 200 && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Migration effectuée avec succès !'), backgroundColor: AppColors.success));
-        context.read<PoulaillerProvider>().refreshPoulaillers();
-        context.read<CycleProvider>().refreshCycles();
-        Navigator.pop(context);
+      if (mounted) {
+        if (response.statusCode == 200) {
+          await context.read<PoulaillerProvider>().refreshPoulaillers();
+          await context.read<CycleProvider>().refreshCycles();
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Migration effectuée avec succès !'), backgroundColor: AppColors.success));
+          Navigator.pop(context);
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erreur: $e'), backgroundColor: AppColors.error));
+            SnackBar(content: Text('Erreur: $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 4)));
       }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
@@ -131,7 +138,7 @@ class _PoulaillerMigrationScreenState extends State<PoulaillerMigrationScreen> {
     }
 
     final provider = context.watch<PoulaillerProvider>();
-    final poulaillers = provider.poulaillers.where((p) => p.id != widget.source.id).toList();
+    final poulaillers = provider.poulaillers.where((p) => p.id != widget.source.id && p.statut == 'LIBRE').toList();
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -196,9 +203,14 @@ class _PoulaillerMigrationScreenState extends State<PoulaillerMigrationScreen> {
           // BOUTON
           SizedBox(width: double.infinity, height: 52,
             child: ElevatedButton(
-              onPressed: _submitMigration,
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: AppBorders.buttonRadius)),
-              child: const Text('VALIDER LA MIGRATION', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              onPressed: _isSubmitting ? null : _submitMigration,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary, foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: AppBorders.buttonRadius),
+              ),
+              child: _isSubmitting
+                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Text('VALIDER LA MIGRATION', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
