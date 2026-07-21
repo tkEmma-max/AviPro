@@ -18,8 +18,6 @@ class TypePoulet(models.Model):
     metadata = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    nb_mangeoires = models.IntegerField(default=0, help_text="Nombre de mangeoires utilisées pour ce cycle")
-    nb_abreuvoirs = models.IntegerField(default=0, help_text="Nombre d'abreuvoirs utilisés pour ce cycle")
     created_by = models.ForeignKey(
         'users.User', on_delete=models.SET_NULL, null=True, blank=True,
         related_name='types_poulet_crees'
@@ -62,7 +60,9 @@ class Cycle(models.Model):
     is_active = models.BooleanField(default=True)
     is_archived = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
-    
+    nb_mangeoires = models.IntegerField(default=0, help_text="Nombre de mangeoires utilisées pour ce cycle")
+    nb_abreuvoirs = models.IntegerField(default=0, help_text="Nombre d'abreuvoirs utilisés pour ce cycle")
+
     # Champs visionnaires
     metadata = models.JSONField(default=dict, blank=True)
     est_publie_marketplace = models.BooleanField(default=False)
