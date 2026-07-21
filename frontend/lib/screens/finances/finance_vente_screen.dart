@@ -42,6 +42,19 @@ class _FinanceVenteScreenState extends State<FinanceVenteScreen> {
   };
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is Map && args.containsKey('cycle_id')) {
+        setState(() {
+          _selectedCycleId = args['cycle_id'];
+        });
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _quantiteController.dispose();
     _prixUnitaireController.dispose();

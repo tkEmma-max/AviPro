@@ -47,6 +47,19 @@ class _FinanceDepenseScreenState extends State<FinanceDepenseScreen> {
     super.dispose();
   }
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is Map && args.containsKey('cycle_id')) {
+        setState(() {
+          _selectedCycleId = args['cycle_id'];
+        });
+      }
+    });
+  }
+
   void _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCategorie == null) {

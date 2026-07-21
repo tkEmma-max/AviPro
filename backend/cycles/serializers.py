@@ -96,7 +96,8 @@ class CycleDetailSerializer(serializers.ModelSerializer):
             'cout_production_unitaire', 'prix_vente_moyen',
             'depenses', 'ventes',
             'metadata', 'est_publie_marketplace',
-            'is_active', 'is_archived', 'created_at', 'updated_at'
+            'is_active', 'is_archived', 'created_at', 'updated_at',
+               'nb_mangeoires', 'nb_abreuvoirs',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 

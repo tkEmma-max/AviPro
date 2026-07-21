@@ -7,7 +7,7 @@ class AppIcons {
   // ═══════════════════════════════════════════
   static const home = LucideIcons.home;
   static const house = LucideIcons.warehouse;
-  static const cycle = LucideIcons.refreshCw;
+  static const cycle = LucideIcons.rotateCw;          // ✅ Changé
   static const finance = LucideIcons.wallet;
   static const profil = LucideIcons.user;
   static const arrowBack = LucideIcons.arrowLeft;
@@ -28,7 +28,7 @@ class AppIcons {
   // ═══════════════════════════════════════════
   // DASHBOARD
   // ═══════════════════════════════════════════
-  static const solde = LucideIcons.wallet;
+  static const solde = LucideIcons.coins;             // ✅ Changé
   static const vente = LucideIcons.trendingUp;
   static const depense = LucideIcons.trendingDown;
   static const oeuf = LucideIcons.egg;
@@ -42,7 +42,7 @@ class AppIcons {
   // ═══════════════════════════════════════════
   // POULAILLERS
   // ═══════════════════════════════════════════
-  static const poulailler = LucideIcons.warehouse;
+  static const poulailler = LucideIcons.building;     // ✅ Changé
   static const migration = LucideIcons.shuffle;
   static const mangeoire = LucideIcons.beef;
   static const abreuvoir = LucideIcons.droplets;
@@ -57,7 +57,7 @@ class AppIcons {
   static const poussin = LucideIcons.baby;
   static const poulet = LucideIcons.bird;
   static const mortalite = LucideIcons.skull;
-  static const progression = LucideIcons.trendingUp;
+  static const progression = LucideIcons.arrowUp;     // ✅ Changé
   static const debut = LucideIcons.play;
   static const fin = LucideIcons.flag;
   static const rapport = LucideIcons.clipboardCheck;
@@ -74,7 +74,7 @@ class AppIcons {
   // ═══════════════════════════════════════════
   static const depenseAdd = LucideIcons.minusCircle;
   static const venteAdd = LucideIcons.plusCircle;
-  static const prets = LucideIcons.creditCard;
+  static const prets = LucideIcons.creditCard;        // ✅ Gardé un seul
   static const remboursement = LucideIcons.landmark;
   static const calendrier = LucideIcons.calendar;
   static const echeancier = LucideIcons.listChecks;

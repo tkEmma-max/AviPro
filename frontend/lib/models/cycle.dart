@@ -22,6 +22,8 @@ class Cycle {
   final bool? estRentable;
   final double? coutProductionUnitaire;
   final double? prixVenteMoyen;
+  final int nbMangeoires;
+  final int nbAbreuvoirs;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -48,6 +50,8 @@ class Cycle {
     this.estRentable,
     this.coutProductionUnitaire,
     this.prixVenteMoyen,
+    this.nbMangeoires = 0,
+    this.nbAbreuvoirs = 0,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -76,6 +80,8 @@ class Cycle {
       estRentable: json['est_rentable'],
       coutProductionUnitaire: json['cout_production_unitaire']?.toDouble(),
       prixVenteMoyen: json['prix_vente_moyen']?.toDouble(),
+      nbMangeoires: json['nb_mangeoires'] ?? 0,
+      nbAbreuvoirs: json['nb_abreuvoirs'] ?? 0,
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
       updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : DateTime.now(),
     );
@@ -92,6 +98,8 @@ class Cycle {
       'duree_estimee_jours': dureeEstimeeJours,
       'is_active': isActive,
       'is_archived': isArchived,
+      'nb_mangeoires': nbMangeoires,
+      'nb_abreuvoirs': nbAbreuvoirs,
     };
     if (dateFin != null) {
       data['date_fin'] = dateFin!.toIso8601String().split('T')[0];

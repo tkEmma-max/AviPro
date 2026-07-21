@@ -10,6 +10,7 @@ import '../../models/cycle.dart';
 import '../../providers/poulailler_provider.dart';
 import '../../providers/cycle_provider.dart';
 import '../../services/densite_service.dart';
+import '../../services/equipement_service.dart';
 import '../../services/api_service.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/custom_button.dart';
@@ -29,6 +30,8 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
   final _nbSujetsController = TextEditingController();
   final _prixUnitaireController = TextEditingController();
   final _ageController = TextEditingController(text: '0');
+  final _nbMangeoiresController = TextEditingController(text: '0');
+  final _nbAbreuvoirsController = TextEditingController(text: '0');
 
   String? _selectedPoulaillerId;
   String _selectedType = 'CHAIR';
@@ -46,6 +49,8 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
     _nbSujetsController.dispose();
     _prixUnitaireController.dispose();
     _ageController.dispose();
+    _nbMangeoiresController.dispose();
+    _nbAbreuvoirsController.dispose();
     super.dispose();
   }
 
@@ -53,6 +58,18 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
     final age = int.tryParse(_ageController.text) ?? 0;
     final date = DateTime.now().subtract(Duration(days: age));
     return '${date.day}/${date.month}/${date.year}';
+  }
+
+  int get _nbMangeoiresRecommandees {
+    final nb = int.tryParse(_nbSujetsController.text) ?? 0;
+    if (nb == 0) return 0;
+    return EquipementService.getMangeoiresRecommandees(nb, _selectedType, int.tryParse(_ageController.text) ?? 0);
+  }
+
+  int get _nbAbreuvoirsRecommandes {
+    final nb = int.tryParse(_nbSujetsController.text) ?? 0;
+    if (nb == 0) return 0;
+    return EquipementService.getAbreuvoirsRecommandes(nb, _selectedType, int.tryParse(_ageController.text) ?? 0);
   }
 
   void _updateDensite() {
@@ -126,6 +143,8 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
         dureeEstimeeJours: _getDureeEstimee(),
         isActive: true,
         isArchived: false,
+        nbMangeoires: int.tryParse(_nbMangeoiresController.text) ?? 0,
+        nbAbreuvoirs: int.tryParse(_nbAbreuvoirsController.text) ?? 0,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -262,6 +281,29 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
               ]),
             )),
           ]),
+          const SizedBox(height: AppSpacing.xxl),
+
+          // Matériel de nutrition
+          Text('Matériel de nutrition', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
+          const SizedBox(height: AppSpacing.md),
+          Row(children: [
+            Expanded(child: CustomTextField(controller: _nbMangeoiresController, label: 'Nb mangeoires', hint: '0', prefixIcon: Icons.restaurant, keyboardType: TextInputType.number, validator: (v) { if (v!.isEmpty) return 'Requis'; final n = int.tryParse(v); if (n == null || n < 0) return '≥ 0'; return null; })),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(child: CustomTextField(controller: _nbAbreuvoirsController, label: 'Nb abreuvoirs', hint: '0', prefixIcon: Icons.water_drop, keyboardType: TextInputType.number, validator: (v) { if (v!.isEmpty) return 'Requis'; final n = int.tryParse(v); if (n == null || n < 0) return '≥ 0'; return null; })),
+          ]),
+          if (_nbSujetsController.text.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(color: AppColors.success.withOpacity(0.05), borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.success.withOpacity(0.2))),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [const Icon(Icons.lightbulb_outline, color: AppColors.success, size: 18), const SizedBox(width: AppSpacing.sm), Text('Recommandations', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.success))]),
+                const SizedBox(height: AppSpacing.sm),
+                Text('Mangeoires recommandées: $_nbMangeoiresRecommandees', style: AppTextStyles.bodySmall),
+                Text('Abreuvoirs recommandés: $_nbAbreuvoirsRecommandes', style: AppTextStyles.bodySmall),
+              ]),
+            ),
+          ],
           const SizedBox(height: AppSpacing.xxxl),
 
           // Bouton
