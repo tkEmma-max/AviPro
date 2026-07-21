@@ -59,7 +59,7 @@ class CycleListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cycle
         fields = [
-            'id', 'nom', 'poulailler_nom', 'type', 'type_poulet_nom',
+            'id', 'nom', 'poulailler', 'poulailler_nom', 'type', 'type_poulet_nom',
             'date_debut', 'progression', 'benefice', 'jours_ecoules',
             'taux_mortalite', 'mortalites', 'nombre_sujets_actuels',
             'nb_mangeoires', 'nb_abreuvoirs',

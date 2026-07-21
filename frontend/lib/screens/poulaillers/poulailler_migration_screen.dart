@@ -7,7 +7,9 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_borders.dart';
 import '../../models/poulailler.dart';
 import '../../providers/poulailler_provider.dart';
-
+import '../../providers/cycle_provider.dart';
+import '../../services/api_service.dart';
+import '../../models/cycle.dart';
 class PoulaillerMigrationScreen extends StatefulWidget {
   final Poulailler source;
 
@@ -17,24 +19,60 @@ class PoulaillerMigrationScreen extends StatefulWidget {
   });
 
   @override
-  State<PoulaillerMigrationScreen> createState() =>
-      _PoulaillerMigrationScreenState();
+  State<PoulaillerMigrationScreen> createState() => _PoulaillerMigrationScreenState();
 }
 
-class _PoulaillerMigrationScreenState
-    extends State<PoulaillerMigrationScreen> {
+class _PoulaillerMigrationScreenState extends State<PoulaillerMigrationScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _apiService = ApiService();
   final _nbSujetsController = TextEditingController();
   final _raisonController = TextEditingController();
 
   String? _selectedTargetId;
-  int _agePoulets = 21; // Simulé
+  String? _cycleId;
+  int _agePoulets = 0;
   int _effectifSource = 0;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _effectifSource = widget.source.nbPouletsActuels;
+    _loadCycleActif();
+  }
+
+  Future<void> _loadCycleActif() async {
+    try {
+      final cycleProvider = context.read<CycleProvider>();
+      await cycleProvider.refreshCycles();
+
+      if (!mounted) return;
+
+      // Chercher un cycle actif pour ce poulailler
+      final cycles = cycleProvider.cycles;
+      Cycle? cycleActif;
+
+      try {
+        cycleActif = cycles.firstWhere(
+              (c) => c.poulailler == widget.source.id && c.isActive && !c.isArchived,
+        );
+      } catch (_) {
+        cycleActif = null;
+      }
+
+      if (cycleActif != null && mounted) {
+        setState(() {
+          _cycleId = cycleActif!.id;
+          _effectifSource = cycleActif!.nombreSujetsActuels;
+          _agePoulets = cycleActif!.joursEcoules ?? 0;
+          _isLoading = false;
+        });
+      } else {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      print('❌ Erreur chargement cycle: $e');
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -44,394 +82,127 @@ class _PoulaillerMigrationScreenState
     super.dispose();
   }
 
-  Poulailler? get _selectedTarget {
-    final provider = context.read<PoulaillerProvider>();
-    try {
-      return provider.poulaillers.firstWhere((p) => p.id == _selectedTargetId);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  bool _hasAgeConflict() {
-    final target = _selectedTarget;
-    if (target == null) return false;
-    // Simuler un écart d'âge (pour la démo)
-    return false;
-  }
-
-  void _submitMigration() {
+  Future<void> _submitMigration() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_selectedTargetId == null || _cycleId == null) return;
 
-    final nb = int.parse(_nbSujetsController.text);
-    final target = _selectedTarget;
+    try {
+      final response = await _apiService.post('cycles/$_cycleId/migrer/', data: {
+        'poulailler_cible': _selectedTargetId,
+        'nombre_sujets': int.parse(_nbSujetsController.text),
+        'raison': _raisonController.text.isNotEmpty ? _raisonController.text : 'Migration',
+      });
 
-    if (target == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Veuillez sélectionner un poulailler cible'),
-          backgroundColor: AppColors.warning,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
+      if (response.statusCode == 200 && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Migration effectuée avec succès !'), backgroundColor: AppColors.success));
+        context.read<PoulaillerProvider>().refreshPoulaillers();
+        context.read<CycleProvider>().refreshCycles();
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erreur: $e'), backgroundColor: AppColors.error));
+      }
     }
-
-    // TODO: Exécuter la migration
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Migration effectuée avec succès !'),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: AppColors.surface,
+        appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0, leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary), onPressed: () => Navigator.pop(context))),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_cycleId == null) {
+      return Scaffold(
+        backgroundColor: AppColors.surface,
+        appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0, leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary), onPressed: () => Navigator.pop(context))),
+        body: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(Icons.info_outline, size: 60, color: AppColors.textHint),
+          const SizedBox(height: AppSpacing.lg),
+          Text('Aucun cycle actif dans ce poulailler', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+        ])),
+      );
+    }
+
     final provider = context.watch<PoulaillerProvider>();
-    final poulaillers = provider.poulaillers
-        .where((p) => p.id != widget.source.id && p.statut == 'LIBRE')
-        .toList();
-
-    final target = _selectedTarget;
-    final nbSujets = int.tryParse(_nbSujetsController.text) ?? 0;
-    final capacityConflict = target != null &&
-        target.surface != null &&
-        (target.nbPouletsActuels ?? 0) + nbSujets > (target.surface ?? 0) * 8;
-
-    final ageConflict = _hasAgeConflict();
+    final poulaillers = provider.poulaillers.where((p) => p.id != widget.source.id).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Migration de poulets',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        backgroundColor: Colors.transparent, elevation: 0,
+        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary), onPressed: () => Navigator.pop(context)),
+        title: const Text('Migration de poulets', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.all(AppSpacing.xxl),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: AppSpacing.md),
+        child: Form(key: _formKey, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const SizedBox(height: AppSpacing.md),
 
-              // ============================================================
-              // SOURCE (Lecture seule)
-              // ============================================================
-              _buildLabel('Poulailler source'),
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: AppBorders.inputRadius,
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      widget.source.nom,
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Text(
-                      '$_effectifSource sujets',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
+          // SOURCE
+          Text('Poulailler source', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
+          const SizedBox(height: AppSpacing.xs),
+          Container(padding: const EdgeInsets.all(AppSpacing.md), decoration: BoxDecoration(color: AppColors.surfaceLight, borderRadius: AppBorders.inputRadius, border: Border.all(color: AppColors.border)),
+              child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text(widget.source.nom, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w500)),
+                Text('$_effectifSource sujets • $_agePoulets jours', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+              ])),
+          const SizedBox(height: AppSpacing.lg),
 
-              // ============================================================
-              // CIBLE
-              // ============================================================
-              _buildLabel('Poulailler cible *'),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: AppBorders.inputRadius,
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedTargetId,
-                    hint: Text(
-                      'Sélectionnez un poulailler libre',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textHint,
-                      ),
-                    ),
-                    isExpanded: true,
-                    icon: Icon(Icons.arrow_drop_down, color: AppColors.primary),
-                    items: poulaillers.map((p) {
-                      return DropdownMenuItem<String>(
-                        value: p.id,
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.house_outlined,
-                              size: 16,
-                              color: AppColors.success,
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            Expanded(
-                              child: Text(
-                                p.nom,
-                                style: AppTextStyles.bodyMedium,
-                              ),
-                            ),
-                            Text(
-                              '${p.surface?.toStringAsFixed(1) ?? 0} m²',
-                              style: AppTextStyles.bodySmall,
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (value) => setState(() => _selectedTargetId = value),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-
-              // ============================================================
-              // NOMBRE DE SUJETS
-              // ============================================================
-              _buildLabel('Nombre de sujets à migrer *'),
-              TextFormField(
-                controller: _nbSujetsController,
-                keyboardType: TextInputType.number,
-                style: AppTextStyles.bodyMedium,
-                decoration: InputDecoration(
-                  hintText: '0',
-                  hintStyle: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textHint,
-                  ),
-                  filled: true,
-                  fillColor: const Color(0xFFF8FAFC),
-                  border: OutlineInputBorder(
-                    borderRadius: AppBorders.inputRadius,
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: AppBorders.inputRadius,
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: AppBorders.inputRadius,
-                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: AppBorders.inputRadius,
-                    borderSide: const BorderSide(color: AppColors.error, width: 2),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                    vertical: AppSpacing.md,
-                  ),
-                ),
-                validator: (value) {
-                  if (value!.isEmpty) return 'Requis';
-                  final nb = int.tryParse(value);
-                  if (nb == null) return 'Nombre valide';
-                  if (nb <= 0) return '> 0';
-                  if (nb > _effectifSource) {
-                    return 'Max: $_effectifSource sujets';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: AppSpacing.lg),
-
-              // ============================================================
-              // ÂGE (Lecture seule)
-              // ============================================================
-              _buildLabel('Âge des poulets'),
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: AppBorders.inputRadius,
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Âge actuel',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    Text(
-                      '$_agePoulets jours',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-
-              // ============================================================
-              // ALERTE ÉCART D'ÂGE
-              // ============================================================
-              if (ageConflict)
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEF3C7),
-                    borderRadius: AppBorders.cardRadius,
-                    border: Border.all(color: const Color(0xFFB45309)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Text('⚠️', style: TextStyle(fontSize: 18)),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: Text(
-                          'Attention : L\'écart d\'âge avec les sujets du bâtiment cible dépasse 7 jours. Risque sanitaire accru pour la bande.',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: const Color(0xFFB45309),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              const SizedBox(height: AppSpacing.md),
-
-              // ============================================================
-              // ALERTE CAPACITÉ
-              // ============================================================
-              if (capacityConflict)
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: AppColors.error.withOpacity(0.08),
-                    borderRadius: AppBorders.cardRadius,
-                    border: Border.all(color: AppColors.error),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.warning_amber_rounded,
-                        color: AppColors.error,
-                        size: 20,
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: Text(
-                          'Capacité maximale du poulailler cible dépassée !',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.error,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              const SizedBox(height: AppSpacing.lg),
-
-              // ============================================================
-              // RAISON (optionnelle)
-              // ============================================================
-              _buildLabel('Raison du transfert (optionnel)'),
-              TextFormField(
-                controller: _raisonController,
-                maxLines: 2,
-                style: AppTextStyles.bodyMedium,
-                decoration: InputDecoration(
-                  hintText: 'Ex: Délestage pour réduire la densité...',
-                  hintStyle: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textHint,
-                  ),
-                  filled: true,
-                  fillColor: const Color(0xFFF8FAFC),
-                  border: OutlineInputBorder(
-                    borderRadius: AppBorders.inputRadius,
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: AppBorders.inputRadius,
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: AppBorders.inputRadius,
-                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
-                  ),
-                  contentPadding: const EdgeInsets.all(AppSpacing.md),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xxl),
-
-              // ============================================================
-              // BOUTON VALIDER
-              // ============================================================
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: capacityConflict ? null : _submitMigration,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppBorders.buttonRadius,
-                    ),
-                    disabledBackgroundColor: AppColors.textHint,
-                  ),
-                  child: const Text(
-                    'VALIDER LA MIGRATION',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-            ],
+          // CIBLE
+          Text('Poulailler cible *', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
+          const SizedBox(height: AppSpacing.xs),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            decoration: BoxDecoration(color: AppColors.surfaceLight, borderRadius: AppBorders.inputRadius, border: Border.all(color: AppColors.border)),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(value: _selectedTargetId, isExpanded: true,
+                  hint: Text('Sélectionnez un poulailler', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint)),
+                  items: poulaillers.map((p) => DropdownMenuItem(value: p.id, child: Text(p.nom, style: AppTextStyles.bodyMedium))).toList(),
+                  onChanged: (value) => setState(() => _selectedTargetId = value)),
+            ),
           ),
-        ),
-      ),
-    );
-  }
+          const SizedBox(height: AppSpacing.lg),
 
-  Widget _buildLabel(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-      child: Text(
-        text,
-        style: AppTextStyles.labelLarge.copyWith(
-          color: AppColors.textSecondary,
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-        ),
+          // NOMBRE
+          Text('Nombre de sujets à migrer *', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
+          const SizedBox(height: AppSpacing.xs),
+          TextFormField(
+            controller: _nbSujetsController, keyboardType: TextInputType.number,
+            decoration: InputDecoration(hintText: 'Max: $_effectifSource', border: OutlineInputBorder(borderRadius: AppBorders.inputRadius)),
+            validator: (v) {
+              if (v == null || v.isEmpty) return 'Requis';
+              final nb = int.tryParse(v);
+              if (nb == null || nb <= 0) return '> 0';
+              if (nb > _effectifSource) return 'Max: $_effectifSource';
+              return null;
+            },
+          ),
+          const SizedBox(height: AppSpacing.lg),
+
+          // RAISON
+          Text('Raison (optionnel)', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
+          const SizedBox(height: AppSpacing.xs),
+          TextFormField(controller: _raisonController, maxLines: 2, decoration: InputDecoration(hintText: 'Ex: Division après chauffage', border: OutlineInputBorder(borderRadius: AppBorders.inputRadius))),
+          const SizedBox(height: AppSpacing.xxl),
+
+          // BOUTON
+          SizedBox(width: double.infinity, height: 52,
+            child: ElevatedButton(
+              onPressed: _submitMigration,
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: AppBorders.buttonRadius)),
+              child: const Text('VALIDER LA MIGRATION', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+        ])),
       ),
     );
   }

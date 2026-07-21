@@ -13,6 +13,8 @@ import '../../providers/cycle_provider.dart';
 import '../../services/densite_service.dart';
 import '../../services/equipement_service.dart';
 import 'poulailler_edit_screen.dart';
+import 'poulailler_migration_screen.dart';
+
 
 class PoulaillerDetailScreen extends StatefulWidget {
   final Poulailler poulailler;
@@ -556,7 +558,7 @@ class _PoulaillerDetailScreenState extends State<PoulaillerDetailScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const Placeholder(),
+                      builder: (context) => PoulaillerMigrationScreen(source: widget.poulailler),
                     ),
                   );
                 }
