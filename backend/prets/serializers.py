@@ -76,9 +76,6 @@ class PretSerializer(serializers.ModelSerializer):
 
 
 class PretListSerializer(serializers.ModelSerializer):
-    """
-    Serializer simplifié pour la liste des prêts
-    """
     prochaine_echeance = serializers.SerializerMethodField()
     est_en_retard = serializers.ReadOnlyField()
 
@@ -87,7 +84,9 @@ class PretListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'preteur', 'type_preteur', 'montant_total',
             'montant_restant', 'prochaine_echeance', 'est_en_retard',
-            'is_rembourse', 'created_at'
+            'is_rembourse', 'created_at',
+            'type_taux', 'date_limite', 'taux_interet',
+            'mode_remboursement', 'duree_totale_mois',
         ]
 
     def get_prochaine_echeance(self, obj):

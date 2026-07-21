@@ -16,6 +16,10 @@ class FinanceHubScreen extends StatefulWidget {
   State<FinanceHubScreen> createState() => _FinanceHubScreenState();
 }
 
+DateTime? _lastFetch;
+final _cacheDuration = Duration(seconds: 30);
+bool get _isCacheValid => _lastFetch != null && DateTime.now().difference(_lastFetch!) < _cacheDuration;
+
 class _FinanceHubScreenState extends State<FinanceHubScreen> {
   final _apiService = ApiService();
   String _selectedFilter = 'Toutes';
@@ -32,6 +36,7 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
   }
 
   Future<void> _loadTransactions() async {
+    if (_isCacheValid) return;
     setState(() => _isLoading = true);
     try {
       // Charger dépenses
@@ -53,6 +58,8 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
             });
           }
         }
+
+        _lastFetch = DateTime.now();
       }
 
       if (ventesResponse.statusCode == 200) {

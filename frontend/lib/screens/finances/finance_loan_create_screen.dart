@@ -139,7 +139,7 @@ class _FinanceLoanCreateScreenState extends State<FinanceLoanCreateScreen> {
         id: '', preteur: _preteurController.text.trim(), typePreteur: _selectedTypePreteur!,
         montantTotal: _montantTotalARembourser, dateDeblocage: _selectedDate,
         tauxInteret: _taux, typeTaux: _typeTaux,
-        modeRemboursement: _echeancesImposees ? 'IMPOSE' : 'FLEXIBLE',
+        modeRemboursement: _echeancesImposees ? 'IMPOSE' : 'PROPOSE',
         dateLimite: _dateLimite, montantRestant: _montantTotalARembourser,
         dureeTotaleMois: _nbMois,
         createdAt: DateTime.now(), updatedAt: DateTime.now(),

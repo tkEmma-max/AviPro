@@ -15,7 +15,7 @@ class ApiService {
 
     print('🔵 ApiService initialisé avec baseUrl: ${AppConstants.apiBaseUrl}');
 
-    // Intercepteur JWT
+    // Intercepteur JWT avec refresh auto
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
@@ -23,16 +23,28 @@ class ApiService {
           final token = prefs.getString(AppConstants.storageAccessToken);
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
-            print('🔑 Token ajouté à la requête: ${token.substring(0, 20)}...');
-          } else {
-            print('⚠️ Aucun token trouvé');
           }
           return handler.next(options);
         },
         onError: (error, handler) async {
-          print('❌ Erreur API: ${error.response?.statusCode} - ${error.message}');
+          // Si 401 → tenter de rafraîchir le token
           if (error.response?.statusCode == 401) {
-            print('🔴 Token expiré, tentative de rafraîchissement...');
+            final success = await _refreshToken();
+            if (success) {
+              // Réessayer la requête avec le nouveau token
+              final prefs = await SharedPreferences.getInstance();
+              final newToken = prefs.getString(AppConstants.storageAccessToken);
+              if (newToken != null) {
+                final options = error.requestOptions;
+                options.headers['Authorization'] = 'Bearer $newToken';
+                try {
+                  final response = await _dio.fetch(options);
+                  return handler.resolve(response);
+                } catch (e) {
+                  return handler.next(error);
+                }
+              }
+            }
           }
           return handler.next(error);
         },
@@ -40,92 +52,90 @@ class ApiService {
     );
   }
 
+  // ═══════════════════════════════════════════
+  // REFRESH TOKEN SILENCIEUX
+  // ═══════════════════════════════════════════
+  Future<bool> _refreshToken() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final refreshToken = prefs.getString(AppConstants.storageRefreshToken);
+
+      if (refreshToken == null) return false;
+
+      final response = await Dio().post(
+        '${AppConstants.apiBaseUrl}auth/auth/refresh/',
+        data: {'refresh': refreshToken},
+      );
+
+      if (response.statusCode == 200) {
+        await prefs.setString(AppConstants.storageAccessToken, response.data['access']);
+        print('🔄 Token rafraîchi avec succès');
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('❌ Échec refresh token: $e');
+      return false;
+    }
+  }
+
+  // ═══════════════════════════════════════════
+  // MÉTHODES HTTP
+  // ═══════════════════════════════════════════
   Future<Response> get(String endpoint) async {
-    print('📡 GET $endpoint');
     try {
       final response = await _dio.get(endpoint);
-      print('✅ GET $endpoint → ${response.statusCode}');
       return response;
     } catch (e) {
-      print('❌ GET $endpoint → Erreur: $e');
       rethrow;
     }
   }
 
   Future<Response> post(String endpoint, {dynamic data}) async {
-    print('📡 POST $endpoint');
-    print('📦 Data: $data');
     try {
       final response = await _dio.post(endpoint, data: data);
-      print('✅ POST $endpoint → ${response.statusCode}');
       return response;
     } catch (e) {
-      print('❌ POST $endpoint → Erreur: $e');
       rethrow;
     }
   }
 
   Future<Response> put(String endpoint, {dynamic data}) async {
-    print('📡 PUT $endpoint');
     try {
       final response = await _dio.put(endpoint, data: data);
-      print('✅ PUT $endpoint → ${response.statusCode}');
       return response;
     } catch (e) {
-      print('❌ PUT $endpoint → Erreur: $e');
       rethrow;
     }
   }
 
   Future<Response> delete(String endpoint) async {
-    print('📡 DELETE $endpoint');
     try {
       final response = await _dio.delete(endpoint);
-      print('✅ DELETE $endpoint → ${response.statusCode}');
       return response;
     } catch (e) {
-      print('❌ DELETE $endpoint → Erreur: $e');
       rethrow;
     }
-  }
-
-  Future<Response> login(String email, String password) async {
-    print('🔐 Tentative de login: $email');
-    return await _dio.post(
-      'auth/auth/login/',
-      data: {'email': email, 'password': password},
-    );
-  }
-
-  Future<Response> register(String firstName, String lastName, String email, String phone, String password) async {
-    print('📝 Tentative d\'inscription: $email');
-    return await _dio.post(
-      'auth/register/',
-      data: {
-        'first_name': firstName,
-        'last_name': lastName,
-        'email': email,
-        'telephone': phone,
-        'password': password,
-      },
-    );
   }
 
   Future<Response> patch(String endpoint, {Map<String, dynamic>? data}) async {
     return _dio.patch(endpoint, data: data);
   }
 
-  String getErrorMessage(DioException error) {
-    if (error.response != null) {
-      final data = error.response!.data;
-      if (data is Map && data.containsKey('error')) {
-        return data['error'];
-      }
-      if (data is Map && data.containsKey('message')) {
-        return data['message'];
-      }
-      return 'Erreur ${error.response!.statusCode}';
-    }
-    return 'Erreur réseau. Vérifiez votre connexion.';
+  Future<Response> login(String email, String password) async {
+    return await _dio.post('auth/auth/login/', data: {
+      'email': email,
+      'password': password,
+    });
+  }
+
+  Future<Response> register(String firstName, String lastName, String email, String phone, String password) async {
+    return await _dio.post('auth/auth/register/', data: {
+      'first_name': firstName,
+      'last_name': lastName,
+      'email': email,
+      'telephone': phone,
+      'password': password,
+    });
   }
 }
