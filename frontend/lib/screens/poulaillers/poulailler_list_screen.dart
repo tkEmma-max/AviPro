@@ -128,47 +128,18 @@ class _PoulaillerListScreenState extends State<PoulaillerListScreen> {
           Expanded(
             child: filtered.isEmpty
                 ? Center(
-              child: Column(
+              child: provider.isLoading
+                  ? const CircularProgressIndicator()
+                  : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.house_outlined,
-                    size: 60,
-                    color: AppColors.textHint,
-                  ),
+                  Icon(Icons.house_outlined, size: 60, color: AppColors.textHint),
                   const SizedBox(height: AppSpacing.lg),
-                  Text(
-                    _searchQuery.isEmpty && _filterType == 'Tous'
-                        ? 'Aucun poulailler enregistré'
-                        : 'Aucun résultat trouvé',
-                    style: AppTextStyles.headline4.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
+                  Text('Aucun poulailler enregistré', style: AppTextStyles.headline4.copyWith(color: AppColors.textSecondary)),
                   const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    _searchQuery.isEmpty && _filterType == 'Tous'
-                        ? 'Ajoutez votre premier poulailler'
-                        : 'Essayez de modifier votre recherche',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textHint,
-                    ),
-                  ),
-                  if (_searchQuery.isEmpty && _filterType == 'Tous')
-                    const SizedBox(height: AppSpacing.xl),
-                  if (_searchQuery.isEmpty && _filterType == 'Tous')
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/poulailler/create');
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: AppBorders.buttonRadius,
-                        ),
-                      ),
-                      child: const Text('Ajouter un poulailler'),
-                    ),
+                  Text('Ajoutez votre premier poulailler', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint)),
+                  const SizedBox(height: AppSpacing.xl),
+                  ElevatedButton(onPressed: () => Navigator.pushNamed(context, '/poulailler/create'), style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary), child: const Text('Ajouter un poulailler')),
                 ],
               ),
             )

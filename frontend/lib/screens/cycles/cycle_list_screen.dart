@@ -32,6 +32,14 @@ class _CycleListScreenState extends State<CycleListScreen> {
     final provider = context.watch<CycleProvider>();
     final cycles = provider.cycles;
 
+    if (provider.isLoading && cycles.isEmpty) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        appBar: AppBar(title: const Text('Cycles de production'), backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     // Filtrage
     List<Cycle> filteredCycles;
     if (_filter == 'Actifs') {

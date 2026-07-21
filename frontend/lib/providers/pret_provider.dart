@@ -7,9 +7,8 @@ class PretProvider extends ChangeNotifier {
   final ApiService _apiService = ApiService();
   List<Pret> _prets = [];
   bool _isLoading = false;
-
-  List<Pret> get prets => _prets;
   bool get isLoading => _isLoading;
+  List<Pret> get prets => _prets;
 
   PretProvider() {
     _loadPrets();

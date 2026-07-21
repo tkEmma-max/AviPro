@@ -6,8 +6,10 @@ import '../services/api_service.dart';
 class CycleProvider extends ChangeNotifier {
   final ApiService _apiService = ApiService();
   List<Cycle> _cycles = [];
+  bool _isLoading = false;
 
   List<Cycle> get cycles => _cycles;
+  bool get isLoading => _isLoading;
 
   CycleProvider() {
     print('🔵 [CycleProvider] Constructeur appelé');
@@ -15,6 +17,8 @@ class CycleProvider extends ChangeNotifier {
   }
 
   Future<void> _loadCycles() async {
+    _isLoading = true;
+    notifyListeners();
     print('🔄 [CycleProvider] _loadCycles() appelé');
     try {
       final response = await _apiService.get('cycles/');
@@ -26,7 +30,6 @@ class CycleProvider extends ChangeNotifier {
           print('📦 [CycleProvider] ${results.length} cycles trouvés');
           _cycles = results.map((json) => Cycle.fromJson(json)).toList();
           print('✅ [CycleProvider] ${_cycles.length} cycles chargés');
-          notifyListeners();
         } else {
           print('❌ [CycleProvider] Format de réponse inattendu');
         }
@@ -34,6 +37,8 @@ class CycleProvider extends ChangeNotifier {
     } catch (e) {
       print('❌ [CycleProvider] Exception: $e');
     }
+    _isLoading = false;
+    notifyListeners();
   }
 
   Future<void> refreshCycles() async {
@@ -41,9 +46,6 @@ class CycleProvider extends ChangeNotifier {
     await _loadCycles();
   }
 
-  // ============================================================
-  // RÉCUPÉRER LE CYCLE ACTIF D'UN POULAILLER
-  // ============================================================
   Cycle? getCycleActif(String poulaillerId) {
     print('🔍 [CycleProvider] getCycleActif pour poulailler: $poulaillerId');
     try {
@@ -58,16 +60,10 @@ class CycleProvider extends ChangeNotifier {
     }
   }
 
-  // ============================================================
-  // RÉCUPÉRER LES CYCLES D'UN POULAILLER (LOCAL)
-  // ============================================================
   List<Cycle> getCyclesByPoulailler(String poulaillerId) {
     return _cycles.where((c) => c.poulailler == poulaillerId).toList();
   }
 
-  // ============================================================
-  // RÉCUPÉRER LES CYCLES D'UN POULAILLER VIA L'API
-  // ============================================================
   Future<List<Cycle>> fetchCyclesByPoulailler(String poulaillerId) async {
     print('🔍 [CycleProvider] fetchCyclesByPoulailler: $poulaillerId');
     try {
@@ -88,16 +84,10 @@ class CycleProvider extends ChangeNotifier {
     }
   }
 
-  // ============================================================
-  // AJOUTER UN CYCLE
-  // ============================================================
   Future<void> addCycle(Cycle cycle) async {
     print('➕ [CycleProvider] addCycle: ${cycle.nom}');
     try {
-      final response = await _apiService.post(
-        'cycles/',
-        data: cycle.toJson(),
-      );
+      final response = await _apiService.post('cycles/', data: cycle.toJson());
       if (response.statusCode == 201) {
         final newCycle = Cycle.fromJson(response.data);
         _cycles.add(newCycle);
@@ -110,9 +100,6 @@ class CycleProvider extends ChangeNotifier {
     }
   }
 
-  // ============================================================
-  // MODIFIER UN CYCLE
-  // ============================================================
   Future<bool> updateCycle(String cycleId, Map<String, dynamic> data) async {
     print('✏️ [CycleProvider] updateCycle: $cycleId');
     print('📤 [CycleProvider] PUT cycles/$cycleId/ data: $data');
@@ -138,10 +125,6 @@ class CycleProvider extends ChangeNotifier {
     }
   }
 
-
-  // ============================================================
-  // SUPPRIMER UN CYCLE
-  // ============================================================
   Future<bool> deleteCycle(String cycleId) async {
     print('🗑️ [CycleProvider] deleteCycle: $cycleId');
     try {

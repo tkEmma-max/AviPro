@@ -38,6 +38,18 @@ class _FinanceLoanDashboardScreenState extends State<FinanceLoanDashboardScreen>
     final pretsActifs = prets.where((p) => !p.isRembourse).toList();
     final totalRestant = pretsActifs.fold<double>(0, (s, p) => s + p.montantRestant);
 
+    if (provider.isLoading && prets.isEmpty) {
+      return Scaffold(
+        backgroundColor: AppColors.surface,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent, elevation: 0,
+          leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary), onPressed: () => Navigator.pop(context)),
+          title: const Text('Mes prêts', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
+          centerTitle: true,
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
