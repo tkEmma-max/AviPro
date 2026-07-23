@@ -6,6 +6,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_borders.dart';
 import '../../providers/cycle_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
 
 class FinanceVenteScreen extends StatefulWidget {
@@ -21,6 +22,7 @@ class _FinanceVenteScreenState extends State<FinanceVenteScreen> {
   final _quantiteController = TextEditingController();
   final _prixUnitaireController = TextEditingController();
   final _clientController = TextEditingController();
+  final _vendeurController = TextEditingController();
 
   String? _selectedCycleId;
   String? _selectedType;
@@ -44,12 +46,19 @@ class _FinanceVenteScreenState extends State<FinanceVenteScreen> {
   @override
   void initState() {
     super.initState();
+    final authProvider = context.read<AuthProvider>();
+    _vendeurController.text = authProvider.user?['full_name'] ?? '';
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final args = ModalRoute.of(context)?.settings.arguments;
       if (args is Map && args.containsKey('cycle_id')) {
         setState(() {
           _selectedCycleId = args['cycle_id'];
         });
+        // ✅ Charger le coût de production pour le cycle pré-rempli
+        if (_selectedCycleId != null) {
+          _loadCoutProduction(_selectedCycleId!);
+        }
       }
     });
   }
@@ -59,6 +68,7 @@ class _FinanceVenteScreenState extends State<FinanceVenteScreen> {
     _quantiteController.dispose();
     _prixUnitaireController.dispose();
     _clientController.dispose();
+    _vendeurController.dispose();
     super.dispose();
   }
 
@@ -77,10 +87,12 @@ class _FinanceVenteScreenState extends State<FinanceVenteScreen> {
   }
 
   Future<void> _loadCoutProduction(String cycleId) async {
+    print('🔍 Chargement coût pour cycle: $cycleId');
     try {
       final response = await _apiService.get('cycles/$cycleId/');
       if (response.statusCode == 200) {
         final data = response.data;
+        print('📥 Coût production: ${data['cout_production_unitaire']}');
         setState(() {
           _coutProductionUnitaire = double.tryParse(data['cout_production_unitaire']?.toString() ?? '0') ?? 0;
           _donneesCycleChargees = true;
@@ -101,14 +113,12 @@ class _FinanceVenteScreenState extends State<FinanceVenteScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCycleId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sélectionnez un cycle'), backgroundColor: AppColors.warning),
-      );
+          const SnackBar(content: Text('Sélectionnez un cycle'), backgroundColor: AppColors.warning));
       return;
     }
     if (_selectedType == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sélectionnez un type'), backgroundColor: AppColors.warning),
-      );
+          const SnackBar(content: Text('Sélectionnez un type'), backgroundColor: AppColors.warning));
       return;
     }
 
@@ -123,6 +133,7 @@ class _FinanceVenteScreenState extends State<FinanceVenteScreen> {
         'montant_total': _montantTotal.toStringAsFixed(0),
         'date': _selectedDate.toIso8601String().split('T')[0],
         if (_clientController.text.isNotEmpty) 'client_nom': _clientController.text,
+        if (_vendeurController.text.isNotEmpty) 'vendeur': _vendeurController.text,
       };
 
       print('📤 [VENTE] POST data: $data');
@@ -131,8 +142,7 @@ class _FinanceVenteScreenState extends State<FinanceVenteScreen> {
 
       if (response.statusCode == 201 && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Vente enregistree !'), backgroundColor: AppColors.success),
-        );
+            const SnackBar(content: Text('Vente enregistree !'), backgroundColor: AppColors.success));
         Navigator.pop(context);
       } else {
         throw Exception('Erreur ${response.statusCode}');
@@ -141,8 +151,7 @@ class _FinanceVenteScreenState extends State<FinanceVenteScreen> {
       print('❌ [VENTE] Exception: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e'), backgroundColor: AppColors.error),
-        );
+            SnackBar(content: Text('Erreur: $e'), backgroundColor: AppColors.error));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -165,179 +174,132 @@ class _FinanceVenteScreenState extends State<FinanceVenteScreen> {
       body: SingleChildScrollView(
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: AppSpacing.lg),
+        child: Form(key: _formKey, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const SizedBox(height: AppSpacing.lg),
 
-              // Cycle
-              Text('Cycle *', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
-              const SizedBox(height: AppSpacing.xs),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                decoration: BoxDecoration(color: AppColors.surfaceLight, borderRadius: AppBorders.inputRadius, border: Border.all(color: AppColors.border)),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedCycleId,
-                    hint: Text('Selectionnez un cycle', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint)),
-                    isExpanded: true,
-                    icon: Icon(Icons.arrow_drop_down, color: AppColors.primary),
-                    items: cyclesActifs.map((c) => DropdownMenuItem<String>(value: c.id, child: Text(c.nom, style: AppTextStyles.bodyMedium))).toList(),
-                    onChanged: (v) {
-                      setState(() => _selectedCycleId = v);
-                      if (v != null) _loadCoutProduction(v);
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-
-              // Type
-              Text('Type de vente *', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
-              const SizedBox(height: AppSpacing.xs),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                decoration: BoxDecoration(color: AppColors.surfaceLight, borderRadius: AppBorders.inputRadius, border: Border.all(color: AppColors.border)),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedType,
-                    hint: Text('Selectionnez un type', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint)),
-                    isExpanded: true,
-                    icon: Icon(Icons.arrow_drop_down, color: AppColors.primary),
-                    items: _types.entries.map((e) => DropdownMenuItem<String>(value: e.key, child: Text(e.value, style: AppTextStyles.bodyMedium))).toList(),
-                    onChanged: (v) => setState(() => _selectedType = v),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-
-              // Quantite & Prix
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('Quantite *', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary, fontSize: 13)),
-                      const SizedBox(height: AppSpacing.xs),
-                      TextFormField(controller: _quantiteController, keyboardType: TextInputType.number, onChanged: (_) => _updateMontantTotal(), decoration: _inputDecoration('0'), validator: (v) => v!.isEmpty || int.tryParse(v) == null ? 'Requis' : null),
-                    ]),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('Prix unitaire *', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary, fontSize: 13)),
-                      const SizedBox(height: AppSpacing.xs),
-                      TextFormField(controller: _prixUnitaireController, keyboardType: TextInputType.number, onChanged: (_) => _updateMontantTotal(), decoration: _inputDecoration('0'), validator: (v) => v!.isEmpty || double.tryParse(v) == null ? 'Requis' : null),
-                    ]),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.lg),
-
-              // Montant total
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                decoration: BoxDecoration(color: AppColors.success.withOpacity(0.1), borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.success.withOpacity(0.3))),
-                child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  Text('Montant total', style: AppTextStyles.bodyMedium),
-                  Text('${_montantTotal.toInt()} FCFA', style: AppTextStyles.numberMedium.copyWith(color: AppColors.success)),
-                ]),
-              ),
-
-              // Alerte vente a perte
-              if (_isVenteAPerte)
-                Container(
-                  margin: const EdgeInsets.only(top: AppSpacing.md),
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: AppColors.error.withOpacity(0.08),
-                    borderRadius: AppBorders.cardRadius,
-                    border: Border.all(color: AppColors.error.withOpacity(0.3)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(children: [
-                        const Icon(Icons.warning_amber_outlined, color: AppColors.error, size: 20),
-                        const SizedBox(width: AppSpacing.sm),
-                        Text('VENTE A PERTE', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.error)),
-                      ]),
-                      const SizedBox(height: AppSpacing.sm),
-                      Text(
-                        'Cout de production: ${_coutProductionUnitaire.toInt()} FCFA/unite. Vous vendez en dessous du prix de revient.',
-                        style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
-                      ),
-                    ],
-                  ),
-                ),
-
-              // Suggestions de prix
-              if (_donneesCycleChargees && _coutProductionUnitaire > 0)
-                Container(
-                  margin: const EdgeInsets.only(top: AppSpacing.md),
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.05),
-                    borderRadius: AppBorders.cardRadius,
-                    border: Border.all(color: AppColors.primary.withOpacity(0.2)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(children: [
-                        const Icon(Icons.lightbulb_outline, color: AppColors.primary, size: 18),
-                        const SizedBox(width: AppSpacing.sm),
-                        Text('Prix suggeres', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.primary)),
-                      ]),
-                      const SizedBox(height: AppSpacing.sm),
-                      _buildPrixSuggere('Equilibre (0%)', _getPrixRecommande(0)),
-                      _buildPrixSuggere('Benefice +10%', _getPrixRecommande(10)),
-                      _buildPrixSuggere('Benefice +20%', _getPrixRecommande(20)),
-                    ],
-                  ),
-                ),
-              const SizedBox(height: AppSpacing.lg),
-
-              // Date
-              Text('Date', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
-              const SizedBox(height: AppSpacing.xs),
-              GestureDetector(
-                onTap: () async {
-                  final date = await showDatePicker(context: context, initialDate: _selectedDate, firstDate: DateTime(2020), lastDate: DateTime.now());
-                  if (date != null) setState(() => _selectedDate = date);
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(color: AppColors.surfaceLight, borderRadius: AppBorders.inputRadius, border: Border.all(color: AppColors.border)),
-                  child: Row(children: [
-                    Icon(Icons.calendar_today, color: AppColors.textHint), const SizedBox(width: AppSpacing.md),
-                    Text('${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}', style: AppTextStyles.bodyMedium),
-                    const Spacer(), Icon(Icons.arrow_drop_down, color: AppColors.textHint),
-                  ]),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-
-              // Client
-              Text('Client (optionnel)', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
-              const SizedBox(height: AppSpacing.xs),
-              TextFormField(controller: _clientController, decoration: _inputDecoration('Nom du client')),
-              const SizedBox(height: AppSpacing.xxl),
-
-              // Bouton
-              SizedBox(
-                width: double.infinity, height: 52,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _submitForm,
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: AppBorders.buttonRadius)),
-                  child: Text(_isLoading ? 'ENREGISTREMENT...' : 'ENREGISTRER LA VENTE', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-            ],
+          // Cycle
+          Text('Cycle *', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
+          const SizedBox(height: AppSpacing.xs),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            decoration: BoxDecoration(color: AppColors.surfaceLight, borderRadius: AppBorders.inputRadius, border: Border.all(color: AppColors.border)),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(value: _selectedCycleId, isExpanded: true,
+                  hint: Text('Selectionnez un cycle', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint)),
+                  items: cyclesActifs.map((c) => DropdownMenuItem<String>(value: c.id, child: Text(c.nom, style: AppTextStyles.bodyMedium))).toList(),
+                  onChanged: (v) { setState(() => _selectedCycleId = v); if (v != null) _loadCoutProduction(v); }),
+            ),
           ),
-        ),
+          const SizedBox(height: AppSpacing.lg),
+
+          // Type
+          Text('Type de vente *', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
+          const SizedBox(height: AppSpacing.xs),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            decoration: BoxDecoration(color: AppColors.surfaceLight, borderRadius: AppBorders.inputRadius, border: Border.all(color: AppColors.border)),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(value: _selectedType, isExpanded: true,
+                  hint: Text('Selectionnez un type', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint)),
+                  items: _types.entries.map((e) => DropdownMenuItem<String>(value: e.key, child: Text(e.value, style: AppTextStyles.bodyMedium))).toList(),
+                  onChanged: (v) => setState(() => _selectedType = v)),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+
+          // Quantite & Prix
+          Row(children: [
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Quantite *', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary, fontSize: 13)),
+              const SizedBox(height: AppSpacing.xs),
+              TextFormField(controller: _quantiteController, keyboardType: TextInputType.number, onChanged: (_) => _updateMontantTotal(), decoration: _inputDecoration('0'), validator: (v) => v!.isEmpty || int.tryParse(v) == null ? 'Requis' : null),
+            ])),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Prix unitaire *', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary, fontSize: 13)),
+              const SizedBox(height: AppSpacing.xs),
+              TextFormField(controller: _prixUnitaireController, keyboardType: TextInputType.number, onChanged: (_) => _updateMontantTotal(), decoration: _inputDecoration('0'), validator: (v) => v!.isEmpty || double.tryParse(v) == null ? 'Requis' : null),
+            ])),
+          ]),
+          const SizedBox(height: AppSpacing.lg),
+
+          // Montant total
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(color: AppColors.success.withOpacity(0.1), borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.success.withOpacity(0.3))),
+            child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Text('Montant total', style: AppTextStyles.bodyMedium),
+              Text('${_montantTotal.toInt()} FCFA', style: AppTextStyles.numberMedium.copyWith(color: AppColors.success)),
+            ]),
+          ),
+
+          // Alerte vente a perte
+          if (_isVenteAPerte)
+            Container(
+              margin: const EdgeInsets.only(top: AppSpacing.md),
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(color: AppColors.error.withOpacity(0.08), borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.error.withOpacity(0.3))),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [const Icon(Icons.warning_amber_outlined, color: AppColors.error, size: 20), const SizedBox(width: AppSpacing.sm), Text('VENTE A PERTE', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.error))]),
+                const SizedBox(height: AppSpacing.sm),
+                Text('Cout de production: ${_coutProductionUnitaire.toInt()} FCFA/unite.', style: AppTextStyles.bodySmall.copyWith(color: AppColors.error)),
+              ]),
+            ),
+
+          // Suggestions de prix
+          if (_donneesCycleChargees && _coutProductionUnitaire > 0)
+            Container(
+              margin: const EdgeInsets.only(top: AppSpacing.md),
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.05), borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.primary.withOpacity(0.2))),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [const Icon(Icons.lightbulb_outline, color: AppColors.primary, size: 18), const SizedBox(width: AppSpacing.sm), Text('Prix suggeres', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.primary))]),
+                const SizedBox(height: AppSpacing.sm),
+                _buildPrixSuggere('Equilibre (0%)', _getPrixRecommande(0)),
+                _buildPrixSuggere('Benefice +10%', _getPrixRecommande(10)),
+                _buildPrixSuggere('Benefice +20%', _getPrixRecommande(20)),
+              ]),
+            ),
+          const SizedBox(height: AppSpacing.lg),
+
+          // Date
+          Text('Date', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
+          const SizedBox(height: AppSpacing.xs),
+          GestureDetector(
+            onTap: () async {
+              final date = await showDatePicker(context: context, initialDate: _selectedDate, firstDate: DateTime(2020), lastDate: DateTime.now());
+              if (date != null) setState(() => _selectedDate = date);
+            },
+            child: Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(color: AppColors.surfaceLight, borderRadius: AppBorders.inputRadius, border: Border.all(color: AppColors.border)),
+              child: Row(children: [Icon(Icons.calendar_today, color: AppColors.textHint), const SizedBox(width: AppSpacing.md), Text('${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}', style: AppTextStyles.bodyMedium), const Spacer(), Icon(Icons.arrow_drop_down, color: AppColors.textHint)]),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+
+          // Vendeur
+          Text('Vendeur', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
+          const SizedBox(height: AppSpacing.xs),
+          TextFormField(controller: _vendeurController, decoration: _inputDecoration('Nom du vendeur')),
+          const SizedBox(height: AppSpacing.lg),
+
+          // Client
+          Text('Client (optionnel)', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
+          const SizedBox(height: AppSpacing.xs),
+          TextFormField(controller: _clientController, decoration: _inputDecoration('Nom du client')),
+          const SizedBox(height: AppSpacing.xxl),
+
+          // Bouton
+          SizedBox(width: double.infinity, height: 52,
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : _submitForm,
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: AppBorders.buttonRadius)),
+              child: Text(_isLoading ? 'ENREGISTREMENT...' : 'ENREGISTRER LA VENTE', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+        ])),
       ),
     );
   }
@@ -345,26 +307,13 @@ class _FinanceVenteScreenState extends State<FinanceVenteScreen> {
   Widget _buildPrixSuggere(String label, double prix) {
     return Padding(
       padding: const EdgeInsets.only(top: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
-          GestureDetector(
-            onTap: () {
-              _prixUnitaireController.text = prix.toStringAsFixed(0);
-              _updateMontantTotal();
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: AppBorders.buttonRadius,
-              ),
-              child: Text('${prix.toStringAsFixed(0)} FCFA', style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600)),
-            ),
-          ),
-        ],
-      ),
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        Text(label, style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
+        GestureDetector(
+          onTap: () { _prixUnitaireController.text = prix.toStringAsFixed(0); _updateMontantTotal(); },
+          child: Container(padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 4), decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), borderRadius: AppBorders.buttonRadius), child: Text('${prix.toStringAsFixed(0)} FCFA', style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600))),
+        ),
+      ]),
     );
   }
 

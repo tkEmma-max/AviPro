@@ -6,7 +6,8 @@ import '../services/api_service.dart';
 class PoulaillerProvider extends ChangeNotifier {
   final ApiService _apiService = ApiService();
   List<Poulailler> _poulaillers = [];
-
+  bool _isLoading = false;
+  bool get isLoading => _isLoading;
   List<Poulailler> get poulaillers => _poulaillers;
 
   PoulaillerProvider() {
@@ -18,6 +19,8 @@ class PoulaillerProvider extends ChangeNotifier {
   // CHARGER LES POULAILLERS DEPUIS L'API
   // ============================================================
   Future<void> _loadPoulaillers() async {
+    _isLoading = true;
+    notifyListeners();
     print('🔄 [PoulaillerProvider] _loadPoulaillers() appelé');
     try {
       final response = await _apiService.get('poulaillers/');
@@ -40,6 +43,8 @@ class PoulaillerProvider extends ChangeNotifier {
     } catch (e) {
       print('❌ [PoulaillerProvider] Exception: $e');
     }
+    _isLoading = false;
+    notifyListeners();
   }
 
   // ============================================================

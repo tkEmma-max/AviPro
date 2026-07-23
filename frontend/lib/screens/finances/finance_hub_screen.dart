@@ -140,9 +140,11 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
           ),
         ],
       ),
-      body: Column(children: [
-        if (_isLoading && _hasCachedData)
-          const LinearProgressIndicator(minHeight: 2, backgroundColor: Colors.transparent, valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary)),
+      body: _isLoading && !_hasCachedData
+          ? const Center(child: CircularProgressIndicator())
+          : Column(children: [
+            if (_isLoading && _hasCachedData)
+              const LinearProgressIndicator(minHeight: 2, backgroundColor: Colors.transparent, valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary)),
         // HEADER
         Container(
           padding: const EdgeInsets.all(AppSpacing.lg),

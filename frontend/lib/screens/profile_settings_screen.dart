@@ -17,6 +17,14 @@ class ProfileSettingsScreen extends StatefulWidget {
 }
 
 class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
+  static bool _cachedLoaded = false;
+  static int _cachedFrequenceRappel = 7;
+  static bool _cachedRappelActif = true;
+  static bool _cachedNotifEcheance = true;
+  static bool _cachedNotifDensite = true;
+  static bool _cachedNotifConsommation = true;
+  static bool _cachedNotifFinCycle = true;
+  static String _cachedDevise = 'FCFA';
   final _apiService = ApiService();
   bool _isLoading = true;
 
@@ -32,6 +40,16 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   @override
   void initState() {
     super.initState();
+    if (_cachedLoaded) {
+      _frequenceRappel = _cachedFrequenceRappel;
+      _rappelActif = _cachedRappelActif;
+      _notifEcheance = _cachedNotifEcheance;
+      _notifDensite = _cachedNotifDensite;
+      _notifConsommation = _cachedNotifConsommation;
+      _notifFinCycle = _cachedNotifFinCycle;
+      _devise = _cachedDevise;
+      _isLoading = false;
+    }
     _loadParametres();
   }
 
@@ -49,6 +67,15 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           _notifFinCycle = data['notif_fin_cycle'] ?? true;
           _devise = data['devise'] ?? 'FCFA';
         });
+
+        _cachedFrequenceRappel = _frequenceRappel;
+        _cachedRappelActif = _rappelActif;
+        _cachedNotifEcheance = _notifEcheance;
+        _cachedNotifDensite = _notifDensite;
+        _cachedNotifConsommation = _notifConsommation;
+        _cachedNotifFinCycle = _notifFinCycle;
+        _cachedDevise = _devise;
+        _cachedLoaded = true;
       }
     } catch (e) {
       print('Erreur chargement paramètres: $e');
