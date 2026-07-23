@@ -55,6 +55,12 @@ class DepenseSerializer(serializers.ModelSerializer):
     categorie_depense_nom = serializers.ReadOnlyField(source='categorie_depense.nom')
     cycle_nom = serializers.ReadOnlyField(source='cycle.nom')
     fournisseur_nom = serializers.ReadOnlyField(source='fournisseur.nom')
+    cumul_depenses_avant = serializers.ReadOnlyField()
+    cumul_depenses_apres = serializers.ReadOnlyField()
+    prix_revient_avant = serializers.ReadOnlyField()
+    prix_revient_apres = serializers.ReadOnlyField()
+    impact_pourcentage = serializers.ReadOnlyField()
+    poulailler_nom = serializers.ReadOnlyField()
 
     class Meta:
         model = Depense
@@ -66,6 +72,9 @@ class DepenseSerializer(serializers.ModelSerializer):
             'facture_numero', 'facture_photo',
             'fournisseur', 'fournisseur_nom',
             'est_depense_routine', 'routine_id',
+            'cumul_depenses_avant', 'cumul_depenses_apres',
+            'prix_revient_avant', 'prix_revient_apres',
+            'impact_pourcentage', 'poulailler_nom',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
@@ -81,7 +90,7 @@ class DepenseListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'cycle', 'cycle_nom',
             'categorie', 'categorie_label', 'categorie_depense_nom',
-            'montant', 'date', 'description'
+            'montant', 'date', 'description', 'poulailler_nom',
         ]
 
 

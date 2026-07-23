@@ -51,7 +51,6 @@ class RoutineDepense(models.Model):
     nom = models.CharField(max_length=100, help_text="Ex: Achat poussins, Vaccin J21, Aliment démarrage")
     age_jour = models.IntegerField(default=0, help_text="Âge du cycle auquel appliquer cette routine")
     
-    # Mode de calcul
     mode_calcul = models.CharField(max_length=20, choices=MODE_CHOICES, default='PAR_SUJET')
     montant_par_sujet = models.DecimalField(max_digits=10, decimal_places=0, default=0, help_text="Montant par sujet si mode PAR_SUJET")
     seuil_tranche = models.IntegerField(default=50, help_text="Nombre de poulets par tranche (ex: 1 sac pour 50 poulets)")
@@ -84,7 +83,7 @@ class RoutineDepense(models.Model):
         elif self.mode_calcul == 'PAR_TRANCHE':
             nb_tranches = (nb_poulets + self.seuil_tranche - 1) // self.seuil_tranche
             return nb_tranches * self.montant_par_tranche
-        else:  # FIXE
+        else:
             return self.montant_fixe
 
 
@@ -115,7 +114,7 @@ class RoutineAppliquee(models.Model):
         verbose_name = 'Routine appliquée'
         verbose_name_plural = 'Routines appliquées'
         ordering = ['-date_application']
-        unique_together = ['routine', 'cycle']  # Une routine ne peut être appliquée qu'une fois par cycle
+        unique_together = ['routine', 'cycle']
 
     def __str__(self):
         return f"{self.routine.nom} → {self.cycle.nom}"
@@ -164,3 +163,49 @@ class Depense(models.Model):
     def __str__(self):
         label = self.categorie_depense.nom if self.categorie_depense else self.categorie
         return f"{label or 'Dépense'} - {self.montant} FCFA"
+
+    @property
+    def cumul_depenses_avant(self):
+        """Total des dépenses du cycle avant cette dépense"""
+        if self.cycle:
+            return sum(d.montant for d in self.cycle.depenses.filter(
+                is_deleted=False, created_at__lt=self.created_at
+            ))
+        return 0
+
+    @property
+    def cumul_depenses_apres(self):
+        """Total des dépenses du cycle après cette dépense"""
+        if self.cycle:
+            return sum(d.montant for d in self.cycle.depenses.filter(
+                is_deleted=False, created_at__lte=self.created_at
+            ))
+        return 0
+
+    @property
+    def prix_revient_avant(self):
+        """Prix de revient par sujet avant cette dépense"""
+        if self.cycle and self.cycle.nombre_sujets_actuels > 0:
+            return self.cumul_depenses_avant / self.cycle.nombre_sujets_actuels
+        return 0
+
+    @property
+    def prix_revient_apres(self):
+        """Prix de revient par sujet après cette dépense"""
+        if self.cycle and self.cycle.nombre_sujets_actuels > 0:
+            return self.cumul_depenses_apres / self.cycle.nombre_sujets_actuels
+        return 0
+
+    @property
+    def impact_pourcentage(self):
+        """Pourcentage d'augmentation du prix de revient"""
+        if self.prix_revient_avant > 0:
+            return ((self.prix_revient_apres - self.prix_revient_avant) / self.prix_revient_avant) * 100
+        return 0
+
+    @property
+    def poulailler_nom(self):
+        """Nom du poulailler"""
+        if self.cycle:
+            return self.cycle.poulailler.nom
+        return None

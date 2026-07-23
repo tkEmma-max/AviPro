@@ -37,16 +37,11 @@ class Vente(models.Model):
     cycle = models.ForeignKey(
         'cycles.Cycle', on_delete=models.CASCADE, related_name='ventes'
     )
-    
-    # Ancien champ type (gardé pour rétrocompatibilité)
     type = models.CharField(max_length=20, blank=True, null=True)
-    
-    # Nouveau champ lié à TypeVente
     type_vente = models.ForeignKey(
         TypeVente, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='ventes', help_text="Type de vente personnalisé"
     )
-    
     quantite = models.FloatField()
     prix_unitaire = models.FloatField()
     montant_total = models.DecimalField(max_digits=12, decimal_places=0, blank=True, null=True)
@@ -60,18 +55,11 @@ class Vente(models.Model):
     facture_photo = models.URLField(blank=True, null=True)
     signature = models.URLField(blank=True, null=True)
     is_deleted = models.BooleanField(default=False)
-    
-    # Prêt / remboursement
     remboursement_confirme = models.BooleanField(default=False)
     remboursement_cycle_id = models.UUIDField(null=True, blank=True)
-    
-    # Champs visionnaires
     metadata = models.JSONField(default=dict, blank=True)
-    vendeur = models.CharField(max_length=100, blank=True, null=True, help_text="Nom du vendeur (si différent du propriétaire)")
-    
-    # Lien futur vers une annonce marketplace
+    vendeur = models.CharField(max_length=100, blank=True, null=True, help_text="Nom du vendeur")
     annonce_id = models.UUIDField(null=True, blank=True, help_text="ID de l'annonce marketplace liée")
-    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
@@ -108,8 +96,44 @@ class Vente(models.Model):
 
     @property
     def marge_unitaire(self):
-        """Marge par unité vendue (prix vente - prix de revient)"""
         prix_revient = float(self.prix_de_revient)
         if prix_revient > 0:
             return self.prix_unitaire - prix_revient
         return float(self.prix_unitaire)
+
+    @property
+    def pourcentage_benefice(self):
+        """Pourcentage de bénéfice sur cette vente"""
+        if self.prix_de_revient > 0:
+            return ((self.prix_unitaire - self.prix_de_revient) / self.prix_de_revient) * 100
+        return 0
+
+    @property
+    def status_vente(self):
+        """Statut de la vente : GAIN, STABLE, PERTE"""
+        if self.pourcentage_benefice > 5:
+            return "GAIN"
+        elif self.pourcentage_benefice < -5:
+            return "PERTE"
+        return "STABLE"
+
+    @property
+    def cumul_benefices_cycle(self):
+        """Bénéfice cumulé du cycle après cette vente"""
+        if self.cycle:
+            return self.cycle.benefice
+        return 0
+
+    @property
+    def potentiel_restant(self):
+        """Bénéfice potentiel si les sujets restants sont vendus au même prix"""
+        if self.cycle and self.cycle.nombre_sujets_actuels > 0:
+            return self.cycle.nombre_sujets_actuels * (self.prix_unitaire - self.prix_de_revient)
+        return 0
+
+    @property
+    def poulailler_nom(self):
+        """Nom du poulailler où la vente a été faite"""
+        if self.cycle:
+            return self.cycle.poulailler.nom
+        return None

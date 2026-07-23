@@ -1,0 +1,9 @@
+1. le graphe de la page des details de cycle n'affiche aucune courbe 
+    s'il y a pas de ventes (sa ne marche pas avec seulement les ventes), et pourtant le graphe
+    du dashboard le fait en considerant que les ventes son a 0
+2.  le boutton "gerer la repartition affiche une page rouge avec du texte jaune: "type 'String' is not a subtype of 
+    type 'poulailler' in type cast"
+3.  le block de "repartition des sujets" est trop coller a celui de "materiel de nutrition", il faut ajouter une marge juste en dessous
+    du block de "repartition des sujets" 
+4.  la fiche de details du poulailler affiche "0 mangeoire, 0abreuvoirs" meme pour les poulailler 
+    ayant un cycle actif avec un nombre de mangeoires definit (la page de details du cycle laffiche clairement" 

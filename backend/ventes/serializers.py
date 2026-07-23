@@ -18,6 +18,11 @@ class VenteSerializer(serializers.ModelSerializer):
     prix_de_revient = serializers.ReadOnlyField()
     est_rentable = serializers.ReadOnlyField()
     marge_unitaire = serializers.ReadOnlyField()
+    pourcentage_benefice = serializers.ReadOnlyField()
+    status_vente = serializers.ReadOnlyField()
+    cumul_benefices_cycle = serializers.ReadOnlyField()
+    potentiel_restant = serializers.ReadOnlyField()
+    poulailler_nom = serializers.ReadOnlyField()
 
     class Meta:
         model = Vente
@@ -29,6 +34,8 @@ class VenteSerializer(serializers.ModelSerializer):
             'client', 'client_nom',
             'facture_numero', 'facture_photo', 'signature',
             'prix_de_revient', 'est_rentable', 'marge_unitaire',
+            'pourcentage_benefice', 'status_vente', 'cumul_benefices_cycle',
+            'potentiel_restant', 'poulailler_nom',
             'remboursement_confirme',
             'vendeur', 'metadata',
             'created_at', 'updated_at'
@@ -48,7 +55,7 @@ class VenteListSerializer(serializers.ModelSerializer):
             'id', 'cycle', 'cycle_nom',
             'type', 'type_label', 'type_vente_nom',
             'quantite', 'prix_unitaire', 'montant_total',
-            'date', 'client_nom'
+            'date', 'client_nom', 'status_vente', 'poulailler_nom',
         ]
 
 
