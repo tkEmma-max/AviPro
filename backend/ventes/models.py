@@ -100,12 +100,13 @@ class Vente(models.Model):
         if prix_revient > 0:
             return self.prix_unitaire - prix_revient
         return float(self.prix_unitaire)
-
+        
     @property
     def pourcentage_benefice(self):
         """Pourcentage de bénéfice sur cette vente"""
-        if self.prix_de_revient > 0:
-            return ((self.prix_unitaire - self.prix_de_revient) / self.prix_de_revient) * 100
+        prix_revient = float(self.prix_de_revient)
+        if prix_revient > 0:
+            return ((self.prix_unitaire - prix_revient) / prix_revient) * 100
         return 0
 
     @property
@@ -126,9 +127,8 @@ class Vente(models.Model):
 
     @property
     def potentiel_restant(self):
-        """Bénéfice potentiel si les sujets restants sont vendus au même prix"""
         if self.cycle and self.cycle.nombre_sujets_actuels > 0:
-            return self.cycle.nombre_sujets_actuels * (self.prix_unitaire - self.prix_de_revient)
+            return self.cycle.nombre_sujets_actuels * (self.prix_unitaire - float(self.prix_de_revient))
         return 0
 
     @property
