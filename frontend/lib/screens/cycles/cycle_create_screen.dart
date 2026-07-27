@@ -42,6 +42,13 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
   bool _isLoading = false;
 
   final List<String> _types = ['CHAIR', 'PONDEUSE', 'LOCAL'];
+  @override
+  void initState() {
+    super.initState();
+    // Pré-remplir le nom du cycle
+    final now = DateTime.now();
+    _nomController.text = 'Lot-${now.day}/${now.month}/${now.year}-1';
+  }
 
   @override
   void dispose() {

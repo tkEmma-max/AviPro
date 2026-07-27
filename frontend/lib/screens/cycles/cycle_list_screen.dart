@@ -8,6 +8,7 @@ import '../../core/theme/app_borders.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../providers/cycle_provider.dart';
 import '../../models/cycle.dart';
+import '../../widgets/custom_search_field.dart';
 
 class CycleListScreen extends StatefulWidget {
   const CycleListScreen({super.key});
@@ -18,6 +19,7 @@ class CycleListScreen extends StatefulWidget {
 
 class _CycleListScreenState extends State<CycleListScreen> {
   String _filter = 'Tous';
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -40,14 +42,22 @@ class _CycleListScreenState extends State<CycleListScreen> {
       );
     }
 
+
     // Filtrage
     List<Cycle> filteredCycles;
     if (_filter == 'Actifs') {
-      filteredCycles = cycles.where((c) => c.isActive && !c.isArchived).toList();
+    filteredCycles = cycles.where((c) => c.isActive && !c.isArchived).toList();
     } else if (_filter == 'Clôturés') {
-      filteredCycles = cycles.where((c) => c.isArchived).toList();
+    filteredCycles = cycles.where((c) => c.isArchived).toList();
     } else {
-      filteredCycles = cycles;
+    filteredCycles = cycles;
+    }
+
+    // Appliquer la recherche
+    if (_searchQuery.isNotEmpty) {
+    filteredCycles = filteredCycles.where((c) =>
+    c.nom.toLowerCase().contains(_searchQuery.toLowerCase())
+    ).toList();
     }
 
     return Scaffold(
@@ -67,6 +77,17 @@ class _CycleListScreenState extends State<CycleListScreen> {
       ),
       body: Column(
         children: [
+          // Barre de recherche
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+            child: CustomSearchField(
+              hint: 'Rechercher un cycle...',
+              onChanged: (value) {
+                setState(() => _searchQuery = value);
+              },
+            ),
+          ),
+
           // Filtres
           Container(
             padding: const EdgeInsets.symmetric(

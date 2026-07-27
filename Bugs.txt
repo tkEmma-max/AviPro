@@ -28,3 +28,7 @@
 12. la section qui indique si le prix est gaganant oh pas et qui propose les prix lors dune vente perds souvent du temps a aparaitre (et souvent elle naparait pas)  (est ce qu'une requette est envoyer au server a cet effet? 
     est cela qui perd du temps. de meme, le champs du nom du vendeur mets souvent du temps a se remplir (mais je sais qu'ici cest a cause de lenvoie de la requette). mais lutilisateur pourait au moins 
     etre informé que quelque chose se trame pemdant se temps.
+13. souvent tous les  données du dashboard charge mais les  cycles et les prets restent a zero.
+14. encore le graph, il faut qu'on revoie vraiment les graphs de lappli, jai trop de probleme avec, mais on va voire sa a la fin
+    pour linstant on se concentre sur les bugs den haut
+

@@ -12,6 +12,7 @@ import '../core/theme/app_text_styles.dart';
 import '../core/theme/app_spacing.dart';
 import '../core/theme/app_borders.dart';
 import '../core/theme/app_shadows.dart';
+import '../core/constants/app_icons.dart';
 import '../services/api_service.dart';
 import 'poulaillers/poulailler_list_screen.dart';
 import 'cycles/cycle_list_screen.dart';
@@ -58,12 +59,12 @@ class _HomeScreenState extends State<HomeScreen> {
             unselectedItemColor: AppColors.textHint,
             selectedLabelStyle: AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.w600),
             unselectedLabelStyle: AppTextStyles.labelSmall,
-            items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Accueil'),
-              BottomNavigationBarItem(icon: Icon(Icons.house_outlined), activeIcon: Icon(Icons.house_rounded), label: 'Poulaillers'),
-              BottomNavigationBarItem(icon: Icon(Icons.timeline_outlined), activeIcon: Icon(Icons.timeline_rounded), label: 'Cycles'),
-              BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet_outlined), activeIcon: Icon(Icons.account_balance_wallet_rounded), label: 'Finances'),
-              BottomNavigationBarItem(icon: Icon(Icons.person_outline_rounded), activeIcon: Icon(Icons.person_rounded), label: 'Profil'),
+            items: [
+              BottomNavigationBarItem(icon: Icon(AppIcons.home), label: 'Accueil'),
+              BottomNavigationBarItem(icon: Icon(AppIcons.house), activeIcon: Icon(AppIcons.house), label: 'Poulaillers'),
+              BottomNavigationBarItem(icon: Icon(AppIcons.cycle), activeIcon: Icon(AppIcons.cycle), label: 'Cycles'),
+              BottomNavigationBarItem(icon: Icon(AppIcons.finance), activeIcon: Icon(AppIcons.finance), label: 'Finances'),
+              BottomNavigationBarItem(icon: Icon(AppIcons.profil), activeIcon: Icon(AppIcons.profil), label: 'Profil'),
             ],
           ),
         ),
@@ -328,10 +329,10 @@ class _DashboardContentState extends State<_DashboardContent> {
                 shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
                 crossAxisCount: 2, crossAxisSpacing: AppSpacing.md, mainAxisSpacing: AppSpacing.md, childAspectRatio: 1.55,
                 children: [
-                  _buildStatCard(title: 'Solde net', value: '${_formatMoney(solde.toInt())} FCFA', icon: Icons.account_balance_wallet_rounded, isPrimary: true),
-                  _buildStatCard(title: 'Dépenses totales', value: '${_formatMoney(_totalDepenses.toInt())} FCFA', icon: Icons.trending_down_rounded, accentColor: AppColors.error),
-                  _buildStatCard(title: 'Cycles actifs', value: '$_cyclesActifs bandes', icon: Icons.egg_rounded, accentColor: AppColors.primary),
-                  _buildStatCard(title: 'Prêts en cours', value: '${_formatMoney(_pretsRestants.toInt())} FCFA', icon: Icons.credit_card_rounded, accentColor: AppColors.warning),
+                  _buildStatCard(title: 'Solde net', value: '${_formatMoney(solde.toInt())} FCFA', icon: AppIcons.solde, isPrimary: true),
+                  _buildStatCard(title: 'Dépenses totales', value: '${_formatMoney(_totalDepenses.toInt())} FCFA', icon: AppIcons.depense, accentColor: AppColors.error),
+                  _buildStatCard(title: 'Cycles actifs', value: '$_cyclesActifs bandes', icon: AppIcons.oeuf, accentColor: AppColors.primary),
+                  _buildStatCard(title: 'Prêts en cours', value: '${_formatMoney(_pretsRestants.toInt())} FCFA', icon: AppIcons.pret, accentColor: AppColors.warning),
                 ],
               ),
             ),
@@ -343,7 +344,7 @@ class _DashboardContentState extends State<_DashboardContent> {
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                   Row(children: [
-                    Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Icon(Icons.show_chart_rounded, size: 16, color: AppColors.primary)),
+                    Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Icon(AppIcons.chart, size: 16, color: AppColors.primary)),
                     const SizedBox(width: 8),
                     Text('Flux de tresorerie', style: AppTextStyles.subtitleLarge.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
                   ]),
@@ -356,18 +357,18 @@ class _DashboardContentState extends State<_DashboardContent> {
             const SizedBox(height: AppSpacing.xl),
 
             // DERNIERES TRANSACTIONS
-            _buildSectionHeader(title: 'Dernieres transactions', icon: Icons.receipt_long_rounded),
+            _buildSectionHeader(title: 'Dernieres transactions', icon: AppIcons.transaction),
             const SizedBox(height: AppSpacing.md),
             if (_dernieresTransactions.isEmpty)
               Container(padding: const EdgeInsets.all(AppSpacing.lg), decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.border)), child: Center(child: Text('Aucune transaction', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint))))
             else
               ..._dernieresTransactions.map((t) => Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                child: _buildTransactionCard(label: t['label'] as String, montant: '${t['type'] == 'vente' ? '+' : '-'} ${_formatMoney((t['montant'] as double).toInt())} FCFA', date: t['date'] as String, isVente: t['type'] == 'vente', icon: t['type'] == 'vente' ? Icons.sell_rounded : Icons.restaurant_rounded),
+                child: _buildTransactionCard(label: t['label'] as String, montant: '${t['type'] == 'vente' ? '+' : '-'} ${_formatMoney((t['montant'] as double).toInt())} FCFA', date: t['date'] as String, isVente: t['type'] == 'vente', icon: t['type'] == 'vente' ? AppIcons.venteAdd : AppIcons.depenseAdd),
               )),
 
             // ECHEANCES
-            _buildSectionHeader(title: 'Echeances prets', icon: Icons.event_note_rounded),
+            _buildSectionHeader(title: 'Echeances prets', icon: AppIcons.echeance),
             const SizedBox(height: AppSpacing.md),
             if (_echeances.isEmpty)
               Container(padding: const EdgeInsets.all(AppSpacing.lg), decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.border)), child: Center(child: Text('Aucune echeance', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint))))
@@ -387,7 +388,7 @@ class _DashboardContentState extends State<_DashboardContent> {
     final maxY = (_totalVentes > _totalDepenses ? _totalVentes : _totalDepenses) * 1.3;
     if (maxY == 0 || _spotsVentes.isEmpty) {
       return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Icon(Icons.show_chart, size: 40, color: AppColors.textHint),
+        Icon(AppIcons.chart, size: 40, color: AppColors.textHint),
         const SizedBox(height: AppSpacing.sm),
         Text('Ajoutez des transactions\npour voir le graphique', textAlign: TextAlign.center, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint)),
       ]));

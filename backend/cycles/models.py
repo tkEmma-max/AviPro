@@ -124,7 +124,16 @@ class Cycle(models.Model):
 
     @property
     def cout_production_unitaire(self):
+        """Coût de production par sujet vivant (hors sujets déjà vendus)"""
         if self.nombre_sujets_actuels > 0:
+            # Déduire le coût des sujets déjà vendus (si prix_vente_moyen est défini)
+            nb_vendus = self.nombre_sujets_initiaux - self.nombre_sujets_actuels - self.nb_morts
+            if nb_vendus > 0 and self.prix_vente_moyen > 0:
+                # Coût restant = coût total - coût des sujets vendus (estimé via coût moyen)
+                cout_total = self.total_depenses
+                cout_moyen_initial = cout_total / self.nombre_sujets_initiaux if self.nombre_sujets_initiaux > 0 else 0
+                cout_restant = cout_total - (nb_vendus * cout_moyen_initial)
+                return cout_restant / self.nombre_sujets_actuels if self.nombre_sujets_actuels > 0 else 0
             return self.total_depenses / self.nombre_sujets_actuels
         return 0
 

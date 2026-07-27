@@ -12,9 +12,6 @@ import '../../models/cycle.dart';
 import '../../services/api_service.dart';
 import '../../services/equipement_service.dart';
 import '../../providers/cycle_provider.dart';
-import '../poulaillers/poulailler_migration_screen.dart';
-import '../poulaillers/poulailler_detail_screen.dart';
-
 
 class CycleDetailScreen extends StatefulWidget {
   final Map<String, dynamic> cycleData;
@@ -90,69 +87,12 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
     );
   }
 
-  void _modifierMateriel() {
-    final nbMangeoiresController = TextEditingController(text: _cycle.nbMangeoires.toString());
-    final nbAbreuvoirsController = TextEditingController(text: _cycle.nbAbreuvoirs.toString());
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: AppBorders.radiusLarge),
-        title: const Text('Modifier le matériel'),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          TextField(
-            controller: nbMangeoiresController,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Nombre de mangeoires', border: OutlineInputBorder()),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          TextField(
-            controller: nbAbreuvoirsController,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Nombre d\'abreuvoirs', border: OutlineInputBorder()),
-          ),
-        ]),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-
-              try {
-                final nbM = int.tryParse(nbMangeoiresController.text) ?? _cycle.nbMangeoires;
-                final nbA = int.tryParse(nbAbreuvoirsController.text) ?? _cycle.nbAbreuvoirs;
-                print('📤 PATCH nb_mangeoires=$nbM, nb_abreuvoirs=$nbA');
-                final response = await _apiService.patch('cycles/${_cycle.id}/', data: {
-                  'nb_mangeoires': int.tryParse(nbMangeoiresController.text) ?? _cycle.nbMangeoires,
-                  'nb_abreuvoirs': int.tryParse(nbAbreuvoirsController.text) ?? _cycle.nbAbreuvoirs,
-                });
-                print('📥 PATCH réponse: ${response.statusCode}');
-                print('📥 Body: ${response.data}');
-                if (response.statusCode == 200 && mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Matériel mis à jour'), backgroundColor: AppColors.success));
-                  // Forcer le rechargement sans cache
-                  _cachedCycleData = null;
-                  _cachedCycleId = null;
-                  _refreshCycle();
-                }
-              } catch (e) {
-                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e'), backgroundColor: AppColors.error));
-              }
-            },
-            child: const Text('Enregistrer'),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _refreshCycle() async {
     setState(() => _isRefreshing = true);
     try {
       final response = await _apiService.get('cycles/${_cycle.id}/');
       if (response.statusCode == 200 && mounted) {
         final data = response.data;
-        print('📥 GET cycle: nb_mangeoires=${data['nb_mangeoires']}, nb_abreuvoirs=${data['nb_abreuvoirs']}');
         final ventes = (data['ventes'] as List?) ?? [];
         final depenses = (data['depenses'] as List?) ?? [];
 
@@ -174,7 +114,6 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
           labels.add(tousLesJours[i].substring(8, 10) + '/' + tousLesJours[i].substring(5, 7));
         }
 
-        // Sous-bandes
         final sbResponse = await _apiService.get('cycles/${_cycle.id}/sous_bandes/');
         final sousBandes = (sbResponse.data as List?)?.cast<Map<String, dynamic>>() ?? [];
 
@@ -191,7 +130,6 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
         _cachedSpotsVentes = _spotsVentes; _cachedSpotsDepenses = _spotsDepenses;
         _cachedLabels = _labelsJours; _cachedSousBandes = _sousBandes;
       }
-
     } catch (e) {
       print('❌ Erreur: $e');
       if (mounted) setState(() => _isRefreshing = false);
@@ -235,6 +173,42 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
     );
   }
 
+  void _modifierMateriel() {
+    final nbMangeoiresController = TextEditingController(text: _cycle.nbMangeoires.toString());
+    final nbAbreuvoirsController = TextEditingController(text: _cycle.nbAbreuvoirs.toString());
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: AppBorders.radiusLarge),
+        title: const Text('Modifier le matériel'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(controller: nbMangeoiresController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Nombre de mangeoires', border: OutlineInputBorder())),
+          const SizedBox(height: AppSpacing.md),
+          TextField(controller: nbAbreuvoirsController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Nombre d\'abreuvoirs', border: OutlineInputBorder())),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+          TextButton(onPressed: () async {
+            Navigator.pop(ctx);
+            try {
+              final nbM = int.tryParse(nbMangeoiresController.text) ?? _cycle.nbMangeoires;
+              final nbA = int.tryParse(nbAbreuvoirsController.text) ?? _cycle.nbAbreuvoirs;
+              final response = await _apiService.patch('cycles/${_cycle.id}/', data: {'nb_mangeoires': nbM, 'nb_abreuvoirs': nbA});
+              if (response.statusCode == 200 && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Matériel mis à jour'), backgroundColor: AppColors.success));
+                _cachedCycleData = null; _cachedCycleId = null;
+                _refreshCycle();
+              }
+            } catch (e) {
+              if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e'), backgroundColor: AppColors.error));
+            }
+          }, child: const Text('Enregistrer')),
+        ],
+      ),
+    );
+  }
+
   Widget _buildNumberButton(String label, VoidCallback onPressed) {
     return Container(width: 48, height: 48, decoration: BoxDecoration(color: AppColors.surfaceLight, shape: BoxShape.circle, border: Border.all(color: AppColors.border)), child: IconButton(icon: Text(label, style: AppTextStyles.numberLarge.copyWith(fontSize: 24, color: AppColors.primary)), onPressed: onPressed, padding: EdgeInsets.zero, constraints: const BoxConstraints()));
   }
@@ -249,9 +223,6 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
 
   String _formatMoney(int value) => value.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]} ');
 
-  // ═══════════════════════════════════════
-  // BUILD
-  // ═══════════════════════════════════════
   @override
   Widget build(BuildContext context) {
     final isActif = _cycle.isActive && !_cycle.isArchived;
@@ -265,7 +236,6 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
     final coutUnitaire = _cycle.coutProductionUnitaire ?? 0;
     final dateDebut = DateFormat('dd/MM/yyyy').format(_cycle.dateDebut);
 
-    // Alerte matériel
     final nbMangeoiresRecommandees = _cycle.nombreSujetsActuels > 0 ? EquipementService.getMangeoiresRecommandees(_cycle.nombreSujetsActuels, _cycle.type, age) : 0;
     final nbAbreuvoirsRecommandes = _cycle.nombreSujetsActuels > 0 ? EquipementService.getAbreuvoirsRecommandes(_cycle.nombreSujetsActuels, _cycle.type, age) : 0;
     final alerteMangeoires = _cycle.nbMangeoires < nbMangeoiresRecommandees;
@@ -304,7 +274,6 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
           ]),
           const SizedBox(height: AppSpacing.md),
 
-          // NOM + ÂGE EN GROS
           Text(_cycle.nom, style: AppTextStyles.headlineLarge.copyWith(fontSize: 22, color: AppColors.textPrimary)),
           const SizedBox(height: AppSpacing.xs),
           Text('($age jours)', style: AppTextStyles.headlineLarge.copyWith(fontSize: 22, color: AppColors.textPrimary, fontWeight: FontWeight.w900)),
@@ -312,11 +281,8 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
           Text('📍 ${_cycle.poulaillerNom ?? "Poulailler"} • Début: $dateDebut', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
           const SizedBox(height: AppSpacing.md),
 
-          // SUJETS + COÛT
           Row(children: [
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('${_cycle.nombreSujetsActuels} sujets vivants', style: AppTextStyles.numberLarge.copyWith(fontSize: 20, color: AppColors.primary)),
-            ])),
+            Expanded(child: Text('${_cycle.nombreSujetsActuels} sujets vivants', style: AppTextStyles.numberLarge.copyWith(fontSize: 20, color: AppColors.primary))),
             Text('${coutUnitaire.toInt()} FCFA/sujet', style: AppTextStyles.numberLarge.copyWith(fontSize: 20, color: AppColors.warning)),
           ]),
           const SizedBox(height: AppSpacing.xxl),
@@ -327,7 +293,7 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
           _buildFriseChronologique(),
           const SizedBox(height: AppSpacing.xxl),
 
-          // RÉPARTITION DES SUJETS (SOUS-BANDES)
+          // RÉPARTITION DES SUJETS
           Text('Répartition des sujets', style: AppTextStyles.subtitleLarge.copyWith(color: AppColors.primary)),
           const SizedBox(height: AppSpacing.md),
           if (_sousBandes.isEmpty)
@@ -335,49 +301,21 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
           else
             ..._sousBandes.map((sb) => GestureDetector(
               onTap: () {
-                // TODO: Ouvrir détail sous-bande (pop-up ou page)
-                showDialog(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: Text(sb['poulailler_nom'] ?? 'Poulailler'),
-                    content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('${sb['nombre_sujets']} sujets', style: AppTextStyles.subtitleLarge),
-                      const SizedBox(height: AppSpacing.sm),
-                      Text('Sous-bande active', style: AppTextStyles.bodySmall),
-                    ]),
-                    actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Fermer'))],
-                  ),
-                );
+                showDialog(context: context, builder: (ctx) => AlertDialog(title: Text(sb['poulailler_nom'] ?? 'Poulailler'), content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Text('${sb['nombre_sujets']} sujets', style: AppTextStyles.subtitleLarge), const SizedBox(height: AppSpacing.sm), Text('Sous-bande active', style: AppTextStyles.bodySmall)]), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Fermer'))]));
               },
-              child: Container(
-                margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-                padding: const EdgeInsets.all(AppSpacing.md),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.primary.withOpacity(0.3))),
-                child: Row(children: [
-                  const Icon(Icons.house_outlined, color: AppColors.primary, size: 20),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(child: Text(sb['poulailler_nom'] ?? 'Poulailler', style: AppTextStyles.subtitleMedium)),
-                  Text('${sb['nombre_sujets']} sujets', style: AppTextStyles.numberSmall.copyWith(color: AppColors.primary)),
-                  const SizedBox(width: AppSpacing.xs),
-                  const Icon(Icons.chevron_right, color: AppColors.textHint, size: 18),
-                ]),
-              ),
+              child: Container(margin: const EdgeInsets.only(bottom: AppSpacing.sm), padding: const EdgeInsets.all(AppSpacing.md), decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.primary.withOpacity(0.3))), child: Row(children: [const Icon(Icons.house_outlined, color: AppColors.primary, size: 20), const SizedBox(width: AppSpacing.sm), Expanded(child: Text(sb['poulailler_nom'] ?? 'Poulailler', style: AppTextStyles.subtitleMedium)), Text('${sb['nombre_sujets']} sujets', style: AppTextStyles.numberSmall.copyWith(color: AppColors.primary)), const SizedBox(width: AppSpacing.xs), const Icon(Icons.chevron_right, color: AppColors.textHint, size: 18)])),
             )),
           if (isActif) ...[
+            const SizedBox(height: AppSpacing.sm),
             SizedBox(width: double.infinity, child: OutlinedButton.icon(
               onPressed: () {
-                // Trouver le poulailler source (première sous-bande active)
-                final poulaillerId = _sousBandes.isNotEmpty ? _sousBandes.first['poulailler'] : null;
-                if (poulaillerId != null) {
-                  // Naviguer vers la migration
-                  Navigator.pushNamed(context, '/poulailler/migration', arguments: poulaillerId);
-                }
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gestion de la répartition disponible en V2'), backgroundColor: AppColors.primary));
               },
-              icon: const Icon(Icons.swap_horiz, size: 16),
-              label: const Text('Gérer la répartition (migrer)'),
+              icon: const Icon(Icons.swap_horiz, size: 16), label: const Text('Gérer la répartition (migrer)'),
               style: OutlinedButton.styleFrom(foregroundColor: AppColors.primary),
             )),
           ],
+          const SizedBox(height: AppSpacing.xxl),
 
           // MATÉRIEL DE NUTRITION
           Text('Matériel de nutrition', style: AppTextStyles.subtitleLarge.copyWith(color: AppColors.primary)),
@@ -396,11 +334,8 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
               Text('Abreuvoirs: ${_cycle.nbAbreuvoirs} (recommandé: $nbAbreuvoirsRecommandes)', style: AppTextStyles.bodySmall),
               const SizedBox(height: AppSpacing.sm),
               SizedBox(width: double.infinity, child: OutlinedButton.icon(
-                onPressed: () {
-                  _modifierMateriel();
-                },
-                icon: const Icon(Icons.edit_outlined, size: 16),
-                label: const Text('Modifier le matériel'),
+                onPressed: _modifierMateriel,
+                icon: const Icon(Icons.edit_outlined, size: 16), label: const Text('Modifier le matériel'),
                 style: OutlinedButton.styleFrom(foregroundColor: AppColors.primary),
               )),
             ]),
@@ -410,48 +345,42 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
           // ACTIONS TERRAIN
           Text('Actions terrain', style: AppTextStyles.subtitleLarge.copyWith(color: AppColors.primary)),
           const SizedBox(height: AppSpacing.md),
-          Column(children: [
-            Row(children: [
-              Expanded(child: _buildQuickAction(label: 'Déclarer une perte', icon: Icons.warning, color: AppColors.error, bgColor: AppColors.error.withOpacity(0.08), onTap: _declarerPerte)),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(child: _buildQuickAction(label: 'Noter une charge', icon: Icons.money_off_outlined, color: AppColors.primary, bgColor: AppColors.primary.withOpacity(0.08), onTap: () => Navigator.pushNamed(context, '/finance/depense', arguments: {'cycle_id': _cycle.id, 'cycle_nom': _cycle.nom}))),
-            ]),
-            const SizedBox(height: AppSpacing.sm),
-            Row(children: [
-              Expanded(child: _buildQuickAction(label: 'Enregistrer une vente', icon: Icons.payments_outlined, color: AppColors.success, bgColor: AppColors.success.withOpacity(0.08), onTap: () => Navigator.pushNamed(context, '/finance/vente', arguments: {'cycle_id': _cycle.id, 'cycle_nom': _cycle.nom}))),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(child: _buildQuickAction(label: 'Observation', icon: Icons.note_alt_outlined, color: AppColors.warning, bgColor: AppColors.warning.withOpacity(0.08), onTap: () => Navigator.pushNamed(context, '/cycle/report/form', arguments: widget.cycleData))),
-            ]),
+          Row(children: [
+            Expanded(child: _buildQuickAction(label: 'Déclarer\nune perte', icon: Icons.warning, color: AppColors.error, bgColor: AppColors.error.withOpacity(0.08), onTap: _declarerPerte)),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(child: _buildQuickAction(label: 'Noter\nune charge', icon: Icons.money_off_outlined, color: AppColors.primary, bgColor: AppColors.primary.withOpacity(0.08), onTap: () => Navigator.pushNamed(context, '/finance/depense', arguments: {'cycle_id': _cycle.id, 'cycle_nom': _cycle.nom}).then((_) => _refreshCycle()))),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(child: _buildQuickAction(label: 'Vente', icon: Icons.payments_outlined, color: AppColors.success, bgColor: AppColors.success.withOpacity(0.08), onTap: () => Navigator.pushNamed(context, '/finance/vente', arguments: {'cycle_id': _cycle.id, 'cycle_nom': _cycle.nom}).then((_) => _refreshCycle()))),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(child: _buildQuickAction(label: 'Obser-\nvation', icon: Icons.note_alt_outlined, color: AppColors.warning, bgColor: AppColors.warning.withOpacity(0.08), onTap: () => Navigator.pushNamed(context, '/cycle/report/form', arguments: widget.cycleData).then((_) => _refreshCycle()))),
           ]),
           const SizedBox(height: AppSpacing.xxl),
 
           // STATS
           Text('Statistiques du cycle', style: AppTextStyles.subtitleLarge.copyWith(color: AppColors.primary)),
           const SizedBox(height: AppSpacing.md),
-          Container(padding: const EdgeInsets.all(AppSpacing.lg), decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.border), boxShadow: AppShadows.shadowCard),
-              child: Column(children: [
-                _buildStatRow('Taux de mortalité', '${mortalite.toStringAsFixed(1)}%', mortalite > 10 ? AppColors.error : AppColors.success),
-                const Divider(height: AppSpacing.lg),
-                _buildStatRow('Total charges', '${totalDepenses.toStringAsFixed(0)} FCFA', AppColors.error),
-                const Divider(height: AppSpacing.lg),
-                _buildStatRow('Total ventes', '${totalVentes.toStringAsFixed(0)} FCFA', AppColors.success),
-                const Divider(height: AppSpacing.lg),
-                _buildStatRow('Bénéfice estimé', '${benefice >= 0 ? "+" : ""}${benefice.toStringAsFixed(0)} FCFA', benefice >= 0 ? AppColors.success : AppColors.error, bold: true),
-              ])),
+          Container(padding: const EdgeInsets.all(AppSpacing.lg), decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.border), boxShadow: AppShadows.shadowCard), child: Column(children: [
+            _buildStatRow('Taux de mortalité', '${mortalite.toStringAsFixed(1)}%', mortalite > 10 ? AppColors.error : AppColors.success),
+            const Divider(height: AppSpacing.lg),
+            _buildStatRow('Total charges', '${totalDepenses.toStringAsFixed(0)} FCFA', AppColors.error),
+            const Divider(height: AppSpacing.lg),
+            _buildStatRow('Total ventes', '${totalVentes.toStringAsFixed(0)} FCFA', AppColors.success),
+            const Divider(height: AppSpacing.lg),
+            _buildStatRow('Bénéfice estimé', '${benefice >= 0 ? "+" : ""}${benefice.toStringAsFixed(0)} FCFA', benefice >= 0 ? AppColors.success : AppColors.error, bold: true),
+          ])),
           const SizedBox(height: AppSpacing.xl),
 
           // GRAPHIQUE
           Text('Flux du cycle', style: AppTextStyles.subtitleLarge.copyWith(color: AppColors.primary)),
           const SizedBox(height: AppSpacing.md),
-          Container(padding: const EdgeInsets.all(AppSpacing.lg), decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.border.withOpacity(0.6)), boxShadow: AppShadows.shadowCard),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  Row(children: [Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Icon(Icons.show_chart_rounded, size: 16, color: AppColors.primary)), const SizedBox(width: 8), Text('Évolution', style: AppTextStyles.subtitleLarge.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.bold))]),
-                  Row(children: [_buildLegend('Gains', AppColors.success), const SizedBox(width: AppSpacing.md), _buildLegend('Dépenses', AppColors.error)]),
-                ]),
-                const SizedBox(height: AppSpacing.lg),
-                SizedBox(height: 160, child: _buildGraphique()),
-              ])),
+          Container(padding: const EdgeInsets.all(AppSpacing.lg), decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.border.withOpacity(0.6)), boxShadow: AppShadows.shadowCard), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Row(children: [Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Icon(Icons.show_chart_rounded, size: 16, color: AppColors.primary)), const SizedBox(width: 8), Text('Évolution', style: AppTextStyles.subtitleLarge.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.bold))]),
+              Row(children: [_buildLegend('Gains', AppColors.success), const SizedBox(width: AppSpacing.md), _buildLegend('Dépenses', AppColors.error)]),
+            ]),
+            const SizedBox(height: AppSpacing.lg),
+            SizedBox(height: 160, child: _buildGraphique()),
+          ])),
           const SizedBox(height: AppSpacing.xl),
 
           // VENTES
@@ -486,51 +415,44 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
     );
   }
 
-  // ═══════════════════════════════════════
-  // WIDGETS
-  // ═══════════════════════════════════════
   Widget _buildGraphique() {
-    final maxY = ((_cycle.totalVentes ?? 0) > (_cycle.totalDepenses ?? 0) ? (_cycle.totalVentes ?? 0) : (_cycle.totalDepenses ?? 0)) * 1.3;
-    if (maxY == 0 || _spotsVentes.isEmpty) {
-      return Center(child: Text('Ajoutez des transactions\npour voir le graphique', textAlign: TextAlign.center, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint)));
+    final totalVentes = _spotsVentes.isNotEmpty ? _spotsVentes.last.y : 0;
+    final totalDepenses = _spotsDepenses.isNotEmpty ? _spotsDepenses.last.y : 0;
+    final maxY = (totalVentes > totalDepenses ? totalVentes : totalDepenses) * 1.3;
+
+    if (maxY == 0) {
+      return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.show_chart, size: 40, color: AppColors.textHint), const SizedBox(height: AppSpacing.sm), Text('Ajoutez des transactions\npour voir le graphique', textAlign: TextAlign.center, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint))]));
     }
+
+    List<FlSpot> spotsV = _spotsVentes;
+    List<FlSpot> spotsD = _spotsDepenses;
+    if (spotsV.length == 1) spotsV = [spotsV.first, FlSpot(1, spotsV.first.y)];
+    if (spotsD.length == 1) spotsD = [spotsD.first, FlSpot(1, spotsD.first.y)];
+    final maxX = (spotsV.length > spotsD.length ? spotsV.length : spotsD.length).toDouble() - 1;
+
     return LineChart(LineChartData(
       gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (value) => FlLine(color: AppColors.border.withOpacity(0.4), strokeWidth: 1, dashArray: [4, 4])),
       titlesData: FlTitlesData(
         leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 45, getTitlesWidget: (value, meta) => Text('${(value/1000).toInt()}k', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textHint, fontSize: 10)))),
         rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
         topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 30, interval: 1, getTitlesWidget: (value, meta) {
-          final index = value.toInt();
-          if (index >= 0 && index < _labelsJours.length) {
-            if (_labelsJours.length > 7 && index % 2 != 0) return const Text('');
-            return Text(_labelsJours[index], style: AppTextStyles.bodySmall.copyWith(color: AppColors.textHint, fontSize: 9));
-          }
-          return const Text('');
-        })),
+        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
       ),
       borderData: FlBorderData(show: false),
       lineBarsData: [
-        LineChartBarData(spots: _spotsVentes, isCurved: true, curveSmoothness: 0.3, color: AppColors.success, dotData: FlDotData(show: false), barWidth: 2.5, belowBarData: BarAreaData(show: true, gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.success.withOpacity(0.2), AppColors.success.withOpacity(0.0)]))),
-        LineChartBarData(spots: _spotsDepenses, isCurved: true, curveSmoothness: 0.3, color: AppColors.error, dotData: FlDotData(show: false), barWidth: 2.5, belowBarData: BarAreaData(show: true, gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.error.withOpacity(0.15), AppColors.error.withOpacity(0.0)]))),
+        LineChartBarData(spots: spotsV, isCurved: true, curveSmoothness: 0.3, color: AppColors.success, dotData: FlDotData(show: false), barWidth: 3, belowBarData: BarAreaData(show: true, gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.success.withOpacity(0.2), AppColors.success.withOpacity(0.0)]))),
+        LineChartBarData(spots: spotsD, isCurved: true, curveSmoothness: 0.3, color: AppColors.error, dotData: FlDotData(show: false), barWidth: 3, belowBarData: BarAreaData(show: true, gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.error.withOpacity(0.15), AppColors.error.withOpacity(0.0)]))),
       ],
-      minX: 0, maxX: (_spotsVentes.length - 1).toDouble().clamp(1, 30), minY: 0, maxY: maxY,
+      minX: 0, maxX: maxX < 1 ? 1 : maxX, minY: 0, maxY: maxY,
     ));
   }
 
   Widget _buildFriseChronologique() {
-    final etapes = _getEtapesFrise();
-    final age = _cycle.joursEcoules ?? 0;
+    final etapes = _getEtapesFrise(); final age = _cycle.joursEcoules ?? 0;
     return Container(padding: const EdgeInsets.all(AppSpacing.lg), decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.border), boxShadow: AppShadows.shadowCard), child: Column(children: [
       SizedBox(height: 60, child: Row(children: etapes.asMap().entries.map((entry) {
-        final index = entry.key; final etape = entry.value;
-        final isPast = age >= etape['age']!;
-        final isCurrent = age < etape['age']! && (index == 0 || age >= etapes[index - 1]['age']!);
-        return Expanded(child: Column(children: [
-          Container(width: 32, height: 32, decoration: BoxDecoration(color: isPast ? AppColors.primary : isCurrent ? AppColors.warning : AppColors.grey200, shape: BoxShape.circle), child: Icon(etape['icon'] as IconData, size: 16, color: isPast || isCurrent ? Colors.white : AppColors.textHint)),
-          const SizedBox(height: 4),
-          Text(etape['label'] as String, style: AppTextStyles.labelSmall.copyWith(color: isPast || isCurrent ? AppColors.textPrimary : AppColors.textHint, fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w400, fontSize: 9), textAlign: TextAlign.center),
-        ]));
+        final etape = entry.value; final isPast = age >= etape['age']!; final isCurrent = age < etape['age']! && (entry.key == 0 || age >= etapes[entry.key - 1]['age']!);
+        return Expanded(child: Column(children: [Container(width: 32, height: 32, decoration: BoxDecoration(color: isPast ? AppColors.primary : isCurrent ? AppColors.warning : AppColors.grey200, shape: BoxShape.circle), child: Icon(etape['icon'] as IconData, size: 16, color: isPast || isCurrent ? Colors.white : AppColors.textHint)), const SizedBox(height: 4), Text(etape['label'] as String, style: AppTextStyles.labelSmall.copyWith(color: isPast || isCurrent ? AppColors.textPrimary : AppColors.textHint, fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w400, fontSize: 9), textAlign: TextAlign.center)]));
       }).toList())),
       const SizedBox(height: AppSpacing.sm),
       LinearProgressIndicator(value: _getFriseProgression(), backgroundColor: AppColors.grey200, valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary), minHeight: 6, borderRadius: AppBorders.buttonRadius),
@@ -553,19 +475,7 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
   }
 
   Widget _buildQuickAction({required String label, required IconData icon, required Color color, required Color bgColor, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 52,
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-        decoration: BoxDecoration(color: bgColor, borderRadius: AppBorders.cardRadius, border: Border.all(color: color.withOpacity(0.2))),
-        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: AppSpacing.sm),
-          Flexible(child: Text(label, style: AppTextStyles.labelSmall.copyWith(color: color, fontWeight: FontWeight.w500), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis)),
-        ]),
-      ),
-    );
+    return GestureDetector(onTap: onTap, child: Container(height: 52, padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md), decoration: BoxDecoration(color: bgColor, borderRadius: AppBorders.cardRadius, border: Border.all(color: color.withOpacity(0.2))), child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, color: color, size: 20), const SizedBox(width: AppSpacing.sm), Flexible(child: Text(label, style: AppTextStyles.labelSmall.copyWith(color: color, fontWeight: FontWeight.w500), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis))])));
   }
 
   Widget _buildStatRow(String label, String value, Color valueColor, {bool bold = false}) {
