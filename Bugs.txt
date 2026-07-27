@@ -7,3 +7,24 @@
     du block de "repartition des sujets" 
 4.  la fiche de details du poulailler affiche "0 mangeoire, 0abreuvoirs" meme pour les poulailler 
     ayant un cycle actif avec un nombre de mangeoires definit (la page de details du cycle laffiche clairement" 
+5.  je veux creer un cycle mais je ne sais pas quel nom mettre (il faudrai que la champ nom soit preremplis
+    par un nom formater comne : "lot" + date + N° ex: lot-12/7/2026-1)
+6.  Certaines fois le dashboard ne charge aucune données mais les autre page oui. (j'imagine que cest a cause de la connexion internet faible ou instable, 
+    est ce quon peut faire un truc pour sa? 
+7.  la page de details affiche bien les cycles, mais je ne sais pas quel est celui parmi ces cycls quu est actif 
+    de plus, ces cycles ne sont pas cliquable, comment faire pour acceder au detail: il faut aller dans la pages de listing des cycles
+    chercher le nom du cycle que tu avaus vu dans la page du poulailler, si tu las oublier, tu rentre dans la page de poulailler pour voir le nom du cycle 
+    en suite tu reviens sur la page de listing, tu cherche (scroller) le nom du cycle et tu clique dessus. (est ce quon ne pourait pas rendre les carte des ccycle cliquable
+    dans la page des poulailler et partout ailleure? 
+8.  il y a une barre de recherche dans la page de listing des poulaillers mais pas dans la page de listing des cycles. et pourtant led cycle sont toujours plus nombreux 
+    que les poulaillers donc plus dificile a trouvé.
+9. apres tout action dans la page de details dun cycle, la page doit rafraichir pour que je puisse savoir si cerre action a été pris en compte. je parle de ces actions: 
+    ventes,  pertes de sujets, depences, modification du materiel dalimentation (deja)  et bien dautre. 
+10. le dashboard affiche "bonjour admin" seulement a la eedirection apres une connexion, mais quand on ouvre lappli deja en mode authentifier,
+    ca affiche "bonjoir utilosateur", de meme pour la page de settings. 
+11. le ptix par sujets est mal caculé apres une vente, je mexplique sur un cycle de 10 sujets avec 500 par sujets, apres la vente de deux sujets (reste: 8)
+    le prix par sujets passe directement a 625 = 5000÷8, hors 625>500 ce qui est absurde car aucune depense n'a été faite, le vraix prix devrai etre : 
+    (5000 - 2 % 500)÷8 = 500. la formule generale est (prix_prod_total - n*prix_prod_par_sujet)÷reste_sujet
+12. la section qui indique si le prix est gaganant oh pas et qui propose les prix lors dune vente perds souvent du temps a aparaitre (et souvent elle naparait pas)  (est ce qu'une requette est envoyer au server a cet effet? 
+    est cela qui perd du temps. de meme, le champs du nom du vendeur mets souvent du temps a se remplir (mais je sais qu'ici cest a cause de lenvoie de la requette). mais lutilisateur pourait au moins 
+    etre informé que quelque chose se trame pemdant se temps.
