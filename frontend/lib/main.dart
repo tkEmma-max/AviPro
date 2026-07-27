@@ -44,6 +44,8 @@ import 'core/theme/app_theme.dart';
 import 'models/poulailler.dart';
 import 'models/pret.dart';
 import 'screens/splash_screen.dart';
+import 'screens/finances/routines_list_screen.dart';
+import 'screens/finances/routine_create_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

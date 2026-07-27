@@ -6,6 +6,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_borders.dart';
 import '../../core/theme/app_shadows.dart';
+import '../../core/constants/app_icons.dart';
 import '../../services/api_service.dart';
 import 'finance_loan_dashboard_screen.dart';
 
@@ -124,7 +125,7 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
         centerTitle: false,
         actions: [
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
+            icon: const Icon(AppIcons.menu, color: Colors.white),
             onSelected: (value) {
               switch (value) {
                 case 'depense': Navigator.pushNamed(context, '/finance/depense').then((_) => _loadTransactions()); break;
@@ -133,9 +134,9 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(value: 'depense', child: ListTile(leading: Icon(Icons.remove_circle_outline, color: AppColors.error), title: Text('Nouvelle dépense'), dense: true)),
-              const PopupMenuItem(value: 'vente', child: ListTile(leading: Icon(Icons.add_circle_outline, color: AppColors.success), title: Text('Nouvelle vente'), dense: true)),
-              const PopupMenuItem(value: 'pret', child: ListTile(leading: Icon(Icons.credit_card_outlined, color: AppColors.primary), title: Text('Gestion des prêts'), dense: true)),
+              const PopupMenuItem(value: 'depense', child: ListTile(leading: Icon(AppIcons.depenseAdd, color: AppColors.error), title: Text('Nouvelle dépense'), dense: true)),
+              const PopupMenuItem(value: 'vente', child: ListTile(leading: Icon(AppIcons.venteAdd, color: AppColors.success), title: Text('Nouvelle vente'), dense: true)),
+              const PopupMenuItem(value: 'pret', child: ListTile(leading: Icon(AppIcons.pret, color: AppColors.primary), title: Text('Gestion des prêts'), dense: true)),
             ],
           ),
         ],
@@ -143,8 +144,8 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
       body: _isLoading && !_hasCachedData
           ? const Center(child: CircularProgressIndicator())
           : Column(children: [
-            if (_isLoading && _hasCachedData)
-              const LinearProgressIndicator(minHeight: 2, backgroundColor: Colors.transparent, valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary)),
+        if (_isLoading && _hasCachedData)
+          const LinearProgressIndicator(minHeight: 2, backgroundColor: Colors.transparent, valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary)),
         // HEADER
         Container(
           padding: const EdgeInsets.all(AppSpacing.lg),
@@ -160,8 +161,8 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
             Text('Solde net global', style: AppTextStyles.bodySmall.copyWith(color: Colors.white.withOpacity(0.7))),
             const SizedBox(height: AppSpacing.md),
             Row(children: [
-              Expanded(child: Row(children: [const Icon(Icons.trending_up, size: 16, color: Colors.white70), const SizedBox(width: 4), Text('${_totalVentes.toStringAsFixed(0)} FCFA', style: AppTextStyles.bodyMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w600))])),
-              Expanded(child: Row(children: [const Icon(Icons.trending_down, size: 16, color: Colors.white70), const SizedBox(width: 4), Text('${_totalDepenses.toStringAsFixed(0)} FCFA', style: AppTextStyles.bodyMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w600))])),
+              Expanded(child: Row(children: [const Icon(AppIcons.vente, size: 16, color: Colors.white70), const SizedBox(width: 4), Text('${_totalVentes.toStringAsFixed(0)} FCFA', style: AppTextStyles.bodyMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w600))])),
+              Expanded(child: Row(children: [const Icon(AppIcons.depense, size: 16, color: Colors.white70), const SizedBox(width: 4), Text('${_totalDepenses.toStringAsFixed(0)} FCFA', style: AppTextStyles.bodyMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w600))])),
             ]),
           ]),
         ),
@@ -179,7 +180,7 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
         // LISTE
         Expanded(
           child: _filteredTransactions.isEmpty
-              ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.receipt_long_outlined, size: 60, color: AppColors.textHint), const SizedBox(height: AppSpacing.lg), Text('Aucune transaction', style: AppTextStyles.headline4.copyWith(color: AppColors.textSecondary))]))
+              ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(AppIcons.transaction, size: 60, color: AppColors.textHint), const SizedBox(height: AppSpacing.lg), Text('Aucune transaction', style: AppTextStyles.headline4.copyWith(color: AppColors.textSecondary))]))
               : RefreshIndicator(
             onRefresh: _loadTransactions,
             child: ListView.separated(

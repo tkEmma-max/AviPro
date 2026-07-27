@@ -5,15 +5,12 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from django.utils import timezone
 from django.db import transaction
+from django.core.exceptions import ValidationError
 from .models import Depense, CategorieDepense, RoutineDepense, RoutineAppliquee
 from cycles.models import Cycle
-from django.db import transaction
-from django.core.exceptions import ValidationError
-from django.db import models
-
 from .serializers import (
     DepenseSerializer, DepenseListSerializer, DepenseCreateSerializer,
     CategorieDepenseSerializer,
@@ -48,8 +45,7 @@ class CategorieDepenseViewSet(viewsets.ModelViewSet):
 class RoutineDepenseViewSet(viewsets.ModelViewSet):
     """
     CRUD pour les routines de dépenses.
-    - Utilisateurs : GET
-    - Admin : GET, POST, PUT, DELETE
+    - Utilisateurs authentifiés : GET, POST, PUT, DELETE
     """
     queryset = RoutineDepense.objects.filter(is_active=True)
     serializer_class = RoutineDepenseSerializer
@@ -66,7 +62,10 @@ class RoutineDepenseViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if self.request.user.is_staff and self.request.query_params.get('show_all'):
             return RoutineDepense.objects.all()
-        return RoutineDepense.objects.filter(is_active=True)
+        return RoutineDepense.objects.filter(
+            Q(created_by=self.request.user) | Q(created_by__isnull=True),
+            is_active=True
+        )
 
     @action(detail=False, methods=['get'])
     def a_appliquer(self, request):
@@ -83,20 +82,26 @@ class RoutineDepenseViewSet(viewsets.ModelViewSet):
         except Cycle.DoesNotExist:
             return Response({'error': 'Cycle introuvable'}, status=status.HTTP_404_NOT_FOUND)
 
-        if not cycle.type_poulet:
-            return Response({'routines': [], 'message': 'Aucun type de poulet défini pour ce cycle'})
-
         age = cycle.jours_ecoules
-        
-        # Routines non appliquées pour ce type et cet âge (avec tolérance de ±3 jours)
-        routines = RoutineDepense.objects.filter(
-            type_poulet=cycle.type_poulet,
-            is_active=True,
-            age_jour__lte=age + 3,
-            age_jour__gte=age - 3
-        ).exclude(
-            applications__cycle=cycle
-        )
+
+        routines = RoutineDepense.objects.none()
+
+        if cycle.type_poulet:
+            routines = RoutineDepense.objects.filter(
+                type_poulet=cycle.type_poulet,
+                is_active=True,
+                age_jour__lte=age + 3,
+                age_jour__gte=age - 3
+            )
+        elif cycle.type:
+            routines = RoutineDepense.objects.filter(
+                type_poulet__nom__icontains=cycle.type,
+                is_active=True,
+                age_jour__lte=age + 3,
+                age_jour__gte=age - 3
+            )
+
+        routines = routines.exclude(applications__cycle=cycle)
 
         result = []
         for routine in routines:
@@ -146,15 +151,12 @@ class RoutineDepenseViewSet(viewsets.ModelViewSet):
                     resultats.append({'routine_id': routine_id, 'status': 'ERREUR', 'message': 'Routine introuvable'})
                     continue
 
-                # Vérifier si déjà appliquée
                 if RoutineAppliquee.objects.filter(routine=routine, cycle=cycle).exists():
                     resultats.append({'routine_id': routine_id, 'status': 'DEJA_APPLIQUEE'})
                     continue
 
-                # Calculer le montant
                 montant = routine.calculer_montant(cycle.nombre_sujets_actuels)
 
-                # Créer la dépense
                 depense = Depense.objects.create(
                     cycle=cycle,
                     categorie_depense=routine.categorie_depense,
@@ -166,7 +168,6 @@ class RoutineDepenseViewSet(viewsets.ModelViewSet):
                     created_by=request.user
                 )
 
-                # Marquer comme appliquée
                 RoutineAppliquee.objects.create(
                     routine=routine,
                     cycle=cycle,
@@ -215,8 +216,6 @@ class DepenseViewSet(viewsets.ModelViewSet):
     @transaction.atomic
     def perform_create(self, serializer):
         depense = serializer.save(created_by=self.request.user)
-
-        # Vérifier si le cycle est archivé
         if depense.cycle and depense.cycle.is_archived:
             raise ValidationError({'cycle': 'Ce cycle est clôturé. Aucune dépense possible.'})
 

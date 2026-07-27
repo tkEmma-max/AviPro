@@ -6,6 +6,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_borders.dart';
 import '../../core/theme/app_shadows.dart';
+import '../../core/constants/app_icons.dart';
 import '../../providers/rapport_provider.dart';
 import '../../providers/cycle_provider.dart';
 import '../../providers/poulailler_provider.dart';
@@ -161,7 +162,7 @@ class _CycleReportFormScreenState extends State<CycleReportFormScreen> {
     if (_isLoadingInit) {
       return Scaffold(
         backgroundColor: AppColors.surface,
-        appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0, leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary), onPressed: () => Navigator.pop(context)), title: const Text('Chargement...', style: TextStyle(color: AppColors.textPrimary))),
+        appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0, leading: IconButton(icon: const Icon(AppIcons.arrowBack, color: AppColors.primary), onPressed: () => Navigator.pop(context)), title: const Text('Chargement...', style: TextStyle(color: AppColors.textPrimary))),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -175,7 +176,7 @@ class _CycleReportFormScreenState extends State<CycleReportFormScreen> {
       backgroundColor: AppColors.surface,
       appBar: AppBar(
         backgroundColor: Colors.transparent, elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary), onPressed: () => Navigator.pop(context)),
+        leading: IconButton(icon: const Icon(AppIcons.arrowBack, color: AppColors.primary), onPressed: () => Navigator.pop(context)),
         title: const Text('Rapport de suivi', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
         centerTitle: true,
       ),
@@ -209,9 +210,9 @@ class _CycleReportFormScreenState extends State<CycleReportFormScreen> {
               Text('Periode du rapport', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
               const SizedBox(height: AppSpacing.sm),
               Row(children: [
-                Expanded(child: _buildDatePicker(label: 'Debut (modifiable)', date: _periodeDebut, onTap: () => _selectDate(context, true), icon: Icons.edit_calendar)),
+                Expanded(child: _buildDatePicker(label: 'Debut (modifiable)', date: _periodeDebut, onTap: () => _selectDate(context, true), icon: AppIcons.edit)),
                 const SizedBox(width: AppSpacing.md),
-                Expanded(child: _buildDatePicker(label: 'Fin', date: _periodeFin, onTap: () => _selectDate(context, false), icon: Icons.calendar_today)),
+                Expanded(child: _buildDatePicker(label: 'Fin', date: _periodeFin, onTap: () => _selectDate(context, false), icon: AppIcons.age)),
               ]),
               const SizedBox(height: AppSpacing.sm),
               Text('Duree: $duree jours', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
@@ -220,25 +221,25 @@ class _CycleReportFormScreenState extends State<CycleReportFormScreen> {
               // Consommations
               Text('Consommations', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
               const SizedBox(height: AppSpacing.md),
-              CustomTextField(controller: _alimentController, label: 'Aliment consomme (kg) *', hint: '0.0', prefixIcon: Icons.restaurant, keyboardType: TextInputType.number, validator: (v) => v!.isEmpty || double.tryParse(v) == null ? 'Requis' : null),
+              CustomTextField(controller: _alimentController, label: 'Aliment consomme (kg) *', hint: '0.0', prefixIcon: AppIcons.aliment, keyboardType: TextInputType.number, validator: (v) => v!.isEmpty || double.tryParse(v) == null ? 'Requis' : null),
               const SizedBox(height: AppSpacing.lg),
-              CustomTextField(controller: _eauController, label: 'Eau consommee (litres) *', hint: '0.0', prefixIcon: Icons.water_drop, keyboardType: TextInputType.number, validator: (v) => v!.isEmpty || double.tryParse(v) == null ? 'Requis' : null),
+              CustomTextField(controller: _eauController, label: 'Eau consommee (litres) *', hint: '0.0', prefixIcon: AppIcons.eau, keyboardType: TextInputType.number, validator: (v) => v!.isEmpty || double.tryParse(v) == null ? 'Requis' : null),
               const SizedBox(height: AppSpacing.xxl),
 
               // Suivi sanitaire
               Text('Suivi sanitaire', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
               const SizedBox(height: AppSpacing.md),
-              CustomTextField(controller: _maladieController, label: 'Maladie observee (optionnel)', hint: 'Ex: Coccidiose, Gumboro...', prefixIcon: Icons.health_and_safety),
+              CustomTextField(controller: _maladieController, label: 'Maladie observee (optionnel)', hint: 'Ex: Coccidiose, Gumboro...', prefixIcon: AppIcons.sante),
               const SizedBox(height: AppSpacing.lg),
-              CustomTextField(controller: _medicamentsController, label: 'Medicaments administres (optionnel)', hint: 'Ex: Anticoccidiens 5g/L...', prefixIcon: Icons.medication),
+              CustomTextField(controller: _medicamentsController, label: 'Medicaments administres (optionnel)', hint: 'Ex: Anticoccidiens 5g/L...', prefixIcon: AppIcons.medicament),
               const SizedBox(height: AppSpacing.lg),
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text('Nombre de sujets malades', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
                 const SizedBox(height: AppSpacing.xs),
                 Row(children: [
-                  _buildCounterButton(Icons.remove, () { if (_nbSujetsMalades > 0) setState(() => _nbSujetsMalades--); }),
+                  _buildCounterButton(AppIcons.moins, () { if (_nbSujetsMalades > 0) setState(() => _nbSujetsMalades--); }),
                   Container(width: 60, height: 44, alignment: Alignment.center, child: Text(_nbSujetsMalades.toString(), style: AppTextStyles.numberMedium.copyWith(color: AppColors.primary))),
-                  _buildCounterButton(Icons.add, () => setState(() => _nbSujetsMalades++)),
+                  _buildCounterButton(AppIcons.plus, () => setState(() => _nbSujetsMalades++)),
                 ]),
               ]),
               const SizedBox(height: AppSpacing.xxl),

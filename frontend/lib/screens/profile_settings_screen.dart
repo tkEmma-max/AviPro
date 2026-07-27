@@ -8,6 +8,7 @@ import '../core/theme/app_borders.dart';
 import '../core/theme/app_shadows.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
+import 'finances/routines_list_screen.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({super.key});
@@ -180,6 +181,34 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             ]),
           ),
           const SizedBox(height: AppSpacing.xl),
+
+          // DÉPENSES DE ROUTINE
+          _buildSectionTitle('Dépenses de routine'),
+          const SizedBox(height: AppSpacing.md),
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.border), boxShadow: AppShadows.shadowCard),
+            child: Column(children: [
+              Row(children: [
+                const Icon(Icons.repeat, color: AppColors.primary, size: 20),
+                const SizedBox(width: AppSpacing.sm),
+                Text('Configurer les dépenses automatiques', style: AppTextStyles.subtitleMedium),
+              ]),
+              const SizedBox(height: AppSpacing.sm),
+              Text('Définissez des dépenses récurrentes appliquées automatiquement à vos cycles.', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
+              const SizedBox(height: AppSpacing.md),
+              SizedBox(width: double.infinity, child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) =>  RoutinesListScreen()));
+                },
+                icon: const Icon(Icons.settings, size: 16),
+                label: const Text('Gérer les routines'),
+                style: OutlinedButton.styleFrom(foregroundColor: AppColors.primary),
+              )),
+            ]),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+
 
           // NOTIFICATIONS
           _buildSectionTitle('Notifications'),
