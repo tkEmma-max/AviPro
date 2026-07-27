@@ -6,6 +6,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_borders.dart';
 import '../../core/theme/app_shadows.dart';
+import '../../core/constants/app_icons.dart';
 import '../../models/poulailler.dart';
 import '../../providers/poulailler_provider.dart';
 import '../../widgets/custom_search_field.dart';
@@ -57,14 +58,14 @@ class _PoulaillerListScreenState extends State<PoulaillerListScreen> {
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(AppIcons.refresh),
             onPressed: () {
               print('🔄 [PoulaillerListScreen] Bouton refresh cliqué');
               context.read<PoulaillerProvider>().refreshPoulaillers();
             },
           ),
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: const Icon(AppIcons.add),
             onPressed: () {
               print('➕ [PoulaillerListScreen] Bouton add cliqué');
               Navigator.pushNamed(context, '/poulailler/create');
@@ -133,7 +134,7 @@ class _PoulaillerListScreenState extends State<PoulaillerListScreen> {
                   : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.house_outlined, size: 60, color: AppColors.textHint),
+                  Icon(AppIcons.house, size: 60, color: AppColors.textHint),
                   const SizedBox(height: AppSpacing.lg),
                   Text('Aucun poulailler enregistré', style: AppTextStyles.headline4.copyWith(color: AppColors.textSecondary)),
                   const SizedBox(height: AppSpacing.xs),
@@ -259,7 +260,7 @@ class _PoulaillerListScreenState extends State<PoulaillerListScreen> {
             Row(
               children: [
                 Icon(
-                  Icons.pets,
+                  AppIcons.sujets,
                   size: 16,
                   color: AppColors.textHint,
                 ),
@@ -276,7 +277,7 @@ class _PoulaillerListScreenState extends State<PoulaillerListScreen> {
             Row(
               children: [
                 Icon(
-                  Icons.square_foot,
+                  AppIcons.densite,
                   size: 16,
                   color: AppColors.textHint,
                 ),

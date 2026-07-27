@@ -21,12 +21,14 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _navigate() async {
     final authProvider = context.read<AuthProvider>();
-
-    // Attendre que le token soit chargé depuis SharedPreferences
     await authProvider.loadToken();
 
-    if (!mounted) return;
+    // Charger le profil si connecté
+    if (authProvider.isAuthenticated && authProvider.user == null) {
+      await authProvider.getUserProfile();
+    }
 
+    if (!mounted) return;
     if (authProvider.isAuthenticated) {
       Navigator.pushReplacementNamed(context, '/home');
     } else {

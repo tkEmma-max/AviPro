@@ -29,6 +29,7 @@ class _FinanceVenteScreenState extends State<FinanceVenteScreen> {
   DateTime _selectedDate = DateTime.now();
   double _montantTotal = 0;
   bool _isLoading = false;
+  bool _isLoadingCout = false;
 
   double _coutProductionUnitaire = 0;
   bool _isVenteAPerte = false;
@@ -46,21 +47,25 @@ class _FinanceVenteScreenState extends State<FinanceVenteScreen> {
   @override
   void initState() {
     super.initState();
-    final authProvider = context.read<AuthProvider>();
-    _vendeurController.text = authProvider.user?['full_name'] ?? '';
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = context.read<AuthProvider>();
+      print('👤 AuthProvider user: ${authProvider.user}');
+      print('👤 full_name: ${authProvider.user?['full_name']}');
+      _vendeurController.text = authProvider.user?['full_name'] ?? '';
+      print('👤 Vendeur text: ${_vendeurController.text}');
+
       final args = ModalRoute.of(context)?.settings.arguments;
       if (args is Map && args.containsKey('cycle_id')) {
         setState(() {
           _selectedCycleId = args['cycle_id'];
         });
-        // ✅ Charger le coût de production pour le cycle pré-rempli
         if (_selectedCycleId != null) {
           _loadCoutProduction(_selectedCycleId!);
         }
       }
     });
+
   }
 
   @override
@@ -87,20 +92,21 @@ class _FinanceVenteScreenState extends State<FinanceVenteScreen> {
   }
 
   Future<void> _loadCoutProduction(String cycleId) async {
-    print('🔍 Chargement coût pour cycle: $cycleId');
+    setState(() => _isLoadingCout = true);
     try {
       final response = await _apiService.get('cycles/$cycleId/');
       if (response.statusCode == 200) {
         final data = response.data;
-        print('📥 Coût production: ${data['cout_production_unitaire']}');
         setState(() {
           _coutProductionUnitaire = double.tryParse(data['cout_production_unitaire']?.toString() ?? '0') ?? 0;
           _donneesCycleChargees = true;
           _checkVenteAPerte();
+          _isLoadingCout = false;
         });
       }
     } catch (e) {
       print('❌ Erreur chargement cout: $e');
+      setState(() => _isLoadingCout = false);
     }
   }
 
@@ -247,7 +253,12 @@ class _FinanceVenteScreenState extends State<FinanceVenteScreen> {
             ),
 
           // Suggestions de prix
-          if (_donneesCycleChargees && _coutProductionUnitaire > 0)
+          if (_isLoadingCout)
+            const Padding(
+              padding: EdgeInsets.all(AppSpacing.md),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (_donneesCycleChargees && _coutProductionUnitaire > 0)
             Container(
               margin: const EdgeInsets.only(top: AppSpacing.md),
               padding: const EdgeInsets.all(AppSpacing.md),

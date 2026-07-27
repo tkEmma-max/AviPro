@@ -6,6 +6,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_borders.dart';
 import '../../core/theme/app_shadows.dart';
+import '../../core/constants/app_icons.dart';
 import '../../models/poulailler.dart';
 import '../../providers/poulailler_provider.dart';
 import '../../widgets/custom_text_field.dart';
@@ -44,7 +45,6 @@ class _PoulaillerCreateScreenState extends State<PoulaillerCreateScreen> {
     });
   }
 
-  // lib/screens/poulaillers/poulailler_create_screen.dart
   void _savePoulailler() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -98,7 +98,7 @@ class _PoulaillerCreateScreenState extends State<PoulaillerCreateScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary),
+          icon: const Icon(AppIcons.arrowBack, color: AppColors.primary),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -136,9 +136,9 @@ class _PoulaillerCreateScreenState extends State<PoulaillerCreateScreen> {
                 controller: _nomController,
                 label: 'Nom ou numéro du bâtiment *',
                 hint: 'Ex: Bâtiment C, Poulailler Nord...',
-                prefixIcon: Icons.house_outlined,
+                prefixIcon: AppIcons.house,
                 validator: (value) =>
-                    value!.isEmpty ? 'Ce champ est requis' : null,
+                value!.isEmpty ? 'Ce champ est requis' : null,
               ),
               const SizedBox(height: AppSpacing.lg),
 
@@ -146,7 +146,7 @@ class _PoulaillerCreateScreenState extends State<PoulaillerCreateScreen> {
                 controller: _localisationController,
                 label: 'Localisation',
                 hint: 'Ex: Site Ouest, Zone B...',
-                prefixIcon: Icons.location_on_outlined,
+                prefixIcon: AppIcons.localisation,
               ),
               const SizedBox(height: AppSpacing.xxl),
 
@@ -168,7 +168,7 @@ class _PoulaillerCreateScreenState extends State<PoulaillerCreateScreen> {
                       controller: _longueurController,
                       label: 'Longueur (m) *',
                       hint: '0.0',
-                      prefixIcon: Icons.straighten,
+                      prefixIcon: AppIcons.surface,
                       keyboardType: TextInputType.number,
                       onChanged: (_) => _updateCalculs(),
                       validator: (value) {
@@ -187,7 +187,7 @@ class _PoulaillerCreateScreenState extends State<PoulaillerCreateScreen> {
                       controller: _largeurController,
                       label: 'Largeur (m) *',
                       hint: '0.0',
-                      prefixIcon: Icons.straighten,
+                      prefixIcon: AppIcons.surface,
                       keyboardType: TextInputType.number,
                       onChanged: (_) => _updateCalculs(),
                       validator: (value) {
@@ -274,7 +274,7 @@ class _PoulaillerCreateScreenState extends State<PoulaillerCreateScreen> {
                     child: _buildCounter(
                       label: 'Mangeoires',
                       value: _nbMangeoires,
-                      icon: Icons.restaurant,
+                      icon: AppIcons.mangeoire,
                       onIncrement: () =>
                           setState(() => _nbMangeoires++),
                       onDecrement: () =>
@@ -287,7 +287,7 @@ class _PoulaillerCreateScreenState extends State<PoulaillerCreateScreen> {
                     child: _buildCounter(
                       label: 'Abreuvoirs',
                       value: _nbAbreuvoirs,
-                      icon: Icons.water_drop,
+                      icon: AppIcons.abreuvoir,
                       onIncrement: () =>
                           setState(() => _nbAbreuvoirs++),
                       onDecrement: () =>
@@ -350,7 +350,7 @@ class _PoulaillerCreateScreenState extends State<PoulaillerCreateScreen> {
         const SizedBox(height: AppSpacing.xs),
         Row(
           children: [
-            _buildCounterButton(Icons.remove, onDecrement),
+            _buildCounterButton(AppIcons.moins, onDecrement),
             Container(
               width: 48,
               height: 40,
@@ -363,7 +363,7 @@ class _PoulaillerCreateScreenState extends State<PoulaillerCreateScreen> {
                 ),
               ),
             ),
-            _buildCounterButton(Icons.add, onIncrement),
+            _buildCounterButton(AppIcons.plus, onIncrement),
           ],
         ),
       ],

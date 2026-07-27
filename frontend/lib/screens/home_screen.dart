@@ -130,34 +130,44 @@ class _DashboardContentState extends State<_DashboardContent> {
 
   Future<void> _loadDashboardData() async {
     setState(() => _isRefreshing = true);
+
+    // Charger chaque provider indépendamment
     try {
       final poulaillerProvider = context.read<PoulaillerProvider>();
       final cycleProvider = context.read<CycleProvider>();
       final pretProvider = context.read<PretProvider>();
 
       await Future.wait([
-        poulaillerProvider.refreshPoulaillers(),
-        cycleProvider.refreshCycles(),
-        pretProvider.refreshPrets(),
+        poulaillerProvider.refreshPoulaillers().catchError((e) => print('❌ Poulaillers: $e')),
+        cycleProvider.refreshCycles().catchError((e) => print('❌ Cycles: $e')),
+        pretProvider.refreshPrets().catchError((e) => print('❌ Prêts: $e')),
       ]);
+    } catch (e) {
+      print('❌ Erreur providers: $e');
+    }
 
-      final cycles = cycleProvider.cycles;
-      final prets = pretProvider.prets;
+    // Lire les données même si une requête a échoué
+    final cycleProvider = context.read<CycleProvider>();
+    final pretProvider = context.read<PretProvider>();
+    final cycles = cycleProvider.cycles;
+    final prets = pretProvider.prets;
 
-      int actifs = 0;
-      double pretsRest = 0;
+    int actifs = 0;
+    double pretsRest = 0;
 
-      for (var c in cycles) {
-        if (c.isActive && !c.isArchived) actifs++;
-      }
-      for (var p in prets) {
-        pretsRest += p.montantRestant ?? 0;
-      }
+    for (var c in cycles) {
+      if (c.isActive && !c.isArchived) actifs++;
+    }
+    for (var p in prets) {
+      pretsRest += p.montantRestant ?? 0;
+    }
 
-      final transactions = <Map<String, dynamic>>[];
-      double totalVentes = 0;
-      double totalDepenses = 0;
+    // Charger les transactions (indépendamment)
+    final transactions = <Map<String, dynamic>>[];
+    double totalVentes = 0;
+    double totalDepenses = 0;
 
+    try {
       final depResponse = await _apiService.get('depenses/?page_size=100');
       if (depResponse.statusCode == 200 && depResponse.data['results'] != null) {
         for (var d in depResponse.data['results']) {
@@ -166,7 +176,11 @@ class _DashboardContentState extends State<_DashboardContent> {
           transactions.add({'type': 'depense', 'label': d['categorie_label'] ?? d['categorie'] ?? 'Dépense', 'montant': montant, 'date': d['date']?.toString() ?? ''});
         }
       }
+    } catch (e) {
+      print('❌ Erreur dépenses: $e');
+    }
 
+    try {
       final venteResponse = await _apiService.get('ventes/?page_size=100');
       if (venteResponse.statusCode == 200 && venteResponse.data['results'] != null) {
         for (var v in venteResponse.data['results']) {
@@ -175,97 +189,79 @@ class _DashboardContentState extends State<_DashboardContent> {
           transactions.add({'type': 'vente', 'label': v['type_label'] ?? v['type'] ?? 'Vente', 'montant': montant, 'date': v['date']?.toString() ?? ''});
         }
       }
-      transactions.sort((a, b) => (b['date'] as String).compareTo(a['date'] as String));
-
-      // ═══════════════════════════════════════
-      // AGRÉGER PAR JOUR POUR LE GRAPHIQUE
-      // ═══════════════════════════════════════
-      Map<String, double> ventesParJour = {};
-      Map<String, double> depensesParJour = {};
-
-      for (var t in transactions) {
-        final dateStr = (t['date'] as String).substring(0, 10);
-        if (t['type'] == 'vente') {
-          ventesParJour[dateStr] = (ventesParJour[dateStr] ?? 0) + (t['montant'] as double);
-        } else {
-          depensesParJour[dateStr] = (depensesParJour[dateStr] ?? 0) + (t['montant'] as double);
-        }
-      }
-
-      final tousLesJours = <String>{...ventesParJour.keys, ...depensesParJour.keys}.toList()..sort();
-
-      double cumulVentes = 0;
-      double cumulDepenses = 0;
-      final spotsVentes = <FlSpot>[];
-      final spotsDepenses = <FlSpot>[];
-      final labels = <String>[];
-
-      for (int i = 0; i < tousLesJours.length; i++) {
-        cumulVentes += ventesParJour[tousLesJours[i]] ?? 0;
-        cumulDepenses += depensesParJour[tousLesJours[i]] ?? 0;
-        spotsVentes.add(FlSpot(i.toDouble(), cumulVentes));
-        spotsDepenses.add(FlSpot(i.toDouble(), cumulDepenses));
-        final parts = tousLesJours[i].split('-');
-        labels.add('${parts[2]}/${parts[1]}');
-      }
-
-      // Si < 2 jours de données, fallback
-      if (tousLesJours.length < 2) {
-        spotsVentes.clear();
-        spotsVentes.add(const FlSpot(0, 0));
-        spotsVentes.add(FlSpot(1, totalVentes));
-        spotsDepenses.clear();
-        spotsDepenses.add(const FlSpot(0, 0));
-        spotsDepenses.add(FlSpot(1, totalDepenses));
-        labels.clear();
-        labels.add('Début');
-        labels.add('Fin');
-      }
-
-      // Échéances avec statut calculé
-      final echeances = <Map<String, dynamic>>[];
-      final aujourdhui = DateTime.now();
-      if (prets.isNotEmpty) {
-        for (var p in prets.where((p) => p.montantRestant != null && p.montantRestant! > 0)) {
-          final estUrgent = p.prochaineEcheance != null &&
-              p.prochaineEcheance!['date'] != null &&
-              DateTime.parse(p.prochaineEcheance!['date']).isBefore(aujourdhui.add(const Duration(days: 3)));
-          echeances.add({
-            'preteur': p.preteur,
-            'montant': p.montantRestant,
-            'statut': estUrgent ? 'urgent' : 'normal',
-          });
-        }
-      }
-
-      if (mounted) {
-        setState(() {
-          _totalVentes = totalVentes;
-          _totalDepenses = totalDepenses;
-          _cyclesActifs = actifs;
-          _pretsRestants = pretsRest;
-          _dernieresTransactions = transactions.take(3).toList();
-          _echeances = echeances.take(3).toList();
-          _spotsVentes = spotsVentes;
-          _spotsDepenses = spotsDepenses;
-          _labelsJours = labels;
-          _isRefreshing = false;
-        });
-
-        // Mettre en cache
-        _cachedVentes = _totalVentes;
-        _cachedDepenses = _totalDepenses;
-        _cachedCyclesActifs = _cyclesActifs;
-        _cachedPretsRestants = _pretsRestants;
-        _cachedTransactions = _dernieresTransactions;
-        _cachedSpotsVentes = _spotsVentes;
-        _cachedSpotsDepenses = _spotsDepenses;
-        _cachedLabels = _labelsJours;
-        _hasCachedData = true;
-      }
     } catch (e) {
-      print('❌ Erreur dashboard: $e');
-      if (mounted) setState(() => _isRefreshing = false);
+      print('❌ Erreur ventes: $e');
+    }
+
+    transactions.sort((a, b) => (b['date'] as String).compareTo(a['date'] as String));
+
+    // Agréger par jour pour le graphique
+    Map<String, double> ventesParJour = {};
+    Map<String, double> depensesParJour = {};
+
+    for (var t in transactions) {
+      final dateStr = (t['date'] as String).substring(0, 10);
+      if (t['type'] == 'vente') {
+        ventesParJour[dateStr] = (ventesParJour[dateStr] ?? 0) + (t['montant'] as double);
+      } else {
+        depensesParJour[dateStr] = (depensesParJour[dateStr] ?? 0) + (t['montant'] as double);
+      }
+    }
+
+    final tousLesJours = <String>{...ventesParJour.keys, ...depensesParJour.keys}.toList()..sort();
+    double cumulVentes = 0;
+    double cumulDepenses = 0;
+    final spotsVentes = <FlSpot>[];
+    final spotsDepenses = <FlSpot>[];
+    final labels = <String>[];
+
+    for (int i = 0; i < tousLesJours.length; i++) {
+      cumulVentes += ventesParJour[tousLesJours[i]] ?? 0;
+      cumulDepenses += depensesParJour[tousLesJours[i]] ?? 0;
+      spotsVentes.add(FlSpot(i.toDouble(), cumulVentes));
+      spotsDepenses.add(FlSpot(i.toDouble(), cumulDepenses));
+      final parts = tousLesJours[i].split('-');
+      labels.add('${parts[2]}/${parts[1]}');
+    }
+
+    if (tousLesJours.length < 2) {
+      spotsVentes.clear(); spotsVentes.add(const FlSpot(0, 0)); spotsVentes.add(FlSpot(1, totalVentes));
+      spotsDepenses.clear(); spotsDepenses.add(const FlSpot(0, 0)); spotsDepenses.add(FlSpot(1, totalDepenses));
+      labels.clear(); labels.add('Début'); labels.add('Fin');
+    }
+
+    final echeances = <Map<String, dynamic>>[];
+    final aujourdhui = DateTime.now();
+    if (prets.isNotEmpty) {
+      for (var p in prets.where((p) => p.montantRestant != null && p.montantRestant! > 0)) {
+        final estUrgent = p.prochaineEcheance != null && p.prochaineEcheance!['date'] != null && DateTime.parse(p.prochaineEcheance!['date']).isBefore(aujourdhui.add(const Duration(days: 3)));
+        echeances.add({'preteur': p.preteur, 'montant': p.montantRestant, 'statut': estUrgent ? 'urgent' : 'normal'});
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _totalVentes = totalVentes;
+        _totalDepenses = totalDepenses;
+        _cyclesActifs = actifs;
+        _pretsRestants = pretsRest;
+        _dernieresTransactions = transactions.take(3).toList();
+        _echeances = echeances.take(3).toList();
+        _spotsVentes = spotsVentes;
+        _spotsDepenses = spotsDepenses;
+        _labelsJours = labels;
+        _isRefreshing = false;
+      });
+
+      _cachedVentes = _totalVentes;
+      _cachedDepenses = _totalDepenses;
+      _cachedCyclesActifs = _cyclesActifs;
+      _cachedPretsRestants = _pretsRestants;
+      _cachedTransactions = _dernieresTransactions;
+      _cachedSpotsVentes = _spotsVentes;
+      _cachedSpotsDepenses = _spotsDepenses;
+      _cachedLabels = _labelsJours;
+      _hasCachedData = true;
     }
   }
 

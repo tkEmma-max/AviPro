@@ -5,11 +5,13 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_borders.dart';
+import '../../core/constants/app_icons.dart';
 import '../../models/poulailler.dart';
 import '../../providers/poulailler_provider.dart';
 import '../../providers/cycle_provider.dart';
 import '../../services/api_service.dart';
 import '../../models/cycle.dart';
+
 class PoulaillerMigrationScreen extends StatefulWidget {
   final Poulailler source;
 
@@ -120,7 +122,7 @@ class _PoulaillerMigrationScreenState extends State<PoulaillerMigrationScreen> {
     if (_isLoading) {
       return Scaffold(
         backgroundColor: AppColors.surface,
-        appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0, leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary), onPressed: () => Navigator.pop(context))),
+        appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0, leading: IconButton(icon: const Icon(AppIcons.arrowBack, color: AppColors.primary), onPressed: () => Navigator.pop(context))),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -128,9 +130,9 @@ class _PoulaillerMigrationScreenState extends State<PoulaillerMigrationScreen> {
     if (_cycleId == null) {
       return Scaffold(
         backgroundColor: AppColors.surface,
-        appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0, leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary), onPressed: () => Navigator.pop(context))),
+        appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0, leading: IconButton(icon: const Icon(AppIcons.arrowBack, color: AppColors.primary), onPressed: () => Navigator.pop(context))),
         body: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(Icons.info_outline, size: 60, color: AppColors.textHint),
+          Icon(AppIcons.urgent, size: 60, color: AppColors.textHint),
           const SizedBox(height: AppSpacing.lg),
           Text('Aucun cycle actif dans ce poulailler', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
         ])),
@@ -144,7 +146,7 @@ class _PoulaillerMigrationScreenState extends State<PoulaillerMigrationScreen> {
       backgroundColor: AppColors.surface,
       appBar: AppBar(
         backgroundColor: Colors.transparent, elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary), onPressed: () => Navigator.pop(context)),
+        leading: IconButton(icon: const Icon(AppIcons.arrowBack, color: AppColors.primary), onPressed: () => Navigator.pop(context)),
         title: const Text('Migration de poulets', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
         centerTitle: true,
       ),

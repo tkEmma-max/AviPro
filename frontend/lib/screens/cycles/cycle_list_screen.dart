@@ -6,6 +6,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_borders.dart';
 import '../../core/theme/app_shadows.dart';
+import '../../core/constants/app_icons.dart';
 import '../../providers/cycle_provider.dart';
 import '../../models/cycle.dart';
 import '../../widgets/custom_search_field.dart';
@@ -46,18 +47,18 @@ class _CycleListScreenState extends State<CycleListScreen> {
     // Filtrage
     List<Cycle> filteredCycles;
     if (_filter == 'Actifs') {
-    filteredCycles = cycles.where((c) => c.isActive && !c.isArchived).toList();
+      filteredCycles = cycles.where((c) => c.isActive && !c.isArchived).toList();
     } else if (_filter == 'Clôturés') {
-    filteredCycles = cycles.where((c) => c.isArchived).toList();
+      filteredCycles = cycles.where((c) => c.isArchived).toList();
     } else {
-    filteredCycles = cycles;
+      filteredCycles = cycles;
     }
 
     // Appliquer la recherche
     if (_searchQuery.isNotEmpty) {
-    filteredCycles = filteredCycles.where((c) =>
-    c.nom.toLowerCase().contains(_searchQuery.toLowerCase())
-    ).toList();
+      filteredCycles = filteredCycles.where((c) =>
+          c.nom.toLowerCase().contains(_searchQuery.toLowerCase())
+      ).toList();
     }
 
     return Scaffold(
@@ -68,7 +69,7 @@ class _CycleListScreenState extends State<CycleListScreen> {
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(AppIcons.refresh),
             onPressed: () {
               context.read<CycleProvider>().refreshCycles();
             },
@@ -129,7 +130,7 @@ class _CycleListScreenState extends State<CycleListScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.timeline_outlined, size: 60, color: AppColors.textHint),
+                  Icon(AppIcons.cycle, size: 60, color: AppColors.textHint),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
                     'Aucun cycle ${_filter.toLowerCase()}',
@@ -166,7 +167,7 @@ class _CycleListScreenState extends State<CycleListScreen> {
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         shape: const CircleBorder(),
-        child: const Icon(Icons.add),
+        child: const Icon(AppIcons.add),
       ),
     );
   }

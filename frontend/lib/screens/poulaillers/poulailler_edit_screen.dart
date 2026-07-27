@@ -5,6 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_borders.dart';
+import '../../core/constants/app_icons.dart';
 import '../../models/poulailler.dart';
 import '../../providers/poulailler_provider.dart';
 import '../../widgets/custom_text_field.dart';
@@ -121,7 +122,7 @@ class _PoulaillerEditScreenState extends State<PoulaillerEditScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary),
+          icon: const Icon(AppIcons.arrowBack, color: AppColors.primary),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -157,7 +158,7 @@ class _PoulaillerEditScreenState extends State<PoulaillerEditScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.info_outline,
+                      const Icon(AppIcons.urgent,
                           color: AppColors.warning, size: 20),
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(
@@ -182,16 +183,16 @@ class _PoulaillerEditScreenState extends State<PoulaillerEditScreen> {
               CustomTextField(
                 controller: _nomController,
                 label: 'Nom ou numéro du bâtiment *',
-                prefixIcon: Icons.house_outlined,
+                prefixIcon: AppIcons.house,
                 validator: (value) =>
-                    value!.isEmpty ? 'Ce champ est requis' : null,
+                value!.isEmpty ? 'Ce champ est requis' : null,
               ),
               const SizedBox(height: AppSpacing.lg),
 
               CustomTextField(
                 controller: _localisationController,
                 label: 'Localisation',
-                prefixIcon: Icons.location_on_outlined,
+                prefixIcon: AppIcons.localisation,
               ),
               const SizedBox(height: AppSpacing.xxl),
 
@@ -209,7 +210,7 @@ class _PoulaillerEditScreenState extends State<PoulaillerEditScreen> {
                     child: CustomTextField(
                       controller: _longueurController,
                       label: 'Longueur (m) *',
-                      prefixIcon: Icons.straighten,
+                      prefixIcon: AppIcons.surface,
                       keyboardType: TextInputType.number,
                       onChanged: (_) => _updateCalculs(),
                       validator: (value) {
@@ -225,7 +226,7 @@ class _PoulaillerEditScreenState extends State<PoulaillerEditScreen> {
                     child: CustomTextField(
                       controller: _largeurController,
                       label: 'Largeur (m) *',
-                      prefixIcon: Icons.straighten,
+                      prefixIcon: AppIcons.surface,
                       keyboardType: TextInputType.number,
                       onChanged: (_) => _updateCalculs(),
                       validator: (value) {
@@ -320,10 +321,10 @@ class _PoulaillerEditScreenState extends State<PoulaillerEditScreen> {
                     child: _buildCounter(
                       label: 'Mangeoires',
                       value: _nbMangeoires,
-                      icon: Icons.restaurant,
+                      icon: AppIcons.mangeoire,
                       onIncrement: () => setState(() => _nbMangeoires++),
                       onDecrement: () => setState(() =>
-                          _nbMangeoires = _nbMangeoires > 0 ? _nbMangeoires - 1 : 0),
+                      _nbMangeoires = _nbMangeoires > 0 ? _nbMangeoires - 1 : 0),
                     ),
                   ),
                   const SizedBox(width: AppSpacing.md),
@@ -331,10 +332,10 @@ class _PoulaillerEditScreenState extends State<PoulaillerEditScreen> {
                     child: _buildCounter(
                       label: 'Abreuvoirs',
                       value: _nbAbreuvoirs,
-                      icon: Icons.water_drop,
+                      icon: AppIcons.abreuvoir,
                       onIncrement: () => setState(() => _nbAbreuvoirs++),
                       onDecrement: () => setState(() =>
-                          _nbAbreuvoirs = _nbAbreuvoirs > 0 ? _nbAbreuvoirs - 1 : 0),
+                      _nbAbreuvoirs = _nbAbreuvoirs > 0 ? _nbAbreuvoirs - 1 : 0),
                     ),
                   ),
                 ],
@@ -348,7 +349,7 @@ class _PoulaillerEditScreenState extends State<PoulaillerEditScreen> {
                   onPressed: _isBlocked ? null : _savePoulailler,
                   style: ElevatedButton.styleFrom(
                     backgroundColor:
-                        _isBlocked ? AppColors.textHint : AppColors.primary,
+                    _isBlocked ? AppColors.textHint : AppColors.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: AppBorders.buttonRadius,
@@ -391,7 +392,7 @@ class _PoulaillerEditScreenState extends State<PoulaillerEditScreen> {
         const SizedBox(height: AppSpacing.xs),
         Row(
           children: [
-            _buildCounterButton(Icons.remove, onDecrement),
+            _buildCounterButton(AppIcons.moins, onDecrement),
             Container(
               width: 48,
               height: 40,
@@ -404,7 +405,7 @@ class _PoulaillerEditScreenState extends State<PoulaillerEditScreen> {
                 ),
               ),
             ),
-            _buildCounterButton(Icons.add, onIncrement),
+            _buildCounterButton(AppIcons.plus, onIncrement),
           ],
         ),
       ],

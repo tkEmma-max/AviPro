@@ -8,6 +8,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_borders.dart';
 import '../../core/theme/app_shadows.dart';
+import '../../core/constants/app_icons.dart';
 import '../../models/cycle.dart';
 import '../../services/api_service.dart';
 import '../../services/equipement_service.dart';
@@ -56,12 +57,78 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
       _labelsJours = _cachedLabels;
       _sousBandes = _cachedSousBandes;
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshCycle());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshCycle();
+      _checkRoutines();  // ← AJOUTE ICI
+    });
   }
 
   bool _canDeleteCycle() {
     final difference = DateTime.now().difference(_cycle.createdAt);
     return difference.inHours < 48;
+  }
+
+  Future<void> _checkRoutines() async {
+    try {
+      final response = await _apiService.get('depenses/routines/a_appliquer/?cycle_id=${_cycle.id}');
+      if (response.statusCode == 200 && response.data['nb_routines'] > 0 && mounted) {
+        final routines = response.data['routines'] as List;
+        _showRoutinesDialog(routines);
+      }
+    } catch (e) {
+      print('❌ Erreur vérification routines: $e');
+    }
+  }
+
+  void _showRoutinesDialog(List routines) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: AppBorders.radiusLarge),
+        title: const Text('Dépenses de routine disponibles'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('${routines.length} routine(s) à appliquer pour ce cycle :', style: AppTextStyles.bodyMedium),
+            const SizedBox(height: AppSpacing.md),
+            ...routines.map((r) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Row(children: [
+                Icon(r['est_obligatoire'] ? Icons.lock : Icons.check_circle_outline, size: 18, color: AppColors.primary),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(r['nom'] ?? '', style: AppTextStyles.subtitleMedium),
+                  Text('${r['montant_calcule']} FCFA • ${r['categorie']}', style: AppTextStyles.bodySmall),
+                ])),
+              ]),
+            )),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Plus tard')),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final ids = routines.map((r) => r['id'].toString()).toList();
+              try {
+                await _apiService.post('depenses/routines/appliquer/', data: {
+                  'cycle_id': _cycle.id,
+                  'routine_ids': ids,
+                });
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Routines appliquées !'), backgroundColor: AppColors.success));
+                  _refreshCycle();
+                }
+              } catch (e) {
+                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e'), backgroundColor: AppColors.error));
+              }
+            },
+            child: const Text('Appliquer'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showDeleteConfirmation() {
@@ -245,17 +312,17 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
       backgroundColor: AppColors.surface,
       appBar: AppBar(
         backgroundColor: Colors.transparent, elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary), onPressed: () => Navigator.pop(context)),
+        leading: IconButton(icon: const Icon(AppIcons.arrowBack, color: AppColors.primary), onPressed: () => Navigator.pop(context)),
         title: Text(_cycle.nom, style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
         centerTitle: true,
         actions: [
-          IconButton(icon: const Icon(Icons.more_vert, color: AppColors.textPrimary), onPressed: () {
+          IconButton(icon: const Icon(AppIcons.menu, color: AppColors.textPrimary), onPressed: () {
             showModalBottomSheet(context: context, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), builder: (ctx) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
-              ListTile(leading: const Icon(Icons.bar_chart, color: AppColors.primary), title: const Text('Rapport de performance'), onTap: () { Navigator.pop(ctx); Navigator.pushNamed(context, '/cycle/report/${_cycle.id}', arguments: widget.cycleData); }),
-              ListTile(leading: const Icon(Icons.note_alt_outlined, color: AppColors.primary), title: const Text('Soumettre un rapport'), onTap: () { Navigator.pop(ctx); Navigator.pushNamed(context, '/cycle/report/form', arguments: widget.cycleData); }),
-              ListTile(leading: const Icon(Icons.edit_outlined, color: AppColors.primary), title: const Text('Modifier le cycle'), onTap: () { Navigator.pop(ctx); Navigator.pushNamed(context, '/cycle/edit', arguments: widget.cycleData); }),
-              ListTile(leading: const Icon(Icons.assessment_outlined, color: AppColors.primary), title: const Text('Voir les rapports'), onTap: () { Navigator.pop(ctx); Navigator.pushNamed(context, '/rapports'); }),
-              if (_canDeleteCycle()) ListTile(leading: const Icon(Icons.delete_outline, color: AppColors.error), title: const Text('Supprimer le cycle', style: TextStyle(color: AppColors.error)), onTap: () { Navigator.pop(ctx); _showDeleteConfirmation(); }),
+              ListTile(leading: const Icon(AppIcons.performance, color: AppColors.primary), title: const Text('Rapport de performance'), onTap: () { Navigator.pop(ctx); Navigator.pushNamed(context, '/cycle/report/${_cycle.id}', arguments: widget.cycleData); }),
+              ListTile(leading: const Icon(AppIcons.rapport, color: AppColors.primary), title: const Text('Soumettre un rapport'), onTap: () { Navigator.pop(ctx); Navigator.pushNamed(context, '/cycle/report/form', arguments: widget.cycleData); }),
+              ListTile(leading: const Icon(AppIcons.edit, color: AppColors.primary), title: const Text('Modifier le cycle'), onTap: () { Navigator.pop(ctx); Navigator.pushNamed(context, '/cycle/edit', arguments: widget.cycleData); }),
+              ListTile(leading: const Icon(AppIcons.observation, color: AppColors.primary), title: const Text('Voir les rapports'), onTap: () { Navigator.pop(ctx); Navigator.pushNamed(context, '/rapports'); }),
+              if (_canDeleteCycle()) ListTile(leading: const Icon(AppIcons.delete, color: AppColors.error), title: const Text('Supprimer le cycle', style: TextStyle(color: AppColors.error)), onTap: () { Navigator.pop(ctx); _showDeleteConfirmation(); }),
             ])));
           }),
         ],
@@ -303,7 +370,7 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
               onTap: () {
                 showDialog(context: context, builder: (ctx) => AlertDialog(title: Text(sb['poulailler_nom'] ?? 'Poulailler'), content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Text('${sb['nombre_sujets']} sujets', style: AppTextStyles.subtitleLarge), const SizedBox(height: AppSpacing.sm), Text('Sous-bande active', style: AppTextStyles.bodySmall)]), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Fermer'))]));
               },
-              child: Container(margin: const EdgeInsets.only(bottom: AppSpacing.sm), padding: const EdgeInsets.all(AppSpacing.md), decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.primary.withOpacity(0.3))), child: Row(children: [const Icon(Icons.house_outlined, color: AppColors.primary, size: 20), const SizedBox(width: AppSpacing.sm), Expanded(child: Text(sb['poulailler_nom'] ?? 'Poulailler', style: AppTextStyles.subtitleMedium)), Text('${sb['nombre_sujets']} sujets', style: AppTextStyles.numberSmall.copyWith(color: AppColors.primary)), const SizedBox(width: AppSpacing.xs), const Icon(Icons.chevron_right, color: AppColors.textHint, size: 18)])),
+              child: Container(margin: const EdgeInsets.only(bottom: AppSpacing.sm), padding: const EdgeInsets.all(AppSpacing.md), decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.primary.withOpacity(0.3))), child: Row(children: [const Icon(AppIcons.house, color: AppColors.primary, size: 20), const SizedBox(width: AppSpacing.sm), Expanded(child: Text(sb['poulailler_nom'] ?? 'Poulailler', style: AppTextStyles.subtitleMedium)), Text('${sb['nombre_sujets']} sujets', style: AppTextStyles.numberSmall.copyWith(color: AppColors.primary)), const SizedBox(width: AppSpacing.xs), const Icon(AppIcons.chevronRight, color: AppColors.textHint, size: 18)])),
             )),
           if (isActif) ...[
             const SizedBox(height: AppSpacing.sm),
@@ -311,7 +378,7 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gestion de la répartition disponible en V2'), backgroundColor: AppColors.primary));
               },
-              icon: const Icon(Icons.swap_horiz, size: 16), label: const Text('Gérer la répartition (migrer)'),
+              icon: const Icon(AppIcons.migration, size: 16), label: const Text('Gérer la répartition (migrer)'),
               style: OutlinedButton.styleFrom(foregroundColor: AppColors.primary),
             )),
           ],
@@ -325,7 +392,7 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
             decoration: BoxDecoration(color: (alerteMangeoires || alerteAbreuvoirs) ? AppColors.warning.withOpacity(0.08) : AppColors.success.withOpacity(0.05), borderRadius: AppBorders.cardRadius, border: Border.all(color: (alerteMangeoires || alerteAbreuvoirs) ? AppColors.warning : AppColors.success.withOpacity(0.2))),
             child: Column(children: [
               Row(children: [
-                Icon(alerteMangeoires || alerteAbreuvoirs ? Icons.warning_amber_outlined : Icons.check_circle, color: alerteMangeoires || alerteAbreuvoirs ? AppColors.warning : AppColors.success, size: 20),
+                Icon(alerteMangeoires || alerteAbreuvoirs ? AppIcons.urgent : AppIcons.succes, color: alerteMangeoires || alerteAbreuvoirs ? AppColors.warning : AppColors.success, size: 20),
                 const SizedBox(width: AppSpacing.sm),
                 Text(alerteMangeoires || alerteAbreuvoirs ? 'Matériel insuffisant' : 'Matériel suffisant', style: AppTextStyles.subtitleMedium.copyWith(color: alerteMangeoires || alerteAbreuvoirs ? AppColors.warning : AppColors.success)),
               ]),
@@ -335,7 +402,7 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
               const SizedBox(height: AppSpacing.sm),
               SizedBox(width: double.infinity, child: OutlinedButton.icon(
                 onPressed: _modifierMateriel,
-                icon: const Icon(Icons.edit_outlined, size: 16), label: const Text('Modifier le matériel'),
+                icon: const Icon(AppIcons.edit, size: 16), label: const Text('Modifier le matériel'),
                 style: OutlinedButton.styleFrom(foregroundColor: AppColors.primary),
               )),
             ]),
@@ -346,13 +413,13 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
           Text('Actions terrain', style: AppTextStyles.subtitleLarge.copyWith(color: AppColors.primary)),
           const SizedBox(height: AppSpacing.md),
           Row(children: [
-            Expanded(child: _buildQuickAction(label: 'Déclarer\nune perte', icon: Icons.warning, color: AppColors.error, bgColor: AppColors.error.withOpacity(0.08), onTap: _declarerPerte)),
+            Expanded(child: _buildQuickAction(label: 'Déclarer\nune perte', icon: AppIcons.urgent, color: AppColors.error, bgColor: AppColors.error.withOpacity(0.08), onTap: _declarerPerte)),
             const SizedBox(width: AppSpacing.sm),
-            Expanded(child: _buildQuickAction(label: 'Noter\nune charge', icon: Icons.money_off_outlined, color: AppColors.primary, bgColor: AppColors.primary.withOpacity(0.08), onTap: () => Navigator.pushNamed(context, '/finance/depense', arguments: {'cycle_id': _cycle.id, 'cycle_nom': _cycle.nom}).then((_) => _refreshCycle()))),
+            Expanded(child: _buildQuickAction(label: 'Noter\nune charge', icon: AppIcons.depenseAdd, color: AppColors.primary, bgColor: AppColors.primary.withOpacity(0.08), onTap: () => Navigator.pushNamed(context, '/finance/depense', arguments: {'cycle_id': _cycle.id, 'cycle_nom': _cycle.nom}).then((_) => _refreshCycle()))),
             const SizedBox(width: AppSpacing.sm),
-            Expanded(child: _buildQuickAction(label: 'Vente', icon: Icons.payments_outlined, color: AppColors.success, bgColor: AppColors.success.withOpacity(0.08), onTap: () => Navigator.pushNamed(context, '/finance/vente', arguments: {'cycle_id': _cycle.id, 'cycle_nom': _cycle.nom}).then((_) => _refreshCycle()))),
+            Expanded(child: _buildQuickAction(label: 'Vente', icon: AppIcons.venteAdd, color: AppColors.success, bgColor: AppColors.success.withOpacity(0.08), onTap: () => Navigator.pushNamed(context, '/finance/vente', arguments: {'cycle_id': _cycle.id, 'cycle_nom': _cycle.nom}).then((_) => _refreshCycle()))),
             const SizedBox(width: AppSpacing.sm),
-            Expanded(child: _buildQuickAction(label: 'Obser-\nvation', icon: Icons.note_alt_outlined, color: AppColors.warning, bgColor: AppColors.warning.withOpacity(0.08), onTap: () => Navigator.pushNamed(context, '/cycle/report/form', arguments: widget.cycleData).then((_) => _refreshCycle()))),
+            Expanded(child: _buildQuickAction(label: 'Obser-\nvation', icon: AppIcons.observation, color: AppColors.warning, bgColor: AppColors.warning.withOpacity(0.08), onTap: () => Navigator.pushNamed(context, '/cycle/report/form', arguments: widget.cycleData).then((_) => _refreshCycle()))),
           ]),
           const SizedBox(height: AppSpacing.xxl),
 
@@ -375,7 +442,7 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
           const SizedBox(height: AppSpacing.md),
           Container(padding: const EdgeInsets.all(AppSpacing.lg), decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.border.withOpacity(0.6)), boxShadow: AppShadows.shadowCard), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Row(children: [Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Icon(Icons.show_chart_rounded, size: 16, color: AppColors.primary)), const SizedBox(width: 8), Text('Évolution', style: AppTextStyles.subtitleLarge.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.bold))]),
+              Row(children: [Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Icon(AppIcons.chart, size: 16, color: AppColors.primary)), const SizedBox(width: 8), Text('Évolution', style: AppTextStyles.subtitleLarge.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.bold))]),
               Row(children: [_buildLegend('Gains', AppColors.success), const SizedBox(width: AppSpacing.md), _buildLegend('Dépenses', AppColors.error)]),
             ]),
             const SizedBox(height: AppSpacing.lg),
@@ -421,7 +488,7 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
     final maxY = (totalVentes > totalDepenses ? totalVentes : totalDepenses) * 1.3;
 
     if (maxY == 0) {
-      return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.show_chart, size: 40, color: AppColors.textHint), const SizedBox(height: AppSpacing.sm), Text('Ajoutez des transactions\npour voir le graphique', textAlign: TextAlign.center, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint))]));
+      return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(AppIcons.chart, size: 40, color: AppColors.textHint), const SizedBox(height: AppSpacing.sm), Text('Ajoutez des transactions\npour voir le graphique', textAlign: TextAlign.center, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint))]));
     }
 
     List<FlSpot> spotsV = _spotsVentes;
@@ -461,10 +528,28 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
 
   List<Map<String, dynamic>> _getEtapesFrise() {
     switch (_cycle.type) {
-      case 'CHAIR': return [{'age': 1, 'label': 'J1', 'icon': Icons.egg}, {'age': 21, 'label': 'J21', 'icon': Icons.pets}, {'age': 35, 'label': 'J35', 'icon': Icons.restaurant}, {'age': 45, 'label': 'J45', 'icon': Icons.check_circle}];
-      case 'PONDEUSE': return [{'age': 1, 'label': 'Sem.1', 'icon': Icons.egg}, {'age': 56, 'label': 'Sem.8', 'icon': Icons.pets}, {'age': 126, 'label': 'Sem.18', 'icon': Icons.restaurant}, {'age': 490, 'label': 'Sem.70', 'icon': Icons.check_circle}];
-      case 'LOCAL': return [{'age': 1, 'label': 'J1', 'icon': Icons.egg}, {'age': 84, 'label': 'Sem.12', 'icon': Icons.pets}, {'age': 168, 'label': 'Sem.24', 'icon': Icons.restaurant}, {'age': _cycle.dureeEstimeeJours, 'label': 'Fin', 'icon': Icons.check_circle}];
-      default: return [{'age': 1, 'label': 'Début', 'icon': Icons.play_arrow}, {'age': _cycle.dureeEstimeeJours, 'label': 'Fin', 'icon': Icons.flag}];
+      case 'CHAIR': return [
+        {'age': 1, 'label': 'J1', 'icon': AppIcons.oeuf},
+        {'age': 21, 'label': 'J21', 'icon': AppIcons.poulet},
+        {'age': 35, 'label': 'J35', 'icon': AppIcons.mangeoire},
+        {'age': 45, 'label': 'J45', 'icon': AppIcons.succes}
+      ];
+      case 'PONDEUSE': return [
+        {'age': 1, 'label': 'Sem.1', 'icon': AppIcons.oeuf},
+        {'age': 56, 'label': 'Sem.8', 'icon': AppIcons.poulet},
+        {'age': 126, 'label': 'Sem.18', 'icon': AppIcons.mangeoire},
+        {'age': 490, 'label': 'Sem.70', 'icon': AppIcons.succes}
+      ];
+      case 'LOCAL': return [
+        {'age': 1, 'label': 'J1', 'icon': AppIcons.oeuf},
+        {'age': 84, 'label': 'Sem.12', 'icon': AppIcons.poulet},
+        {'age': 168, 'label': 'Sem.24', 'icon': AppIcons.mangeoire},
+        {'age': _cycle.dureeEstimeeJours, 'label': 'Fin', 'icon': AppIcons.succes}
+      ];
+      default: return [
+        {'age': 1, 'label': 'Début', 'icon': AppIcons.debut},
+        {'age': _cycle.dureeEstimeeJours, 'label': 'Fin', 'icon': AppIcons.fin}
+      ];
     }
   }
 

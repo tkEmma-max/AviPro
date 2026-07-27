@@ -5,6 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_borders.dart';
+import '../../core/constants/app_icons.dart';
 import '../../models/cycle.dart';
 import '../../models/poulailler.dart';
 import '../../providers/cycle_provider.dart';
@@ -160,7 +161,7 @@ class _CycleEditScreenState extends State<CycleEditScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary),
+            icon: const Icon(AppIcons.arrowBack, color: AppColors.primary),
             onPressed: () => Navigator.pop(context),
           ),
         ),
@@ -188,7 +189,7 @@ class _CycleEditScreenState extends State<CycleEditScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary),
+          icon: const Icon(AppIcons.arrowBack, color: AppColors.primary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -222,7 +223,7 @@ class _CycleEditScreenState extends State<CycleEditScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.lock_outline, color: AppColors.warning, size: 20),
+                      const Icon(AppIcons.urgent, color: AppColors.warning, size: 20),
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: Text(
@@ -239,7 +240,7 @@ class _CycleEditScreenState extends State<CycleEditScreen> {
               CustomTextField(
                 controller: _nomController,
                 label: 'Nom de la bande *',
-                prefixIcon: Icons.label_outline,
+                prefixIcon: AppIcons.edit,
                 validator: (value) => value!.isEmpty ? 'Ce champ est requis' : null,
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -257,7 +258,7 @@ class _CycleEditScreenState extends State<CycleEditScreen> {
                   child: DropdownButton<String>(
                     value: _selectedPoulaillerId,
                     isExpanded: true,
-                    icon: Icon(Icons.arrow_drop_down, color: _isFullyEditable ? AppColors.primary : AppColors.textHint),
+                    icon: Icon(AppIcons.chevronRight, color: _isFullyEditable ? AppColors.primary : AppColors.textHint),
                     onChanged: _isFullyEditable ? (value) => setState(() => _selectedPoulaillerId = value) : null,
                     items: poulaillersDisponibles.map((p) {
                       return DropdownMenuItem<String>(
@@ -304,7 +305,7 @@ class _CycleEditScreenState extends State<CycleEditScreen> {
                 CustomTextField(
                   controller: _effectifController,
                   label: 'Nombre de sujets *',
-                  prefixIcon: Icons.pets,
+                  prefixIcon: AppIcons.sujets,
                   keyboardType: TextInputType.number,
                   validator: (value) {
                     if (value!.isEmpty) return 'Requis';
@@ -324,7 +325,7 @@ class _CycleEditScreenState extends State<CycleEditScreen> {
                       decoration: BoxDecoration(color: AppColors.grey200, borderRadius: AppBorders.inputRadius),
                       child: Row(
                         children: [
-                          const Icon(Icons.lock, size: 16, color: AppColors.textHint),
+                          const Icon(AppIcons.libre, size: 16, color: AppColors.textHint),
                           const SizedBox(width: AppSpacing.sm),
                           Text('${_cycle.nombreSujetsInitiaux} sujets (verrouillé)',
                               style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint)),
@@ -346,7 +347,7 @@ class _CycleEditScreenState extends State<CycleEditScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.calendar_today, color: _isFullyEditable ? AppColors.primary : AppColors.textHint),
+                    Icon(AppIcons.age, color: _isFullyEditable ? AppColors.primary : AppColors.textHint),
                     const SizedBox(width: AppSpacing.md),
                     Text('${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
                         style: AppTextStyles.bodyMedium.copyWith(
@@ -364,7 +365,7 @@ class _CycleEditScreenState extends State<CycleEditScreen> {
                           );
                           if (date != null) setState(() => _selectedDate = date);
                         },
-                        child: const Icon(Icons.edit, size: 16, color: AppColors.primary),
+                        child: const Icon(AppIcons.edit, size: 16, color: AppColors.primary),
                       ),
                     ],
                   ],

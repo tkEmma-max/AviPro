@@ -12,6 +12,7 @@ from .models import Depense, CategorieDepense, RoutineDepense, RoutineAppliquee
 from cycles.models import Cycle
 from django.db import transaction
 from django.core.exceptions import ValidationError
+from django.db import models
 
 from .serializers import (
     DepenseSerializer, DepenseListSerializer, DepenseCreateSerializer,
@@ -52,11 +53,7 @@ class RoutineDepenseViewSet(viewsets.ModelViewSet):
     """
     queryset = RoutineDepense.objects.filter(is_active=True)
     serializer_class = RoutineDepenseSerializer
-
-    def get_permissions(self):
-        if self.action in ('create', 'update', 'partial_update', 'destroy'):
-            return [IsAdminUser()]
-        return [IsAuthenticated()]
+    permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action == 'create':

@@ -6,6 +6,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_borders.dart';
 import '../../core/theme/app_shadows.dart';
+import '../../core/constants/app_icons.dart';
 import '../../models/poulailler.dart';
 import '../../models/cycle.dart';
 import '../../providers/poulailler_provider.dart';
@@ -133,7 +134,7 @@ class _PoulaillerDetailScreenState extends State<PoulaillerDetailScreen> {
       backgroundColor: AppColors.surface,
       appBar: AppBar(
         backgroundColor: Colors.transparent, elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary), onPressed: () => Navigator.pop(context)),
+        leading: IconButton(icon: const Icon(AppIcons.arrowBack, color: AppColors.primary), onPressed: () => Navigator.pop(context)),
         title: const Text('Détails du poulailler', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
         centerTitle: true,
       ),
@@ -201,7 +202,7 @@ class _PoulaillerDetailScreenState extends State<PoulaillerDetailScreen> {
               padding: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(color: AppColors.warning.withOpacity(0.08), borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.warning.withOpacity(0.3))),
               child: Row(children: [
-                const Icon(Icons.warning_amber_outlined, color: AppColors.warning, size: 20), const SizedBox(width: AppSpacing.sm),
+                const Icon(AppIcons.urgent, color: AppColors.warning, size: 20), const SizedBox(width: AppSpacing.sm),
                 Expanded(child: Text('Matériel insuffisant :${alerteMangeoires ? ' Ajoutez au moins ${nbMangeoiresRecommandees - mangeoiresActuelles} mangeoires.' : ''}${alerteAbreuvoirs ? ' Ajoutez au moins ${nbAbreuvoirsRecommandes - abreuvoirsActuels} abreuvoirs.' : ''}', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textPrimary))),
               ]),
             ),
@@ -238,19 +239,19 @@ class _PoulaillerDetailScreenState extends State<PoulaillerDetailScreen> {
               final result = await Navigator.push(context, MaterialPageRoute(builder: (_) => PoulaillerEditScreen(poulailler: widget.poulailler)));
               if (result == true && mounted) { context.read<PoulaillerProvider>().refreshPoulaillers(); _loadCycles(); }
             },
-            icon: const Icon(Icons.edit_outlined, size: 18), label: const Text('Modifier'),
+            icon: const Icon(AppIcons.edit, size: 18), label: const Text('Modifier'),
             style: OutlinedButton.styleFrom(foregroundColor: AppColors.primary, side: const BorderSide(color: AppColors.primary), minimumSize: const Size(0, 44), shape: RoundedRectangleBorder(borderRadius: AppBorders.buttonRadius)),
           )),
           const SizedBox(width: AppSpacing.sm),
           Expanded(child: OutlinedButton.icon(
             onPressed: isOccupied ? () => Navigator.push(context, MaterialPageRoute(builder: (_) => PoulaillerMigrationScreen(source: widget.poulailler))) : null,
-            icon: const Icon(Icons.swap_horiz, size: 18), label: const Text('Migrer'),
+            icon: const Icon(AppIcons.migration, size: 18), label: const Text('Migrer'),
             style: OutlinedButton.styleFrom(foregroundColor: AppColors.primary, side: const BorderSide(color: AppColors.primary), minimumSize: const Size(0, 44), shape: RoundedRectangleBorder(borderRadius: AppBorders.buttonRadius)),
           )),
           const SizedBox(width: AppSpacing.sm),
           Expanded(child: OutlinedButton.icon(
             onPressed: !isOccupied && widget.poulailler.nbPouletsActuels == 0 ? () => _showDeleteConfirmation(context) : null,
-            icon: const Icon(Icons.delete_outline, size: 18), label: const Text('Supprimer'),
+            icon: const Icon(AppIcons.delete, size: 18), label: const Text('Supprimer'),
             style: OutlinedButton.styleFrom(foregroundColor: AppColors.error, side: const BorderSide(color: AppColors.error), minimumSize: const Size(0, 44), shape: RoundedRectangleBorder(borderRadius: AppBorders.buttonRadius)),
           )),
         ]),

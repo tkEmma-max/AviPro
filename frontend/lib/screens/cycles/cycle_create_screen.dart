@@ -5,6 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_borders.dart';
+import '../../core/constants/app_icons.dart';
 import '../../models/poulailler.dart';
 import '../../models/cycle.dart';
 import '../../providers/poulailler_provider.dart';
@@ -199,7 +200,7 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
       backgroundColor: AppColors.surface,
       appBar: AppBar(
         backgroundColor: Colors.transparent, elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary), onPressed: () => Navigator.pop(context)),
+        leading: IconButton(icon: const Icon(AppIcons.arrowBack, color: AppColors.primary), onPressed: () => Navigator.pop(context)),
         title: const Text('Lancer un cycle', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
         centerTitle: true,
       ),
@@ -227,7 +228,7 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
           // Nom
           Text('Caractéristiques du lot', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
           const SizedBox(height: AppSpacing.md),
-          CustomTextField(controller: _nomController, label: 'Nom de la bande *', hint: 'Ex: Lot Chair Juil-07', prefixIcon: Icons.label_outline, validator: (v) => v!.isEmpty ? 'Requis' : null),
+          CustomTextField(controller: _nomController, label: 'Nom de la bande *', hint: 'Ex: Lot Chair Juil-07', prefixIcon: AppIcons.edit, validator: (v) => v!.isEmpty ? 'Requis' : null),
           const SizedBox(height: AppSpacing.lg),
 
           // Type
@@ -244,9 +245,9 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
 
           // Nombre de sujets + Prix unitaire
           Row(children: [
-            Expanded(flex: 2, child: CustomTextField(controller: _nbSujetsController, label: 'Nombre de sujets *', hint: '0', prefixIcon: Icons.pets, keyboardType: TextInputType.number, onChanged: (_) => _updateDensite(), validator: (v) { if (v!.isEmpty) return 'Requis'; final n = int.tryParse(v); if (n == null || n <= 0) return '> 0'; return null; })),
+            Expanded(flex: 2, child: CustomTextField(controller: _nbSujetsController, label: 'Nombre de sujets *', hint: '0', prefixIcon: AppIcons.sujets, keyboardType: TextInputType.number, onChanged: (_) => _updateDensite(), validator: (v) { if (v!.isEmpty) return 'Requis'; final n = int.tryParse(v); if (n == null || n <= 0) return '> 0'; return null; })),
             const SizedBox(width: AppSpacing.md),
-            Expanded(flex: 1, child: CustomTextField(controller: _prixUnitaireController, label: 'Prix unit. (FCFA) *', hint: '500', prefixIcon: Icons.money_outlined, keyboardType: TextInputType.number, validator: (v) { if (v!.isEmpty) return 'Requis'; final n = double.tryParse(v); if (n == null || n <= 0) return '> 0'; return null; })),
+            Expanded(flex: 1, child: CustomTextField(controller: _prixUnitaireController, label: 'Prix unit. (FCFA) *', hint: '500', prefixIcon: AppIcons.prixUnitaire, keyboardType: TextInputType.number, validator: (v) { if (v!.isEmpty) return 'Requis'; final n = double.tryParse(v); if (n == null || n <= 0) return '> 0'; return null; })),
           ]),
 
           // Aperçu coût total
@@ -255,7 +256,7 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
               margin: const EdgeInsets.only(top: AppSpacing.sm),
               padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.05), borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.primary.withOpacity(0.2))),
-              child: Row(children: [const Icon(Icons.receipt_long, color: AppColors.primary, size: 18), const SizedBox(width: AppSpacing.sm), Text('Coût total poussins: ${(int.parse(_nbSujetsController.text) * double.parse(_prixUnitaireController.text)).toStringAsFixed(0)} FCFA', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600))]),
+              child: Row(children: [const Icon(AppIcons.transaction, color: AppColors.primary, size: 18), const SizedBox(width: AppSpacing.sm), Text('Coût total poussins: ${(int.parse(_nbSujetsController.text) * double.parse(_prixUnitaireController.text)).toStringAsFixed(0)} FCFA', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600))]),
             ),
 
           // Alerte densité
@@ -265,7 +266,7 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
               padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(color: _isDensiteOk ? AppColors.success.withOpacity(0.08) : AppColors.error.withOpacity(0.08), borderRadius: AppBorders.cardRadius, border: Border.all(color: _isDensiteOk ? AppColors.success.withOpacity(0.3) : AppColors.error.withOpacity(0.3))),
               child: Row(children: [
-                Icon(_isDensiteOk ? Icons.check_circle : Icons.warning_amber_outlined, color: _isDensiteOk ? AppColors.success : AppColors.error, size: 20),
+                Icon(_isDensiteOk ? AppIcons.succes : AppIcons.urgent, color: _isDensiteOk ? AppColors.success : AppColors.error, size: 20),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(child: Text(_isDensiteOk ? 'Densité conforme (${_densite.toStringAsFixed(1)} sujets/m²)' : 'Surcharge : Capacité max $_capaciteMax sujets', style: AppTextStyles.bodyMedium.copyWith(color: _isDensiteOk ? AppColors.success : AppColors.error, fontWeight: FontWeight.w600))),
               ]),
@@ -276,7 +277,7 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
           Text('Âge des poussins', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
           const SizedBox(height: AppSpacing.md),
           Row(children: [
-            Expanded(flex: 1, child: CustomTextField(controller: _ageController, label: 'Âge (jours)', hint: '0', prefixIcon: Icons.timer_outlined, keyboardType: TextInputType.number, onChanged: (_) => setState(() {}), validator: (v) { if (v!.isEmpty) return 'Requis'; final n = int.tryParse(v); if (n == null || n < 0) return '≥ 0'; return null; })),
+            Expanded(flex: 1, child: CustomTextField(controller: _ageController, label: 'Âge (jours)', hint: '0', prefixIcon: AppIcons.age, keyboardType: TextInputType.number, onChanged: (_) => setState(() {}), validator: (v) { if (v!.isEmpty) return 'Requis'; final n = int.tryParse(v); if (n == null || n < 0) return '≥ 0'; return null; })),
             const SizedBox(width: AppSpacing.md),
             Expanded(flex: 2, child: Container(
               padding: const EdgeInsets.all(AppSpacing.md),
@@ -294,9 +295,9 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
           Text('Matériel de nutrition', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
           const SizedBox(height: AppSpacing.md),
           Row(children: [
-            Expanded(child: CustomTextField(controller: _nbMangeoiresController, label: 'Nb mangeoires', hint: '0', prefixIcon: Icons.restaurant, keyboardType: TextInputType.number, validator: (v) { if (v!.isEmpty) return 'Requis'; final n = int.tryParse(v); if (n == null || n < 0) return '≥ 0'; return null; })),
+            Expanded(child: CustomTextField(controller: _nbMangeoiresController, label: 'Nb mangeoires', hint: '0', prefixIcon: AppIcons.mangeoire, keyboardType: TextInputType.number, validator: (v) { if (v!.isEmpty) return 'Requis'; final n = int.tryParse(v); if (n == null || n < 0) return '≥ 0'; return null; })),
             const SizedBox(width: AppSpacing.md),
-            Expanded(child: CustomTextField(controller: _nbAbreuvoirsController, label: 'Nb abreuvoirs', hint: '0', prefixIcon: Icons.water_drop, keyboardType: TextInputType.number, validator: (v) { if (v!.isEmpty) return 'Requis'; final n = int.tryParse(v); if (n == null || n < 0) return '≥ 0'; return null; })),
+            Expanded(child: CustomTextField(controller: _nbAbreuvoirsController, label: 'Nb abreuvoirs', hint: '0', prefixIcon: AppIcons.abreuvoir, keyboardType: TextInputType.number, validator: (v) { if (v!.isEmpty) return 'Requis'; final n = int.tryParse(v); if (n == null || n < 0) return '≥ 0'; return null; })),
           ]),
           if (_nbSujetsController.text.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.md),
@@ -304,7 +305,7 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
               padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(color: AppColors.success.withOpacity(0.05), borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.success.withOpacity(0.2))),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [const Icon(Icons.lightbulb_outline, color: AppColors.success, size: 18), const SizedBox(width: AppSpacing.sm), Text('Recommandations', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.success))]),
+                Row(children: [const Icon(AppIcons.suggestion, color: AppColors.success, size: 18), const SizedBox(width: AppSpacing.sm), Text('Recommandations', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.success))]),
                 const SizedBox(height: AppSpacing.sm),
                 Text('Mangeoires recommandées: $_nbMangeoiresRecommandees', style: AppTextStyles.bodySmall),
                 Text('Abreuvoirs recommandés: $_nbAbreuvoirsRecommandes', style: AppTextStyles.bodySmall),
