@@ -1,0 +1,1238 @@
+\documentclass[12pt,a4paper]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\geometry{top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+\usepackage{graphicx}
+\usepackage{color}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{colortbl}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{multirow}
+
+% Configuration des couleurs
+\definecolor{bleu}{RGB}{0, 112, 192}
+\definecolor{vert}{RGB}{0, 176, 80}
+\definecolor{rouge}{RGB}{255, 0, 0}
+\definecolor{gris}{RGB}{128, 128, 128}
+\definecolor{orange}{RGB}{255, 153, 0}
+\definecolor{jaune}{RGB}{255, 204, 0}
+
+% Configuration du header/footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textbf{Cahier des Charges}}
+\fancyhead[R]{\textit{Gestion Avicole}}
+\fancyfoot[C]{\thepage/\pageref{LastPage}}
+\renewcommand{\headrulewidth}{1pt}
+\renewcommand{\footrulewidth}{0.5pt}
+
+% Configuration des titres
+\titleformat{\chapter}{\normalfont\Huge\bfseries\color{bleu}}{\thechapter}{1em}{}
+\titleformat{\section}{\normalfont\Large\bfseries\color{bleu}}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\large\bfseries\color{bleu}}{\thesubsection}{1em}{}
+
+% Commandes pour les priorités
+\newcommand{\haute}{\textcolor{rouge}{\textbf{[HAUTE]}}}
+\newcommand{\moyenne}{\textcolor{orange}{\textbf{[MOYENNE]}}}
+\newcommand{\basse}{\textcolor{gris}{\textbf{[BASSE]}}}
+
+% Début du document
+\begin{document}
+
+% ==================== PAGE DE GARDE ====================
+\begin{titlepage}
+    \centering
+    \vspace*{1cm}
+
+    \includegraphics[width=0.3\textwidth]{logo.jpg}
+
+    \vspace{1cm}
+
+    {\Huge \textbf{CAHIER DES CHARGES}}
+
+    \vspace{0.5cm}
+    {\Large \textbf{Application Mobile de Gestion Avicole}}
+
+    \vspace{1cm}
+
+    \begin{minipage}{0.8\textwidth}
+        \centering
+        {\Large \textbf{Projet :} Gestion intégrée des poulaillers, \\
+        suivi financier et prévisions pour l'élevage avicole}
+    \end{minipage}
+
+    \vspace{2cm}
+
+    \begin{tabular}{p{3cm} p{8cm}}
+        \textbf{Version} & 1.0 \\
+        \textbf{Date} & \today \\
+        \textbf{Auteur} & [Nom du commanditaire] \\
+        \textbf{Statut} & Approuvé \\
+    \end{tabular}
+
+    \vspace{2cm}
+
+    \begin{minipage}{0.7\textwidth}
+        \centering
+        \textit{
+        "Ce projet vise à digitaliser la gestion d'un élevage avicole \\
+        en offrant une traçabilité complète des dépenses, gains, \\
+        prêts et données techniques, avec des fonctionnalités \\
+        de prévision et de suivi hors-ligne."}
+    \end{minipage}
+
+    \vspace{2cm}
+
+    \rule{0.8\textwidth}{0.5mm}
+
+    \vspace{0.5cm}
+    {\large \textbf{Document strictement confidentiel}}
+
+\end{titlepage}
+
+% ==================== SOMMAIRE ====================
+\tableofcontents
+\newpage
+
+% ==================== LISTE DES TABLEAUX ====================
+\listoftables
+\newpage
+
+% ==================== CHAPITRE 1 : INTRODUCTION ====================
+\chapter{Introduction}
+
+\section{Présentation du projet}
+Le présent document constitue le cahier des charges de l'application mobile de gestion avicole. Il a pour objectif de définir précisément les besoins du commanditaire, les fonctionnalités à développer, les contraintes techniques et les livrables attendus.
+
+L'application vise à accompagner un éleveur avicole dans la gestion quotidienne de son activité en offrant :
+\begin{itemize}
+    \item Une traçabilité complète des dépenses et des gains
+    \item Un suivi précis des prêts et remboursements
+    \item Une gestion optimisée des poulaillers et des cycles de production
+    \item Des prévisions fiables basées sur les données historiques
+    \item Un suivi technique détaillé (aliment, eau, santé)
+    \item Une frise chronologique visuelle pour suivre l'évolution des cycles
+    \item Une synchronisation hors-ligne pour une utilisation sur le terrain
+\end{itemize}
+
+\section{Contexte et enjeux}
+L'élevage avicole est une activité nécessitant une gestion rigoureuse des ressources financières et techniques. Le commanditaire, éleveur expérimenté, rencontre actuellement plusieurs difficultés :
+
+\begin{itemize}
+    \item \textbf{Manque de traçabilité} des dépenses et des gains
+    \item \textbf{Impossibilité d'anticiper} les coûts des cycles
+    \item \textbf{Gestion complexe} des prêts et échéances
+    \item \textbf{Suivi approximatif} de la consommation d'aliment et d'eau
+    \item \textbf{Absence de données historiques} pour améliorer la rentabilité
+\end{itemize}
+
+L'application devra répondre à ces problématiques en offrant une solution \textbf{simple, intuitive et accessible} depuis un téléphone mobile.
+
+\section{Objectifs du projet}
+\begin{enumerate}
+    \item \textbf{Objectif principal :} Offrir un outil complet de gestion avicole permettant une traçabilité à 100\% des activités.
+    \item \textbf{Objectif secondaire 1 :} Permettre l'anticipation des coûts et la planification des cycles.
+    \item \textbf{Objectif secondaire 2 :} Faciliter la prise de décision grâce à des données fiables et structurées.
+    \item \textbf{Objectif tertiaire :} Évoluer vers une solution professionnelle adaptable à différentes tailles d'exploitation.
+\end{enumerate}
+
+\section{Périmètre du projet}
+\subsection{Inclus dans le périmètre}
+\begin{itemize}
+    \item Application mobile (Android et iOS) développée avec Flutter
+    \item Backend Django avec base de données PostgreSQL
+    \item Synchronisation hors-ligne
+    \item Toutes les fonctionnalités décrites dans ce document
+\end{itemize}
+
+\subsection{Exclus du périmètre (version 1.0)}
+\begin{itemize}
+    \item Gestion avancée de la température et de la litière
+    \item Prévisions globales hors cycles
+    \item Intégration automatique avec les fournisseurs
+    \item Signature électronique avancée
+    \item Version web
+    \item Amortissement des équipements
+    \item Module multilingue
+\end{itemize}
+
+\newpage
+
+% ==================== CHAPITRE 2 : ARCHITECTURE TECHNIQUE ====================
+\chapter{Architecture Technique}
+
+\section{Choix technologiques}
+
+\begin{table}[H]
+    \centering
+    \caption{Stack technique retenue}
+    \begin{tabular}{|p{4cm}|p{4cm}|p{6cm}|}
+        \hline
+        \textbf{Composant} & \textbf{Technologie} & \textbf{Justification} \\
+        \hline
+        \hline
+        Application mobile & Flutter & Performance, multiplateforme, interface riche \\
+        \hline
+        Langage mobile & Dart & Moderne, productif, communauté active \\
+        \hline
+        Backend & Django (Python) & Robuste, sécurisé, familiarité du développeur \\
+        \hline
+        API REST & Django REST Framework & Standard, complet, bien documenté \\
+        \hline
+        Base de données & PostgreSQL & Robuste, fiable, performances élevées \\
+        \hline
+        Stockage local & SQLite (sqflite) & Léger, intégré, parfait pour le hors-ligne \\
+        \hline
+        Authentification & JWT (Simple JWT) & Standard sécurisé, sans état \\
+        \hline
+        Notifications & Firebase Cloud Messaging & Fiable, gratuit, simple d'utilisation \\
+        \hline
+        Hébergement & [À définir] & AWS / DigitalOcean / Autre \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\section{Architecture logicielle}
+
+\subsection{Vue d'ensemble}
+L'application suit une architecture \textbf{client-serveur} avec une couche de synchronisation :
+
+\begin{lstlisting}[language=text, caption=Schéma d'architecture]
+┌─────────────────────────────────────┐
+│          FLUTTER (Mobile)            │
+│  ┌─────────────────────────────┐    │
+│  │    Interface Utilisateur    │    │
+│  └─────────────────────────────┘    │
+│  ┌─────────────────────────────┐    │
+│  │    Stockage Local (SQLite)  │    │
+│  │      + File d'attente       │    │
+│  └─────────────────────────────┘    │
+│  ┌─────────────────────────────┐    │
+│  │   Service de Synchronisation │    │
+│  └─────────────────────────────┘    │
+└─────────────────────────────────────┘
+              │ API REST
+              ▼
+┌─────────────────────────────────────┐
+│          DJANGO (Backend)            │
+│  ┌─────────────────────────────┐    │
+│  │   API REST (Django REST)    │    │
+│  └─────────────────────────────┘    │
+│  ┌─────────────────────────────┐    │
+│  │    Logique Métier (Services) │    │
+│  └─────────────────────────────┘    │
+│  ┌─────────────────────────────┐    │
+│  │      Modèles (ORM)          │    │
+│  └─────────────────────────────┘    │
+└─────────────────────────────────────┘
+              │
+              ▼
+┌─────────────────────────────────────┐
+│        POSTGRESQL (Base de données)  │
+└─────────────────────────────────────┘
+\end{lstlisting}
+
+\subsection{Stratégie de synchronisation hors-ligne}
+
+\subsubsection{Principe}
+L'application fonctionne \textbf{même sans connexion internet}. Les données sont stockées localement et synchronisées automatiquement lorsque la connexion est rétablie.
+
+\subsubsection{Processus de synchronisation}
+\begin{enumerate}
+    \item L'utilisateur saisit des données sur le mobile (ex: une dépense)
+    \item Les données sont enregistrées dans \textbf{SQLite}
+    \item La modification est ajoutée à la \textbf{file d'attente} (table \texttt{pending\_sync})
+    \item Lorsque la connexion est disponible, l'appli envoie toutes les modifications au backend
+    \item Le backend traite les opérations et renvoie les modifications récentes
+    \item Les données locales sont mises à jour
+    \item Les opérations synchronisées sont supprimées de la file d'attente
+\end{enumerate}
+
+\newpage
+
+% ==================== CHAPITRE 3 : FONCTIONNALITÉS ====================
+\chapter{Fonctionnalités}
+
+\section{Module 1 : Gestion des poulaillers}
+
+\subsection{F1 - Créer un poulailler \haute}
+Création d'un poulailler avec les informations suivantes :
+\begin{itemize}
+    \item Nom (ex: "Poulailler Nord", "Bâtiment A")
+    \item Dimensions (longueur, largeur, hauteur optionnelle)
+    \item Localisation
+    \item Type de sol (optionnel)
+    \item Nombre de mangeoires et d'abreuvoirs
+\end{itemize}
+
+\subsection{F2 - Lister les poulaillers \haute}
+Liste des poulaillers avec :
+\begin{itemize}
+    \item Nom
+    \item Statut (LIBRE / OCCUPÉ) calculé automatiquement
+    \item Nombre actuel de poulets
+    \item Densité (poulets/m²)
+    \item Capacité maximale recommandée
+    \item Indicateur visuel de densité (�� OK / �� Élevée / �� Critique)
+\end{itemize}
+
+\subsection{F3 - Fiche détaillée d'un poulailler \haute}
+\begin{itemize}
+    \item Informations générales (nom, dimensions, localisation)
+    \item Surface totale
+    \item Statut actuel
+    \item Nombre de poulets actuel
+    \item Capacité maximale recommandée
+    \item Densité actuelle vs densité recommandée
+    \item Historique des cycles
+    \item Boutons d'action (migration, modification, suppression)
+\end{itemize}
+
+\subsection{F4 - Modifier un poulailler \moyenne}
+Modification des informations (nom, dimensions, localisation). La modification des dimensions déclenche une alerte si la densité dépasse la nouvelle capacité.
+
+\subsection{F5 - Gestion automatique du statut \haute}
+Le statut passe automatiquement à :
+\begin{itemize}
+    \item \textbf{LIBRE} lorsque le nombre de poulets = 0
+    \item \textbf{OCCUPÉ} lorsque le nombre de poulets > 0
+\end{itemize}
+
+\subsection{F6 - Calcul de la capacité et de la densité \haute}
+\begin{itemize}
+    \item Surface = Longueur × Largeur
+    \item Capacité = Surface × Densité recommandée (selon l'âge des poules)
+    \item Densité actuelle = Nombre de poulets / Surface
+    \item Alerte en cas de surcharge
+\end{itemize}
+
+\subsection{F7 - Migration de poulets \haute}
+Déplacement de poulets entre poulaillers avec :
+\begin{itemize}
+    \item Source et cible
+    \item Nombre de poulets à migrer
+    \item Âge des poulets (non modifiable, calculé automatiquement)
+    \item Raison de la migration
+    \item Alerte en cas de différence d'âge significative
+\end{itemize}
+
+\subsection{F8 - Supprimer un poulailler \basse}
+Suppression uniquement si le poulailler est vide (0 poulet).
+
+\subsection{F9 - Pré-remplissage initial \moyenne}
+À la première ouverture, saisie de tous les poulaillers existants.
+
+\subsection{F49 - Gestion des équipements \haute}
+\begin{itemize}
+    \item Saisie du nombre de mangeoires et abreuvoirs
+    \item Calcul automatique du nombre recommandé (basé sur des données d'experts)
+    \item Alerte en cas d'insuffisance
+\end{itemize}
+
+\subsection{F50 - Paramétrage des recommandations \moyenne}
+Configuration des seuils de recommandation (nb de poulets par mangeoire/abreuvoir).
+
+\section{Module 2 : Gestion des prêts}
+
+\subsection{F10 - Enregistrer un prêt \haute}
+Deux modes :
+\begin{itemize}
+    \item \textbf{Échéances imposées} : Saisie manuelle des échéances
+    \item \textbf{Échéances proposées} : Calcul automatique basé sur durée et périodicité
+\end{itemize}
+Champs : prêteur, montant, date, taux (0\% acceptable), cycles affectés.
+
+\subsection{F11 - Génération automatique d'échéancier \haute}
+Pour les prêts à échéances proposées, calcul automatique du nombre d'échéances et du montant de chacune.
+
+\subsection{F12 - Saisie manuelle des échéances \haute}
+Pour les prêts à échéances imposées, saisie de chaque échéance (date, montant).
+
+\subsection{F13 - Lister les prêts \haute}
+Affichage avec :
+\begin{itemize}
+    \item Prêteur
+    \item Montant total
+    \item Montant restant dû
+    \item Prochaine échéance
+    \item Statut (ACTIF / EN RETARD / REMBOURSÉ)
+    \item Type d'échéancier (IMPOSÉ / PROPOSÉ)
+\end{itemize}
+
+\subsection{F14 - Fiche détaillée d'un prêt \haute}
+\begin{itemize}
+    \item Informations générales
+    \item Échéancier complet avec statut
+    \item Cycles affectés
+    \item Historique des remboursements
+    \item Durée totale de remboursement
+\end{itemize}
+
+\subsection{F15 - Affecter un cycle à un prêt \haute}
+Lier un cycle à un ou plusieurs prêts avec :
+\begin{itemize}
+    \item Montant fixe ou pourcentage des bénéfices à affecter
+    \item Traçabilité des affectations
+\end{itemize}
+
+\subsection{F16 - Alerte de remboursement lors des ventes \haute}
+Lors d'une vente sur un cycle affecté :
+\begin{enumerate}
+    \item Calcul automatique du montant à reverser
+    \item Demande de confirmation du remboursement
+    \item Si confirmé, déduction du capital restant dû
+    \item Si non confirmé, rappel périodique
+\end{enumerate}
+
+\subsection{F17 - Gestion des prêts flexibles (sans échéance) \haute}
+\begin{itemize}
+    \item Pas d'échéancier généré
+    \item Pas de date limite
+    \item Remboursement via affectation des cycles
+    \item Remboursement manuel possible
+\end{itemize}
+
+\subsection{F18 - Système de rappel \haute}
+\begin{itemize}
+    \item J-7, J-3, J-1 avant chaque échéance
+    \item Alerte en cas de retard
+    \item Rappel quotidien en attente de confirmation
+    \item Paramétrable par l'utilisateur
+\end{itemize}
+
+\subsection{F19 - Calcul de la durée totale \haute}
+Calcul automatique de la durée totale de remboursement.
+
+\subsection{F20 - Remboursement manuel \moyenne}
+Enregistrement d'un remboursement hors vente (épargne personnelle).
+
+\subsection{F21 - Tableau de bord des financements \basse}
+Synthèse globale des prêts (total emprunté, restant dû, prochaines échéances).
+
+\subsection{F22 - Historique des prêts clôturés \basse}
+Consultation des prêts remboursés.
+
+\section{Module 3 : Traçabilité des dépenses et gains}
+
+\subsection{F23 - Enregistrer une dépense \haute}
+\begin{itemize}
+    \item Champs : date, montant, catégorie, cycle (obligatoire), poulailler
+    \item Description, fournisseur, numéro de facture, photo
+    \item Alerte d'impact sur les bénéfices
+\end{itemize}
+
+\subsection{F24 - Enregistrer une vente / gain \haute}
+\begin{itemize}
+    \item Champs : date, type, quantité, prix unitaire, cycle (obligatoire)
+    \item Client, facture, signature
+    \item Calcul automatique du prix de revient
+    \item Alerte en cas de vente à perte
+    \item Proposition de prix gagnant
+\end{itemize}
+
+\subsection{F25 - Historique des transactions \haute}
+Liste chronologique avec filtres (date, poulailler, cycle, catégorie).
+
+\subsection{F26 - Fiche bilan d'un cycle \haute}
+\begin{itemize}
+    \item Total des dépenses (par catégorie)
+    \item Total des gains (par type)
+    \item Bénéfice brut
+    \item Coût de production unitaire (avec mortalités intégrées)
+    \item Seuil de rentabilité
+    \item Graphiques (camemberts, courbes)
+\end{itemize}
+
+\subsection{F27 - Tableau de bord global \haute}
+\begin{itemize}
+    \item Solde global (Gains - Dépenses)
+    \item Total des dépenses et gains
+    \item Nombre de cycles actifs
+    \item Prochaines échéances
+    \item Graphiques (évolution, répartition)
+\end{itemize}
+
+\subsection{F28 - Comparaison entre cycles \moyenne}
+Comparaison des performances (coût, gain, bénéfice, rentabilité).
+
+\subsection{F29 - Dépenses de routine automatisées \haute}
+\begin{itemize}
+    \item Configuration des dépenses récurrentes (poussins, aliment, vaccins, etc.)
+    \item Application automatique à la création d'un cycle
+    \item Modification possible avant validation
+    \item Profils par type d'élevage (chair, pondeuse, local)
+\end{itemize}
+
+\subsection{F30 - Modification des dépenses de routine \haute}
+Ajout, modification, suppression des modèles de routine.
+
+\subsection{F31 - Gestion des clients \haute}
+CRUD avec historique des achats.
+
+\subsection{F32 - Gestion des fournisseurs \haute}
+CRUD avec historique des achats.
+
+\subsection{F33 - Gestion des utilisateurs \haute}
+CRUD, attribution des transactions.
+
+\section{Module 4 : Prévisions et anticipation}
+
+\subsection{F34 - Prévision par cycle \haute}
+Basée sur les données historiques des cycles précédents.
+\begin{itemize}
+    \item Premier cycle : "Prévision non disponible"
+    \item Cycles suivants : prévisions automatiques
+    \item Aucune saisie requise (choix du cycle uniquement)
+\end{itemize}
+
+\subsection{F35 - Méthodes de prévision adaptatives \haute}
+\begin{itemize}
+    \item 1 cycle : Règle de 3
+    \item 2-3 cycles : Moyenne simple
+    \item 4+ cycles : Moyenne pondérée ou régression linéaire
+\end{itemize}
+
+\subsection{F36 - Affichage des prévisions \haute}
+\begin{itemize}
+    \item Coût total prévisionnel
+    \item Coût de production unitaire
+    \item Dépenses par catégorie
+    \item Gains prévisionnels
+    \item Bénéfice prévisionnel
+    \item Seuil de rentabilité
+    \item Plan de trésorerie
+\end{itemize}
+
+\subsection{F37 - Comparaison prévisions vs réalisations \haute}
+Écarts entre prévisions et résultats réels.
+
+\subsection{F38 - Projection de trésorerie \moyenne}
+Projection sur 3-6 mois basée sur les cycles en cours.
+
+\subsection{F39 - Budget prévisionnel type \moyenne}
+Budget type par type d'élevage (moyenne des cycles terminés).
+
+\subsection{F40 - Planification des ventes \moyenne}
+Objectifs de vente pour couvrir les dépenses.
+
+\subsection{F41 - Suggestions d'optimisation \basse}
+Analyses automatiques pour améliorer la rentabilité.
+
+\subsection{F42 - Indicateur de fiabilité \moyenne}
+Niveau de confiance des prévisions (�� Élevé / �� Moyen / �� Faible).
+
+\section{Module 5 : Suivi technique}
+
+\subsection{F43 - Soumettre un rapport de suivi \haute}
+\begin{itemize}
+    \item Période calculée automatiquement
+    \item Consommation d'aliment (kg)
+    \item Consommation d'eau (litres)
+    \item Maladie observée, médicaments administrés
+    \item Observations générales
+    \item N'affecte pas les finances
+\end{itemize}
+
+\subsection{F44 - Historique des rapports \haute}
+Liste chronologique des rapports soumis.
+
+\subsection{F45 - Suivi sanitaire \haute}
+\begin{itemize}
+    \item Évolution des maladies
+    \item Nombre de traitements
+    \item Nombre de sujets malades
+    \item Alertes automatiques
+\end{itemize}
+
+\subsection{F46 - Indicateurs de consommation \haute}
+\begin{itemize}
+    \item Consommation moyenne d'aliment par jour
+    \item Consommation moyenne d'aliment par sujet/jour
+    \item Consommation moyenne d'eau par sujet/jour
+    \item Ratio eau/aliment
+\end{itemize}
+
+\subsection{F47 - Amélioration des prévisions \haute}
+Intégration des données de consommation dans les prévisions.
+
+\subsection{F48 - Alerte de consommation anormale \moyenne}
+Alerte en cas de baisse ou hausse significative.
+
+\subsection{F49 - Configuration des unités \basse}
+Personnalisation des unités et périodicités.
+
+\section{Module 6 : Frise chronologique du cycle}
+
+\subsection{F51 - Frise chronologique \haute}
+Affichée en haut de la fiche d'un cycle. Représentation visuelle de l'âge des poulets sous forme de ligne du temps avec des icônes SVG intégrées.
+
+\subsection{F52 - Types d'élevage et frises associées \haute}
+La frise change automatiquement en fonction du type d'élevage sélectionné. L'utilisateur n'a aucun paramètre à configurer.
+
+\subsubsection{Poulet de chair (45 jours)}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|p{3cm}|p{3cm}|p{6cm}|}
+        \hline
+        \textbf{Étape} & \textbf{Âge} & \textbf{Signification} \\
+        \hline
+        �� & Jour 1 & Poussins d'un jour (arrivée) \\
+        \hline
+        �� & Jour 21 & Poussins de 21 jours (sevrage) \\
+        \hline
+        �� & Jour 35 & Poulet adulte \\
+        \hline
+        �� & Jour 45 & Fin du cycle - Prêt à consommer/vendre \\
+        \hline
+    \end{tabular}
+    \caption{Frise : Poulet de chair}
+\end{table}
+
+\textbf{Frise visuelle :}
+\begin{verbatim}
+��─────────────��─────────────��─────────────��
+^                ^              ^              ^
+Jour 1          Jour 21        Jour 35        Jour 45
+\end{verbatim}
+
+\subsubsection{Poule pondeuse (70+ semaines)}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|p{3cm}|p{3cm}|p{6cm}|}
+        \hline
+        \textbf{Étape} & \textbf{Âge} & \textbf{Signification} \\
+        \hline
+        �� & Jour 1 & Poussins d'un jour (arrivée) \\
+        \hline
+        �� & Semaine 8 & Poulette (fin de l'élevage de démarrage) \\
+        \hline
+        �� & Semaine 18 & Mise en ponte (début production d'œufs) \\
+        \hline
+        �� & Semaine 70 & Fin de cycle - Réforme \\
+        \hline
+    \end{tabular}
+    \caption{Frise : Poule pondeuse}
+\end{table}
+
+\textbf{Frise visuelle :}
+\begin{verbatim}
+��─────────────��─────────────��─────────────��
+^                ^              ^              ^
+Sem. 1          Sem. 8        Sem. 18        Sem. 70
+\end{verbatim}
+
+\subsubsection{Poulet local / Villageois}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|p{3cm}|p{3cm}|p{6cm}|}
+        \hline
+        \textbf{Étape} & \textbf{Âge} & \textbf{Signification} \\
+        \hline
+        �� & Jour 1 & Poussins d'un jour (arrivée) \\
+        \hline
+        �� & Semaine 12 & Élevage en divagation \\
+        \hline
+        �� & Semaine 24 & Début de reproduction \\
+        \hline
+        �� & Fin variable & Fin du cycle - Prêt à consommer \\
+        \hline
+    \end{tabular}
+    \caption{Frise : Poulet local}
+\end{table}
+
+\textbf{Frise visuelle :}
+\begin{verbatim}
+��─────────────��─────────────��─────────────��
+^                ^              ^              ^
+Jour 1          Sem. 12       Sem. 24         Fin
+\end{verbatim}
+
+\subsection{F53 - Évolutivité des frises \basse}
+Nouvelles frises ajoutées dans les versions futures de l'application.
+
+\section{Module 7 : Système de notifications}
+
+\subsection{N1 - Échéances de prêts \haute}
+J-7, J-3, J-1, jour J, retard.
+
+\subsection{N2 - Alertes de densité \haute}
+Surcharge, densité critique.
+
+\subsection{N3 - Alertes de consommation \haute}
+Baisse/hausse anormale de consommation.
+
+\subsection{N4 - Rappel de rapports \moyenne}
+Si aucun rapport soumis depuis 7 jours.
+
+\subsection{N5 - Fin de cycle \moyenne}
+J-7, J-3 avant la fin estimée.
+
+\subsection{N6 - Prêts flexibles \basse}
+Rappel mensuel des remboursements en attente.
+
+\subsection{N7 - Suggestions d'optimisation \basse}
+Nouvelles suggestions disponibles.
+
+\subsection{N8 - Paramètres des notifications \moyenne}
+Activation/désactivation, délais, canaux.
+
+\subsection{N9 - Centre de notifications \basse}
+Historique des notifications.
+
+\newpage
+
+% ==================== CHAPITRE 4 : RÈGLES DE GESTION ====================
+\chapter{Règles de Gestion}
+
+\begin{longtable}{|p{1.2cm}|p{5cm}|p{8cm}|}
+    \caption{Règles de gestion}
+    \label{tab:regles} \\
+    \hline
+    \textbf{RG} & \textbf{Intitulé} & \textbf{Description} \\
+    \hline
+    \hline
+    \endfirsthead
+    \hline
+    \textbf{RG} & \textbf{Intitulé} & \textbf{Description} \\
+    \hline
+    \hline
+    \endhead
+    \hline
+    \multicolumn{3}{c}{\textit{Suite...}} \\
+    \endfoot
+    \hline
+    \endlastfoot
+
+    % Règles Poulaillers
+    1 & Statut automatique & Le statut LIBRE/OCCUPÉ est basé sur le nombre de poulets (0 = LIBRE, >0 = OCCUPÉ) \\
+    2 & Capacité & Capacité = Surface × Densité recommandée (selon âge des poules) \\
+    3 & Alerte densité & Alerte si densité actuelle > densité recommandée \\
+    4 & Suppression & Un poulailler ne peut être supprimé que si vide (0 poulet) \\
+    5 & Migration tracée & Toute migration est tracée (date, source, cible, nombre, raison) \\
+    6 & Âge non modifiable & L'âge des poulets est calculé automatiquement et ne peut être modifié \\
+    7 & Migration différenciée & Alerte si migration entre lots d'âges significativement différents \\
+
+    % Règles Prêts
+    8 & Échéancier systématique & Tout prêt est divisé en échéances (imposées ou proposées) \\
+    9 & Intérêts calculés & Les intérêts sont calculés en fonction du taux et de la durée \\
+    10 & Durée calculée & La durée totale de remboursement est calculée automatiquement \\
+    11 & Échéancier modifiable & L'utilisateur peut modifier l'échéancier proposé \\
+    12 & Remboursement confirmé & Une alerte de vente déclenche une demande de confirmation de remboursement \\
+    13 & Remboursement déduit & Le remboursement est déduit du prêt uniquement sur confirmation \\
+    14 & Prêt flexible & Un prêt flexible reste actif jusqu'à remboursement total \\
+
+    % Règles Dépenses/Gains
+    15 & Cycle obligatoire & Toute dépense et tout gain doivent être associés à un cycle \\
+    16 & Alerte dépense & Alerte si une dépense impacte négativement les bénéfices \\
+    17 & Alerte vente & Alerte en cas de vente à perte (prix conseillé proposé) \\
+    18 & Mortalité intégrée & Les mortalités sont intégrées au coût de production unitaire \\
+    19 & Utilisateur tracé & Chaque transaction enregistre l'utilisateur responsable \\
+    20 & Facture optionnelle & Les transactions peuvent être accompagnées d'une facture (numéro, photo) \\
+    21 & Signature & Les ventes importantes peuvent nécessiter une signature \\
+    22 & Dépenses de routine & Les dépenses de routine sont proposées automatiquement \\
+    23 & Modification limitée & Une transaction ne peut être modifiée que dans les 24h \\
+
+    % Règles Prévisions
+    24 & Prévision basée données & Les prévisions sont basées sur les cycles précédents (même type) \\
+    25 & Premier cycle & Message "Prévision non disponible" au premier cycle \\
+    26 & Méthode adaptative & La méthode de prévision s'adapte au nombre de cycles \\
+    27 & Sélection par cycle & L'utilisateur accède aux prévisions en sélectionnant un cycle \\
+    28 & Fiabilité & Un indicateur de fiabilité accompagne chaque prévision \\
+
+    % Règles Suivi technique
+    29 & Rapport hors finance & Les rapports de suivi n'affectent pas les finances \\
+    30 & Rapport périodique & La période du rapport est calculée automatiquement \\
+    31 & Alerte consommation & Alerte en cas de baisse/hausse significative de consommation \\
+    32 & Données collectées & Les données de consommation sont utilisées pour les prévisions \\
+
+    % Règles Notifications
+    33 & Paramétrable & L'utilisateur peut activer/désactiver chaque type de notification \\
+    34 & Priorité & Les notifications de prêts sont prioritaires \\
+    35 & Immédiateté & Les alertes de densité et consommation sont envoyées immédiatement \\
+    36 & Historique 30 jours & Les notifications sont conservées 30 jours dans l'historique \\
+
+    % Règles Équipements
+    37 & Recommandation équipement & Le nombre de mangeoires/abreuvoirs est conseillé automatiquement \\
+    38 & Alerte équipement & Alerte si le nombre d'équipements est insuffisant \\
+
+    % Règles Frise chronologique
+    39 & Affichage frise & La frise est affichée en haut de la fiche du cycle \\
+    40 & Changement automatique & La frise change automatiquement en fonction du type d'élevage \\
+    41 & Marqueur de position & Un marqueur indique l'âge actuel du cycle \\
+    42 & Icônes intégrées & Les icônes SVG sont intégrées dans l'application \\
+    43 & Évolutivité & Nouvelles frises ajoutées dans les versions futures \\
+    44 & Trois types de base & Poulet de chair, Poule pondeuse, Poulet local \\
+    45 & Étapes poulet chair & �� (J1) → �� (J21) → �� (J35) → �� (J45) \\
+    46 & Icône poulet adulte & �� indique que le poulet a atteint sa taille mature \\
+    47 & Icône fin de cycle & �� indique que le poulet est prêt à être consommé/vendu \\
+
+\end{longtable}
+
+\newpage
+
+% ==================== CHAPITRE 5 : ÉLÉMENTS À REVOIR EN PRODUCTION ====================
+\chapter{Éléments à revoir en production}
+
+\begin{longtable}{|p{3cm}|p{5cm}|p{6cm}|}
+    \caption{Éléments à reporter en versions futures}
+    \label{tab:futur} \\
+    \hline
+    \textbf{Élément} & \textbf{Version cible} & \textbf{Justification} \\
+    \hline
+    \hline
+    \endfirsthead
+    \hline
+    \textbf{Élément} & \textbf{Version cible} & \textbf{Justification} \\
+    \hline
+    \hline
+    \endhead
+    \hline
+    \multicolumn{3}{c}{\textit{Suite...}} \\
+    \endfoot
+    \hline
+    \endlastfoot
+
+    Méthodes statistiques avancées pour prévisions & v2.0 & Nécessite plus de données terrain \\
+    Gestion de la litière & v2.0 & Paramètre avancé, non prioritaire \\
+    Gestion de la température & v2.0 & Paramètre avancé, non prioritaire \\
+    Prévisions globales (hors cycle) & v2.0 & Dépend de l'évolution de l'exploitation \\
+    Intégration fournisseurs automatique & v2.0 & Nécessite API externes \\
+    Signature électronique avancée & v2.0 & Complexité technique \\
+    Amortissement des équipements & v2.0 & Comptabilité avancée \\
+    Module multilingue & v2.0 & À définir selon besoins \\
+    Version web & v2.0 & Évolution naturelle du projet \\
+    Nouvelles frises chronologiques & v2.0 & Selon les besoins des utilisateurs \\
+    API publique (partage données) & v3.0 & Usage avancé \\
+    Intégration IoT (capteurs) & v3.0 & Évolution technologique \\
+
+\end{longtable}
+
+\newpage
+
+% ==================== CHAPITRE 6 : ROADMAP DE DÉVELOPPEMENT ====================
+\chapter{Roadmap de Développement}
+
+\section{Phase 1 : MVP - Minimum Viable Product (Semaines 1-4)}
+
+\begin{table}[H]
+    \centering
+    \caption{Phase 1 - MVP}
+    \begin{tabular}{|p{2cm}|p{6cm}|p{4cm}|}
+        \hline
+        \textbf{Semaine} & \textbf{Tâches} & \textbf{Livrables} \\
+        \hline
+        \hline
+        1 & Configuration Django + PostgreSQL & Backend fonctionnel \\
+        2 & Modèles de données + API REST & API CRUD pour poulaillers, cycles \\
+        3 & Modèles Flutter + SQLite local & Stockage local opérationnel \\
+        4 & Synchronisation basique & Sync entre local et cloud \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\section{Phase 2 : Fonctionnalités de base (Semaines 5-8)}
+
+\begin{table}[H]
+    \centering
+    \caption{Phase 2 - Fonctionnalités de base}
+    \begin{tabular}{|p{2cm}|p{6cm}|p{4cm}|}
+        \hline
+        \textbf{Semaine} & \textbf{Tâches} & \textbf{Livrables} \\
+        \hline
+        \hline
+        5 & CRUD dépenses et gains & Saisie des transactions \\
+        6 & CRUD prêts et échéances & Gestion des prêts \\
+        7 & Interface utilisateur Flutter & Écrans principaux \\
+        8 & Alertes de densité et équipements & Module poulaillers complet \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\section{Phase 3 : Fonctionnalités avancées (Semaines 9-12)}
+
+\begin{table}[H]
+    \centering
+    \caption{Phase 3 - Fonctionnalités avancées}
+    \begin{tabular}{|p{2cm}|p{6cm}|p{4cm}|}
+        \hline
+        \textbf{Semaine} & \textbf{Tâches} & \textbf{Livrables} \\
+        \hline
+        \hline
+        9 & Suivi technique (rapports) & Module de suivi \\
+        10 & Prévisions et statistiques & Module prévisions \\
+        11 & Frise chronologique & Intégration des frises \\
+        12 & Notifications push & Système de notifications \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\section{Phase 4 : Finalisation et déploiement (Semaines 13-16)}
+
+\begin{table}[H]
+    \centering
+    \caption{Phase 4 - Finalisation}
+    \begin{tabular}{|p{2cm}|p{6cm}|p{4cm}|}
+        \hline
+        \textbf{Semaine} & \textbf{Tâches} & \textbf{Livrables} \\
+        \hline
+        \hline
+        13 & Tests utilisateurs (UAT) & Retours utilisateur \\
+        14 & Corrections et optimisations & Version stabilisée \\
+        15 & Documentation & Guide utilisateur \\
+        16 & Déploiement & Version production \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\newpage
+
+% ==================== CHAPITRE 7 : SPÉCIFICATIONS TECHNIQUES ====================
+\chapter{Spécifications Techniques}
+
+\section{Backend (Django)}
+
+\subsection{Modèles principaux}
+\begin{itemize}
+    \item \texttt{Poulailler} : infrastructure physique
+    \item \texttt{Cycle} : cycle de production
+    \item \texttt{Depense} : dépense liée à un cycle
+    \item \texttt{Vente} : vente liée à un cycle
+    \item \texttt{Pret} : prêt contracté
+    \item \texttt{Echeance} : échéance d'un prêt
+    \item \texttt{Remboursement} : remboursement d'un prêt
+    \item \texttt{RapportSuivi} : rapport technique périodique
+    \item \texttt{Client} : acheteur
+    \item \texttt{Fournisseur} : fournisseur de produits
+    \item \texttt{Utilisateur} : gestionnaire
+    \item \texttt{PendingSync} : file d'attente de synchronisation
+\end{itemize}
+
+\subsection{Endpoints API REST}
+\begin{longtable}{|p{4.5cm}|p{3cm}|p{5cm}|}
+    \caption{Endpoints API}
+    \label{tab:endpoints} \\
+    \hline
+    \textbf{Endpoint} & \textbf{Méthode} & \textbf{Description} \\
+    \hline
+    \hline
+    \endfirsthead
+    \hline
+    \textbf{Endpoint} & \textbf{Méthode} & \textbf{Description} \\
+    \hline
+    \hline
+    \endhead
+    \hline
+    \multicolumn{3}{c}{\textit{Suite...}} \\
+    \endfoot
+    \hline
+    \endlastfoot
+
+    /api/poulaillers/ & GET, POST & Liste et création des poulaillers \\
+    /api/poulaillers/{id}/ & GET, PUT, DELETE & Détail d'un poulailler \\
+    /api/cycles/ & GET, POST & Liste et création des cycles \\
+    /api/depenses/ & GET, POST & Liste et création des dépenses \\
+    /api/ventes/ & GET, POST & Liste et création des ventes \\
+    /api/prets/ & GET, POST & Liste et création des prêts \\
+    /api/echeances/ & GET & Liste des échéances \\
+    /api/remboursements/ & GET, POST & Liste et création des remboursements \\
+    /api/rapports/ & GET, POST & Liste et création des rapports \\
+    /api/sync/ & POST & Synchronisation des données \\
+    /api/auth/login/ & POST & Authentification \\
+    /api/auth/register/ & POST & Inscription \\
+    /api/notifications/ & GET & Récupération des notifications \\
+    /api/stats/ & GET & Statistiques globales \\
+
+\end{longtable}
+
+\newpage
+
+% ==================== CHAPITRE 8 : CONTRAINTES ET EXIGENCES ====================
+\chapter{Contraintes et Exigences}
+
+\section{Contraintes fonctionnelles}
+\begin{itemize}
+    \item L'application doit fonctionner hors-ligne (mode dégradé)
+    \item La synchronisation doit être transparente pour l'utilisateur
+    \item Les données doivent être sauvegardées automatiquement
+    \item Les calculs (bénéfices, densités, prévisions) doivent être précis
+    \item L'interface doit être intuitive pour un utilisateur non technique
+\end{itemize}
+
+\section{Contraintes techniques}
+\begin{itemize}
+    \item Compatible Android 7.0+ et iOS 12+
+    \item Temps de réponse < 500ms pour les opérations courantes
+    \item Stockage local limité (SQLite)
+    \item Synchronisation optimisée pour connexion faible
+    \item Sécurisation des données (HTTPS, JWT)
+\end{itemize}
+
+\section{Exigences de performance}
+\begin{itemize}
+    \item L'application doit se lancer en moins de 3 secondes
+    \item Les opérations locales (saisie) doivent être instantanées
+    \item La synchronisation ne doit pas bloquer l'interface
+    \item La consommation de batterie doit être optimisée
+\end{itemize}
+
+\section{Exigences de sécurité}
+\begin{itemize}
+    \item Authentification sécurisée (JWT)
+    \item Chiffrement des données sensibles
+    \item Sauvegarde régulière des données
+    \item Pas de stockage des mots de passe en clair
+\end{itemize}
+
+\newpage
+
+% ==================== CHAPITRE 9 : LIVRABLES ====================
+\chapter{Livrables}
+
+\section{Documentation}
+\begin{itemize}
+    \item Présentation du projet
+    \item Guide d'installation et déploiement
+    \item Guide utilisateur (pour votre mère)
+    \item Documentation technique (pour maintenabilité)
+    \item Code source commenté
+\end{itemize}
+
+\section{Code source}
+\begin{itemize}
+    \item Backend Django (API REST)
+    \item Application Flutter (Android + iOS)
+    \item Scripts de déploiement
+    \item Fichiers de configuration
+\end{itemize}
+
+\section{Déploiement}
+\begin{itemize}
+    \item Backend : environnement de production configuré
+    \item Mobile : version APK (Android) et TestFlight (iOS)
+    \item Base de données : PostgreSQL configurée
+\end{itemize}
+
+\newpage
+
+% ==================== CHAPITRE 10 : GLOSSAIRE ====================
+\chapter{Glossaire}
+
+\begin{longtable}{|p{3cm}|p{10cm}|}
+    \caption{Glossaire des termes}
+    \label{tab:glossaire} \\
+    \hline
+    \textbf{Terme} & \textbf{Définition} \\
+    \hline
+    \hline
+    \endfirsthead
+    \hline
+    \textbf{Terme} & \textbf{Définition} \\
+    \hline
+    \hline
+    \endhead
+    \hline
+    \multicolumn{2}{c}{\textit{Suite...}} \\
+    \endfoot
+    \hline
+    \endlastfoot
+
+    API & Application Programming Interface. Interface de programmation permettant la communication entre systèmes \\
+    \hline
+    CRUD & Create, Read, Update, Delete. Opérations de base sur les données \\
+    \hline
+    Cycle & Période de production d'une bande de poules (du poussin à la vente) \\
+    \hline
+    Densité & Nombre de poulets par mètre carré dans un poulailler \\
+    \hline
+    DRF & Django REST Framework. Bibliothèque pour créer des API REST avec Django \\
+    \hline
+    Échéance & Date à laquelle un remboursement de prêt est dû \\
+    \hline
+    Élevage avicole & Élevage de volailles (poulets, poules pondeuses) \\
+    \hline
+    Flutter & Framework de développement mobile multiplateforme (Google) \\
+    \hline
+    Frise chronologique & Représentation visuelle de l'âge des poulets avec des icônes \\
+    \hline
+    Hors-ligne & Fonctionnement sans connexion internet \\
+    \hline
+    JWT & JSON Web Token. Standard d'authentification sécurisé \\
+    \hline
+    Migration & Déplacement de poulets entre poulaillers \\
+    \hline
+    MVP & Minimum Viable Product. Version minimaliste mais fonctionnelle \\
+    \hline
+    PostgreSQL & Base de données relationnelle open-source \\
+    \hline
+    Poulailler & Infrastructure physique accueillant les poulets \\
+    \hline
+    Rentabilité & Rapport entre le bénéfice et les coûts investis \\
+    \hline
+    Seuil de rentabilité & Point où les gains couvrent exactement les dépenses \\
+    \hline
+    SQLite & Base de données légère embarquée dans l'application mobile \\
+    \hline
+    Synchronisation & Échange de données entre l'application et le serveur \\
+    \hline
+    Tontine & Système d'épargne et crédit informel \\
+    \hline
+    Tracabilité & Capacité à retracer l'historique complet des transactions \\
+
+\end{longtable}
+
+\newpage
+
+% ==================== ANNEXES ====================
+\chapter{Annexes}
+
+\section{Annexe A : Exemples de données d'experts pour les équipements}
+
+\begin{table}[H]
+    \centering
+    \caption{Recommandations d'équipements}
+    \begin{tabular}{|p{4cm}|p{4cm}|p{4cm}|}
+        \hline
+        \textbf{Type d'équipement} & \textbf{Recommandation} & \textbf{Seuil critique} \\
+        \hline
+        \hline
+        Mangeoire circulaire & 1 pour 50 poulets & 1 pour 70 poulets \\
+        \hline
+        Mangeoire linéaire & 1 cm/poulet & - \\
+        \hline
+        Abreuvoir à siphon & 1 pour 30 poulets & 1 pour 50 poulets \\
+        \hline
+        Abreuvoir à pipette & 1 pour 20 poulets & 1 pour 35 poulets \\
+        \hline
+        Abreuvoir automatique & 1 pour 100 poulets & 1 pour 150 poulets \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\section{Annexe B : Profils de dépenses de routine}
+
+\begin{longtable}{|p{3cm}|p{3cm}|p{4cm}|p{3cm}|}
+    \caption{Profils de dépenses de routine}
+    \label{tab:routine} \\
+    \hline
+    \textbf{Dépense} & \textbf{Unité} & \textbf{Valeur par défaut} & \textbf{Période} \\
+    \hline
+    \hline
+    \endfirsthead
+    \hline
+    \textbf{Dépense} & \textbf{Unité} & \textbf{Valeur par défaut} & \textbf{Période} \\
+    \hline
+    \hline
+    \endhead
+    \hline
+    \multicolumn{4}{c}{\textit{Suite...}} \\
+    \endfoot
+    \hline
+    \endlastfoot
+
+    \multicolumn{4}{c}{\textbf{Poulets de chair (45 jours)}} \\
+    \hline
+    Achat poussins & Par sujet & 500 FCFA & Début cycle \\
+    Copos de bois & Par cycle & 5 000 FCFA & Début cycle \\
+    Vaccins & Par sujet & 100 FCFA & Semaine 1 \\
+    Chauffage & Par jour & 500 FCFA & 3 premières semaines \\
+    Aliment démarrage & Par sujet/jour & 50 FCFA & Semaines 1-3 \\
+    Aliment croissance & Par sujet/jour & 40 FCFA & Semaines 4-6 \\
+    \hline
+    \multicolumn{4}{c}{\textbf{Poules pondeuses (70 semaines)}} \\
+    \hline
+    Achat poulettes & Par sujet & 1 500 FCFA & Début cycle \\
+    Vaccins & Par sujet & 150 FCFA & Semaine 1 \\
+    Aliment croissance & Par sujet/jour & 45 FCFA & Semaines 1-18 \\
+    Aliment ponte & Par sujet/jour & 55 FCFA & Semaines 19-70 \\
+    Compléments minéraux & Par sujet/mois & 100 FCFA & Mensuel \\
+    \hline
+    \multicolumn{4}{c}{\textbf{Poulet local (variable)}} \\
+    \hline
+    Achat poussins & Par sujet & 300 FCFA & Début cycle \\
+    Aliment & Par sujet/jour & 20 FCFA & Variable \\
+    Vaccins & Par sujet & 50 FCFA & En fonction des besoins \\
+
+\end{longtable}
+
+\section{Annexe C : Liste des maladies et médicaments}
+
+\begin{table}[H]
+    \centering
+    \caption{Maladies fréquentes en aviculture}
+    \begin{tabular}{|p{4cm}|p{4cm}|p{4cm}|}
+        \hline
+        \textbf{Maladie} & \textbf{Symptômes} & \textbf{Traitement} \\
+        \hline
+        \hline
+        Coccidiose & Diarrhée sanglante, abattement & Anticoccidiens \\
+        \hline
+        Gumboro & Abattement, diarrhée & Vaccination \\
+        \hline
+        Newcastle & Problèmes respiratoires & Vaccination \\
+        \hline
+        Pullorose & Diarrhée blanche & Antibiotiques \\
+        \hline
+        Mycoplasmose & Éternuements, conjonctivite & Antibiotiques \\
+        \hline
+        Stress thermique & Halètement, ailes écartées & Vitamines, eau fraîche \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\newpage
+
+% ==================== CONCLUSION ====================
+\chapter*{Conclusion}
+\addcontentsline{toc}{chapter}{Conclusion}
+
+Ce cahier des charges définit l'ensemble des spécifications pour le développement de l'application mobile de gestion avicole. Il couvre :
+
+\begin{itemize}
+    \item \textbf{53 fonctionnalités} réparties en 7 modules
+    \item \textbf{47 règles de gestion} formalisées
+    \item \textbf{Une architecture technique robuste} (Django + PostgreSQL + Flutter)
+    \item \textbf{Un système de synchronisation hors-ligne}
+    \item \textbf{Une frise chronologique} avec icônes intégrées pour 3 types d'élevage
+    \item \textbf{Une roadmap de développement} en 4 phases (16 semaines)
+\end{itemize}
+
+Le projet est conçu pour évoluer avec l'exploitation, avec des fonctionnalités futures identifiées (température, litière, version web, etc.).
+
+Ce document servira de référence tout au long du cycle de développement et garantira la conformité du produit final avec les besoins du commanditaire.
+
+\vspace{2cm}
+
+\begin{center}
+    \textbf{Date de validation :} \today
+\end{center}
+
+\vspace{1cm}
+
+\begin{center}
+    \begin{tabular}{p{5cm} p{5cm}}
+        \textbf{Commanditaire} & \textbf{Développeur} \\
+        \hline
+        [Signature] & [Signature] \\
+        Nom : [Nom] & Nom : [Nom] \\
+        Date : \today & Date : \today \\
+    \end{tabular}
+\end{center}
+
+\newpage
+
+% ==================== TABLE DES MATIÈRES DÉTAILLÉE ====================
+% (générée automatiquement par LaTeX)
+
+\end{document}
