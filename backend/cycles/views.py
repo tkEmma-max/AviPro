@@ -287,3 +287,126 @@ class CycleViewSet(viewsets.ModelViewSet):
             'total_morts': cycle.nb_morts,
             'depense_creee': True
         })
+      
+    @action(detail=True, methods=['get'])
+    def comparaison(self, request, pk=None):
+        """
+        Compare les prévisions avec les résultats réels d'un cycle terminé.
+        GET /cycles/{id}/comparaison/
+        """
+        cycle = self.get_object()
+    
+        # Vérifier que le cycle est terminé
+        if not cycle.is_archived:
+            return Response(
+                {'error': 'Ce cycle est encore actif. Archivez-le d\'abord pour voir la comparaison.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+        # Vérifier qu'un type_poulet est défini (nécessaire pour les prévisions)
+        if not cycle.type_poulet:
+            return Response(
+                {'error': 'Ce cycle n\'a pas de type de poulet défini. Impossible de comparer.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+        # Récupérer les prévisions qui auraient été faites au lancement du cycle
+        service = PrevisionService(
+            type_poulet=cycle.type_poulet,
+            nb_sujets=cycle.nombre_sujets_initiaux,
+            age_debut=0,
+            age_fin=None
+        )
+        previsions = service.get_previsions()
+    
+        # Données réelles
+        reel = {
+            'depenses_totales': float(cycle.total_depenses),
+            'ventes_totales': float(cycle.total_ventes),
+            'benefice': float(cycle.benefice),
+            'cout_production_unitaire': float(cycle.cout_production_unitaire),
+            'mortalite_reelle': float(cycle.taux_mortalite),
+        }
+    
+        # Extraire les valeurs prévisionnelles
+        prev_depenses = float(previsions.get('depenses', {}).get('total') or 0)
+        prev_ventes = float(previsions.get('ventes', {}).get('total') or 0)
+        prev_benefice = float(previsions.get('benefice_previsionnel') or 0)
+        prev_cout_unitaire = float(previsions.get('cout_production_unitaire') or 0)
+        prev_mortalite = float(previsions.get('mortalite_estimee') or 0)
+        prev_fiabilite = previsions.get('fiabilite', 'INDISPONIBLE')
+    
+        # Calculer les écarts
+        def calc_ecart(reel_val, prev_val):
+            if prev_val == 0:
+                return {'absolu': round(reel_val), 'pourcentage': 0.0}
+            absolu = round(reel_val - prev_val)
+            pourcentage = round((reel_val - prev_val) / abs(prev_val) * 100, 2)
+            return {'absolu': absolu, 'pourcentage': pourcentage}
+    
+        ecarts = {
+            'depenses': calc_ecart(reel['depenses_totales'], prev_depenses),
+            'ventes': calc_ecart(reel['ventes_totales'], prev_ventes),
+            'benefice': calc_ecart(reel['benefice'], prev_benefice),
+            'cout_production': calc_ecart(reel['cout_production_unitaire'], prev_cout_unitaire),
+            'mortalite': calc_ecart(reel['mortalite_reelle'], prev_mortalite),
+        }
+    
+        # Générer une analyse textuelle
+        analyse_parts = []
+    
+        # Dépenses
+        if ecarts['depenses']['absolu'] > 0:
+            analyse_parts.append(
+                f"Vous avez dépensé {ecarts['depenses']['pourcentage']:.1f}% de plus que prévu"
+            )
+        elif ecarts['depenses']['absolu'] < 0:
+            analyse_parts.append(
+                f"Vous avez dépensé {abs(ecarts['depenses']['pourcentage']):.1f}% de moins que prévu"
+            )
+        else:
+            analyse_parts.append("Vos dépenses correspondent exactement aux prévisions")
+    
+        # Mortalité
+        if ecarts['mortalite']['pourcentage'] > 10:
+            analyse_parts.append(
+                f", notamment à cause d'une mortalité plus élevée (+{ecarts['mortalite']['pourcentage']:.1f}%)"
+            )
+        elif ecarts['mortalite']['pourcentage'] < -10:
+            analyse_parts.append(
+                f", avec une mortalité plus faible que prévu ({ecarts['mortalite']['pourcentage']:.1f}%)"
+            )
+    
+        # Bénéfice
+        if ecarts['benefice']['absolu'] > 0:
+            analyse_parts.append(
+                f". Votre bénéfice est supérieur de {ecarts['benefice']['pourcentage']:.1f}% aux prévisions."
+            )
+        elif ecarts['benefice']['absolu'] < 0:
+            analyse_parts.append(
+                f". Votre bénéfice est inférieur de {abs(ecarts['benefice']['pourcentage']):.1f}% aux prévisions."
+            )
+        else:
+            analyse_parts.append(". Votre bénéfice correspond aux prévisions.")
+    
+        analyse = ''.join(analyse_parts)
+    
+        return Response({
+            'cycle_id': str(cycle.id),
+            'cycle_nom': cycle.nom,
+            'type_poulet': cycle.type_poulet.nom,
+            'nb_sujets': cycle.nombre_sujets_initiaux,
+            'statut': 'TERMINE',
+            'previsions': {
+                'depenses_totales': prev_depenses,
+                'ventes_totales': prev_ventes,
+                'benefice': prev_benefice,
+                'cout_production_unitaire': prev_cout_unitaire,
+                'mortalite_estimee': prev_mortalite,
+                'fiabilite': prev_fiabilite,
+            },
+            'reel': reel,
+            'ecarts': ecarts,
+            'analyse': analyse,
+            'date_comparaison': timezone.now().date().isoformat(),
+        })
