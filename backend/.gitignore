@@ -1,1 +1,32 @@
+
+# Base de données
 db.sqlite3
+db.sqlite3-journal
+
+# Environnement virtuel
+env/
+venv/
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Fichiers de log
+*.log
+
+# Fichiers d'environnement
+.env
+.env.local
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Build / temporaires
+*.pid
+*.pid.lock

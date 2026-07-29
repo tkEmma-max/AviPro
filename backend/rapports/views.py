@@ -1,4 +1,4 @@
-# rapports/views.py
+# backend/rapports/views.py
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -12,6 +12,7 @@ from .serializers import (
     RapportSuiviSerializer, RapportSuiviListSerializer,
     RapportSuiviCreateSerializer, TypeMaladieSerializer
 )
+from notifications.services import NotificationService  # ← AJOUTÉ
 
 
 class TypeMaladieViewSet(viewsets.ModelViewSet):
@@ -66,29 +67,9 @@ class RapportSuiviViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         rapport = serializer.save(created_by=self.request.user)
-        self._verifier_alertes(rapport)
+        # ✅ Vérification consommation après création d'un rapport
+        NotificationService.verifier_consommation(rapport.cycle)
         return rapport
-
-    def _verifier_alertes(self, rapport):
-        rapports_precedents = RapportSuivi.objects.filter(
-            cycle=rapport.cycle,
-            periode_fin__lt=rapport.periode_debut,
-            is_deleted=False
-        ).order_by('-periode_fin')[:3]
-
-        if rapports_precedents.exists():
-            moyenne_aliment = rapports_precedents.aggregate(avg=Avg('aliment_par_sujet_par_jour'))['avg'] or 0
-            moyenne_eau = rapports_precedents.aggregate(avg=Avg('eau_par_sujet_par_jour'))['avg'] or 0
-
-            if moyenne_aliment > 0:
-                baisse_aliment = 1 - (rapport.aliment_par_sujet_par_jour / moyenne_aliment)
-                if baisse_aliment > 0.2:
-                    pass  # Future notification
-
-            if moyenne_eau > 0:
-                baisse_eau = 1 - (rapport.eau_par_sujet_par_jour / moyenne_eau)
-                if baisse_eau > 0.2:
-                    pass  # Future notification
 
     @action(detail=True, methods=['post'])
     def supprimer(self, request, pk=None):

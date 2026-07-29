@@ -1,4 +1,4 @@
-# cycles/views.py
+# backend/cycles/views.py
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -14,6 +14,7 @@ from .serializers import (
     SousBandeSerializer, MigrationSerializer
 )
 from .services import PrevisionService
+from notifications.services import NotificationService  # ← AJOUTÉ
 
 
 class TypePouletViewSet(viewsets.ModelViewSet):
@@ -73,6 +74,9 @@ class CycleViewSet(viewsets.ModelViewSet):
             poulailler=cycle.poulailler,
             nombre_sujets=cycle.nombre_sujets_initiaux
         )
+        # ✅ Vérifications après création
+        NotificationService.verifier_densite(cycle.poulailler, cycle)
+        NotificationService.verifier_fin_cycle(cycle)
 
     @action(detail=True, methods=['get'])
     def stats(self, request, pk=None):
@@ -220,6 +224,10 @@ class CycleViewSet(viewsets.ModelViewSet):
             raison=raison,
             created_by=request.user
         )
+        # ✅ Vérification densité après migration
+        NotificationService.verifier_densite(poulailler_cible, cycle)
+        NotificationService.verifier_densite(sous_bande_source.poulailler, cycle)
+
         return Response({
             'message': f'{nombre_sujets} sujets migrés vers {poulailler_cible.nom}',
             'age_sujets': age,
@@ -281,13 +289,16 @@ class CycleViewSet(viewsets.ModelViewSet):
             description=f'Perte de {nb_morts} sujets : {raison}',
             created_by=request.user
         )
+        # ✅ Vérification densité après perte
+        NotificationService.verifier_densite(cycle.poulailler, cycle)
+
         return Response({
             'message': f'{nb_morts} perte(s) déclarée(s).',
             'sujets_restants': cycle.nombre_sujets_actuels,
             'total_morts': cycle.nb_morts,
             'depense_creee': True
         })
-      
+
     @action(detail=True, methods=['get'])
     def comparaison(self, request, pk=None):
         """
@@ -295,21 +306,21 @@ class CycleViewSet(viewsets.ModelViewSet):
         GET /cycles/{id}/comparaison/
         """
         cycle = self.get_object()
-    
+
         # Vérifier que le cycle est terminé
         if not cycle.is_archived:
             return Response(
                 {'error': 'Ce cycle est encore actif. Archivez-le d\'abord pour voir la comparaison.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-    
+
         # Vérifier qu'un type_poulet est défini (nécessaire pour les prévisions)
         if not cycle.type_poulet:
             return Response(
                 {'error': 'Ce cycle n\'a pas de type de poulet défini. Impossible de comparer.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-    
+
         # Récupérer les prévisions qui auraient été faites au lancement du cycle
         service = PrevisionService(
             type_poulet=cycle.type_poulet,
@@ -318,7 +329,7 @@ class CycleViewSet(viewsets.ModelViewSet):
             age_fin=None
         )
         previsions = service.get_previsions()
-    
+
         # Données réelles
         reel = {
             'depenses_totales': float(cycle.total_depenses),
@@ -327,7 +338,7 @@ class CycleViewSet(viewsets.ModelViewSet):
             'cout_production_unitaire': float(cycle.cout_production_unitaire),
             'mortalite_reelle': float(cycle.taux_mortalite),
         }
-    
+
         # Extraire les valeurs prévisionnelles
         prev_depenses = float(previsions.get('depenses', {}).get('total') or 0)
         prev_ventes = float(previsions.get('ventes', {}).get('total') or 0)
@@ -335,7 +346,7 @@ class CycleViewSet(viewsets.ModelViewSet):
         prev_cout_unitaire = float(previsions.get('cout_production_unitaire') or 0)
         prev_mortalite = float(previsions.get('mortalite_estimee') or 0)
         prev_fiabilite = previsions.get('fiabilite', 'INDISPONIBLE')
-    
+
         # Calculer les écarts
         def calc_ecart(reel_val, prev_val):
             if prev_val == 0:
@@ -343,7 +354,7 @@ class CycleViewSet(viewsets.ModelViewSet):
             absolu = round(reel_val - prev_val)
             pourcentage = round((reel_val - prev_val) / abs(prev_val) * 100, 2)
             return {'absolu': absolu, 'pourcentage': pourcentage}
-    
+
         ecarts = {
             'depenses': calc_ecart(reel['depenses_totales'], prev_depenses),
             'ventes': calc_ecart(reel['ventes_totales'], prev_ventes),
@@ -351,10 +362,10 @@ class CycleViewSet(viewsets.ModelViewSet):
             'cout_production': calc_ecart(reel['cout_production_unitaire'], prev_cout_unitaire),
             'mortalite': calc_ecart(reel['mortalite_reelle'], prev_mortalite),
         }
-    
+
         # Générer une analyse textuelle
         analyse_parts = []
-    
+
         # Dépenses
         if ecarts['depenses']['absolu'] > 0:
             analyse_parts.append(
@@ -366,7 +377,7 @@ class CycleViewSet(viewsets.ModelViewSet):
             )
         else:
             analyse_parts.append("Vos dépenses correspondent exactement aux prévisions")
-    
+
         # Mortalité
         if ecarts['mortalite']['pourcentage'] > 10:
             analyse_parts.append(
@@ -376,7 +387,7 @@ class CycleViewSet(viewsets.ModelViewSet):
             analyse_parts.append(
                 f", avec une mortalité plus faible que prévu ({ecarts['mortalite']['pourcentage']:.1f}%)"
             )
-    
+
         # Bénéfice
         if ecarts['benefice']['absolu'] > 0:
             analyse_parts.append(
@@ -388,9 +399,9 @@ class CycleViewSet(viewsets.ModelViewSet):
             )
         else:
             analyse_parts.append(". Votre bénéfice correspond aux prévisions.")
-    
+
         analyse = ''.join(analyse_parts)
-    
+
         return Response({
             'cycle_id': str(cycle.id),
             'cycle_nom': cycle.nom,

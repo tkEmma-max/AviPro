@@ -1,4 +1,4 @@
-# prets/views.py
+# backend/prets/views.py
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -12,6 +12,7 @@ from .serializers import (
     PretSerializer, PretListSerializer, PretCreateSerializer,
     EcheanceSerializer, RemboursementPretSerializer
 )
+from notifications.services import NotificationService  # ← AJOUTÉ
 
 
 class PretViewSet(viewsets.ModelViewSet):
@@ -33,19 +34,21 @@ class PretViewSet(viewsets.ModelViewSet):
         elif self.action == 'create':
             return PretCreateSerializer
         return PretSerializer
-        
+
     def get_queryset(self):
         if self.request.user.is_staff:
             return Pret.objects.filter(is_deleted=False)
         return Pret.objects.filter(created_by=self.request.user, is_deleted=False)
-    
-    
+
     def perform_create(self, serializer):
         """Crée un prêt avec le montant restant initial"""
-        serializer.save(
+        pret = serializer.save(
             created_by=self.request.user,
             montant_restant=serializer.validated_data.get('montant_total')
         )
+        # ✅ Vérifications après création
+        NotificationService.verifier_echeances(pret)
+        NotificationService.verifier_pret_flexible(pret)
 
     @action(detail=True, methods=['post'])
     def ajouter_echeance(self, request, pk=None):
@@ -81,7 +84,7 @@ class PretViewSet(viewsets.ModelViewSet):
             remboursement = serializer.save(created_by=request.user)
             return Response(RemboursementPretSerializer(remboursement).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
     @action(detail=True, methods=['get'])
     def echeances(self, request, pk=None):
         """

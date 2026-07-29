@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'fournisseurs',
     'sync',
     'stock',
+    'notifications',
 ]
 
 MIDDLEWARE = [
