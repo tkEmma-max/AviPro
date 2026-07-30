@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AviPro – Design System V2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563EB;
+            --primary-dark: #1D4ED8;
+            --primary-light: #DBEAFE;
+            --green: #059669;
+            --green-light: #D1FAE5;
+            --text-primary: #0F172A;
+            --text-secondary: #334155;
+            --text-tertiary: #64748B;
+            --text-hint: #94A3B8;
+            --surface: #FFFFFF;
+            --surface-light: #F8FAFC;
+            --border: #E2E8F0;
+            --border-light: #F1F5F9;
+            --shadow-xs: 0 1px 2px 0 rgba(0,0,0,0.03);
+            --shadow-sm: 0 1px 3px 0 rgba(0,0,0,0.04), 0 1px 2px -1px rgba(0,0,0,0.03);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.04);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.06), 0 4px 6px -4px rgba(0,0,0,0.04);
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #F1F5F9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 24px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .phone-frame {
+            width: 390px;
+            height: 844px;
+            background: var(--surface-light);
+            border-radius: 40px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            position: relative;
+            border: 1px solid var(--border-light);
+        }
+
+        .status-bar {
+            height: 44px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 28px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .content {
+            padding: 0 18px;
+            height: calc(100% - 44px - 80px);
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+        .content::-webkit-scrollbar { display: none; }
+
+        /* HEADER */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0 10px;
+        }
+        .avatar {
+            width: 42px; height: 42px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 42px;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 700; font-size: 16px;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.22);
+        }
+        .greeting { flex: 1; margin-left: 12px; }
+        .greeting h1 { font-size: 17px; font-weight: 600; color: var(--text-primary); }
+        .greeting p { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+        .icon-btn {
+            width: 38px; height: 38px;
+            background: var(--surface); border-radius: 38px;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid var(--border); box-shadow: var(--shadow-xs);
+            cursor: pointer; color: var(--text-secondary);
+        }
+
+        /* STATS GRID */
+        .stats-grid {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 12px; margin: 16px 0 18px;
+        }
+        .stat-card {
+            background: var(--surface); padding: 14px 16px;
+            border-radius: var(--radius-lg); border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-xs);
+        }
+        .stat-card.primary {
+            background: linear-gradient(135deg, #1E40AF, #2563EB);
+            color: white; border: none;
+            box-shadow: 0 8px 20px -6px rgba(37, 99, 235, 0.3);
+        }
+        .stat-icon {
+            width: 34px; height: 34px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 10px;
+        }
+        .stat-card:not(.primary) .stat-icon { background: var(--surface-light); }
+        .stat-card.primary .stat-icon { background: rgba(255,255,255,0.15); }
+        .stat-value {
+            font-size: 19px; font-weight: 700; letter-spacing: -0.3px;
+            margin-bottom: 2px; color: var(--text-primary);
+        }
+        .stat-card.primary .stat-value { color: white; }
+        .stat-label { font-size: 11px; color: var(--text-tertiary); font-weight: 500; }
+        .stat-card.primary .stat-label { color: rgba(255,255,255,0.8); }
+
+        /* SECTION TITLE */
+        .section-title {
+            display: flex; align-items: center;
+            margin: 20px 0 10px;
+        }
+        .section-title h2 {
+            font-size: 14px; font-weight: 600;
+            color: var(--text-secondary); text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* TRANSACTIONS */
+        .tx-card {
+            background: var(--surface); padding: 12px 14px;
+            border-radius: var(--radius-md); border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-xs); display: flex; align-items: center;
+            margin-bottom: 8px;
+        }
+        .tx-icon {
+            width: 38px; height: 38px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            margin-right: 12px;
+        }
+        .tx-info { flex: 1; }
+        .tx-info .title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+        .tx-info .date { font-size: 11px; color: var(--text-hint); }
+        .tx-amount {
+            font-size: 13px; font-weight: 600; padding: 4px 10px;
+            border-radius: 8px;
+        }
+        .tx-amount.positive { background: var(--green-light); color: var(--green); }
+        .tx-amount.negative { background: #FEE2E2; color: #991B1B; }
+
+        /* BADGES */
+        .badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 10px; font-weight: 600; padding: 3px 8px;
+            border-radius: 20px;
+        }
+        .badge.success { background: var(--green-light); color: var(--green); }
+        .badge.info { background: var(--primary-light); color: var(--primary); }
+        .badge.warning { background: #FEF3C7; color: #92400E; }
+        .badge.danger { background: #FEE2E2; color: #991B1B; }
+
+        /* ÉCHÉANCES */
+        .ech-card {
+            background: var(--surface); padding: 12px 14px;
+            border-radius: var(--radius-md); border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-xs); display: flex; align-items: center;
+            margin-bottom: 8px;
+        }
+        .ech-card .dot {
+            width: 8px; height: 8px; border-radius: 8px;
+            margin-right: 10px; flex-shrink: 0;
+        }
+        .ech-card .dot.urgent { background: #DC2626; }
+        .ech-card .dot.normal { background: #F59E0B; }
+        .ech-card .name { flex: 1; font-weight: 500; font-size: 13px; color: var(--text-primary); }
+        .ech-card .amount { font-weight: 600; font-size: 13px; color: var(--text-secondary); }
+
+        /* CHART PLACEHOLDER */
+        .chart-box {
+            background: var(--surface); padding: 18px;
+            border-radius: var(--radius-lg); border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-xs); margin: 16px 0;
+        }
+        .chart-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 14px;
+        }
+        .chart-title { font-weight: 600; font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
+        .chart-area {
+            height: 110px; background: var(--surface-light);
+            border-radius: 10px; border: 1px dashed var(--border);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-hint); font-size: 12px;
+        }
+
+        /* BUTTONS */
+        .btn-row { display: flex; gap: 10px; margin: 12px 0; }
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            gap: 6px; font-family: 'Inter', sans-serif; font-size: 13px;
+            font-weight: 600; padding: 9px 18px; border-radius: 12px;
+            cursor: pointer; border: none; transition: all 0.15s ease;
+        }
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2); }
+        .btn-outline { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+
+        /* INPUT */
+        .input-field {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 10px; padding: 10px 14px; font-family: 'Inter', sans-serif;
+            font-size: 13px; width: 100%; color: var(--text-primary); margin: 8px 0 12px;
+        }
+        .input-field:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08); }
+
+        /* BOTTOM NAV */
+        .bottom-nav {
+            position: absolute; bottom: 0; width: 100%; height: 80px;
+            background: var(--surface); border-top: 1px solid var(--border-light);
+            display: flex; justify-content: space-around; align-items: center;
+            padding: 0 8px; box-shadow: 0 -2px 10px rgba(0,0,0,0.02);
+        }
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center;
+            gap: 3px; color: var(--text-hint); font-size: 10px; font-weight: 500;
+            cursor: pointer;
+        }
+        .nav-item.active { color: var(--primary); font-weight: 600; }
+        .nav-item svg { width: 22px; height: 22px; }
+
+        /* ICONS - DARK & CRISP */
+        .icon-dark { color: var(--text-primary); stroke-width: 2; }
+        .icon-secondary { color: var(--text-secondary); stroke-width: 1.8; }
+    </style>
+</head>
+<body>
+    <div class="phone-frame">
+        <div class="status-bar"><span>9:41</span><span>📶 🔋</span></div>
+
+        <div class="content">
+            <!-- HEADER -->
+            <div class="header">
+                <div class="avatar">AV</div>
+                <div class="greeting">
+                    <h1>Bonjour, Admin 👋</h1>
+                    <p>Mercredi 30 juillet 2026</p>
+                </div>
+                <div class="icon-btn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                </div>
+            </div>
+
+            <!-- STATS -->
+            <div class="stats-grid">
+                <div class="stat-card primary">
+                    <div class="stat-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+                    </div>
+                    <div class="stat-value">+245 000 FCFA</div>
+                    <div class="stat-label">Solde net</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                    </div>
+                    <div class="stat-value">310 000 FCFA</div>
+                    <div class="stat-label">Dépenses totales</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    </div>
+                    <div class="stat-value">3 bandes</div>
+                    <div class="stat-label">Cycles actifs</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                    </div>
+                    <div class="stat-value">85 000 FCFA</div>
+                    <div class="stat-label">Prêts en cours</div>
+                </div>
+            </div>
+
+            <!-- CHART -->
+            <div class="chart-box">
+                <div class="chart-header">
+                    <div class="chart-title">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                        Flux de trésorerie
+                    </div>
+                    <div style="display:flex; gap:12px; font-size:11px; color:var(--text-tertiary);">
+                        <span>🟢 Gains</span>
+                        <span>🔴 Dépenses</span>
+                    </div>
+                </div>
+                <div class="chart-area">📈 Graphique cumulé (fl_chart)</div>
+            </div>
+
+            <!-- BADGES -->
+            <div class="section-title"><h2>Badges de statut</h2></div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+                <span class="badge success">✅ Cycle actif</span>
+                <span class="badge info">ℹ️ Densité OK</span>
+                <span class="badge warning">⚠️ À venir</span>
+                <span class="badge danger">❗ Urgent</span>
+            </div>
+
+            <!-- BOUTONS -->
+            <div class="btn-row">
+                <button class="btn btn-primary">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
+                    Ajouter
+                </button>
+                <button class="btn btn-outline">Annuler</button>
+            </div>
+
+            <!-- INPUT -->
+            <input type="text" class="input-field" placeholder="Nom du poulailler">
+
+            <!-- TRANSACTIONS -->
+            <div class="section-title"><h2>Dernières transactions</h2></div>
+            <div class="tx-card">
+                <div class="tx-icon" style="background:#F8FAFC;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="1.8"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                </div>
+                <div class="tx-info">
+                    <div class="title">Vente de poulets</div>
+                    <div class="date">30/07/2026</div>
+                </div>
+                <div class="tx-amount positive">+175 000 FCFA</div>
+            </div>
+            <div class="tx-card">
+                <div class="tx-icon" style="background:#F8FAFC;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="1.8"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+                </div>
+                <div class="tx-info">
+                    <div class="title">Aliment démarrage</div>
+                    <div class="date">29/07/2026</div>
+                </div>
+                <div class="tx-amount negative">-50 000 FCFA</div>
+            </div>
+
+            <!-- ÉCHÉANCES -->
+            <div class="section-title"><h2>Échéances prêts</h2></div>
+            <div class="ech-card">
+                <div class="dot urgent"></div>
+                <span class="name">Crédit Agricole</span>
+                <span class="amount">45 000 FCFA</span>
+            </div>
+            <div class="ech-card">
+                <div class="dot normal"></div>
+                <span class="name">Tontine Mme Koffi</span>
+                <span class="amount">30 000 FCFA</span>
+            </div>
+        </div>
+
+        <!-- BOTTOM NAV -->
+        <div class="bottom-nav">
+            <div class="nav-item active">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Accueil
+            </div>
+            <div class="nav-item">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 22h20"/><path d="M2 22V6l10-4 10 4v16"/></svg>
+                Poulaillers
+            </div>
+            <div class="nav-item">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.38-3.36L23 10M1 14l5.11 1.36A9 9 0 0 0 20.49 15"/></svg>
+                Cycles
+            </div>
+            <div class="nav-item">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                Finances
+            </div>
+            <div class="nav-item">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Profil
+            </div>
+        </div>
+    </div>
+</body>
+</html>
