@@ -313,35 +313,60 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
       backgroundColor: AppColors.surface,
       appBar: AppBar(
         backgroundColor: Colors.transparent, elevation: 0,
-        leading: IconButton(icon: const Icon(AppIcons.arrowBack, color: AppColors.primary), onPressed: () => Navigator.pop(context)),
+        leading: IconButton(icon: const Icon(AppIcons.arrowBack, color: AppColors.textPrimary), onPressed: () => Navigator.pop(context)),
         title: Text(_cycle.nom, style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
         centerTitle: true,
         actions: [
           IconButton(icon: const Icon(AppIcons.menu, color: AppColors.textPrimary), onPressed: () {
-            showModalBottomSheet(context: context, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), builder: (ctx) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
-              ListTile(
-                leading: const Icon(AppIcons.chart, color: AppColors.primary),
-                title: const Text('Prévisions'),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => ChangeNotifierProvider(create: (_) => PrevisionProvider(), child: PrevisionScreen(typePouletId: _cycle.type_poulet, nbSujets: _cycle.nombreSujetsActuels))));
-                },
-              ),
-              if (isArchived)
-                ListTile(
-                  leading: const Icon(AppIcons.performance, color: AppColors.primary),
-                  title: const Text('Prévisions vs Réalisations'),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => ChangeNotifierProvider(create: (_) => ComparaisonProvider(), child: ComparaisonScreen(cycleId: _cycle.id, cycleNom: _cycle.nom, typePoulet: _cycle.type_poulet, nbSujets: _cycle.nombreSujetsActuels, totalDepenses: _cycle.totalDepenses ?? 0, totalVentes: _cycle.totalVentes ?? 0, benefice: _cycle.benefice ?? 0, coutProductionUnitaire: _cycle.coutProductionUnitaire ?? 0, tauxMortalite: _cycle.tauxMortalite ?? 0))));
-                  },
+            showModalBottomSheet(
+              context: context,
+              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+              builder: (ctx) => SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ListTile(
+                      leading: const Icon(AppIcons.chart, color: AppColors.textPrimary),
+                      title: const Text('Prévisions', style: TextStyle(color: AppColors.textPrimary)),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => ChangeNotifierProvider(create: (_) => PrevisionProvider(), child: PrevisionScreen(typePouletId: _cycle.type_poulet, nbSujets: _cycle.nombreSujetsActuels))));
+                      },
+                    ),
+                    if (isArchived)
+                      ListTile(
+                        leading: const Icon(AppIcons.performance, color: AppColors.textPrimary),
+                        title: const Text('Prévisions vs Réalisations', style: TextStyle(color: AppColors.textPrimary)),
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => ChangeNotifierProvider(create: (_) => ComparaisonProvider(), child: ComparaisonScreen(cycleId: _cycle.id, cycleNom: _cycle.nom, typePoulet: _cycle.type_poulet, nbSujets: _cycle.nombreSujetsActuels, totalDepenses: _cycle.totalDepenses ?? 0, totalVentes: _cycle.totalVentes ?? 0, benefice: _cycle.benefice ?? 0, coutProductionUnitaire: _cycle.coutProductionUnitaire ?? 0, tauxMortalite: _cycle.tauxMortalite ?? 0))));
+                        },
+                      ),
+                    ListTile(
+                      leading: const Icon(AppIcons.rapport, color: AppColors.textPrimary),
+                      title: const Text('Soumettre un rapport', style: TextStyle(color: AppColors.textPrimary)),
+                      onTap: () { Navigator.pop(ctx); Navigator.pushNamed(context, '/cycle/report/form', arguments: widget.cycleData); },
+                    ),
+                    ListTile(
+                      leading: const Icon(AppIcons.edit, color: AppColors.textPrimary),
+                      title: const Text('Modifier le cycle', style: TextStyle(color: AppColors.textPrimary)),
+                      onTap: () { Navigator.pop(ctx); Navigator.pushNamed(context, '/cycle/edit', arguments: widget.cycleData); },
+                    ),
+                    ListTile(
+                      leading: const Icon(AppIcons.observation, color: AppColors.textPrimary),
+                      title: const Text('Voir les rapports', style: TextStyle(color: AppColors.textPrimary)),
+                      onTap: () { Navigator.pop(ctx); Navigator.pushNamed(context, '/rapports'); },
+                    ),
+                    if (_canDeleteCycle())
+                      ListTile(
+                        leading: const Icon(AppIcons.delete, color: AppColors.error),
+                        title: const Text('Supprimer le cycle', style: TextStyle(color: AppColors.error)),
+                        onTap: () { Navigator.pop(ctx); _showDeleteConfirmation(); },
+                      ),
+                  ],
                 ),
-              ListTile(leading: const Icon(AppIcons.performance, color: AppColors.primary), title: const Text('Rapport de performance'), onTap: () { Navigator.pop(ctx); Navigator.pushNamed(context, '/cycle/report/${_cycle.id}', arguments: widget.cycleData); }),
-              ListTile(leading: const Icon(AppIcons.rapport, color: AppColors.primary), title: const Text('Soumettre un rapport'), onTap: () { Navigator.pop(ctx); Navigator.pushNamed(context, '/cycle/report/form', arguments: widget.cycleData); }),
-              ListTile(leading: const Icon(AppIcons.edit, color: AppColors.primary), title: const Text('Modifier le cycle'), onTap: () { Navigator.pop(ctx); Navigator.pushNamed(context, '/cycle/edit', arguments: widget.cycleData); }),
-              ListTile(leading: const Icon(AppIcons.observation, color: AppColors.primary), title: const Text('Voir les rapports'), onTap: () { Navigator.pop(ctx); Navigator.pushNamed(context, '/rapports'); }),
-              if (_canDeleteCycle()) ListTile(leading: const Icon(AppIcons.delete, color: AppColors.error), title: const Text('Supprimer le cycle', style: TextStyle(color: AppColors.error)), onTap: () { Navigator.pop(ctx); _showDeleteConfirmation(); }),
-            ])));
+              ),
+            );
           }),
         ],
       ),
@@ -352,38 +377,36 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
           if (_isRefreshing) const LinearProgressIndicator(minHeight: 2, backgroundColor: AppColors.surface, valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary)),
 
           // ═══════════════════════════════════════════
-          // HEADER
+          // HEADER – fond theme foncé
           // ═══════════════════════════════════════════
           Container(
             padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.primary,
               borderRadius: AppBorders.cardRadius,
-              border: Border.all(color: AppColors.border.withOpacity(0.5)),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))],
             ),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Container(padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs), decoration: BoxDecoration(color: (isActif ? AppColors.success : AppColors.textHint).withOpacity(0.08), borderRadius: AppBorders.buttonRadius), child: Text(isActif ? 'ACTIF' : 'CLÔTURÉ', style: AppTextStyles.labelSmall.copyWith(color: isActif ? AppColors.success : AppColors.textHint, fontWeight: FontWeight.w600))),
+                Container(padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs), decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: AppBorders.buttonRadius), child: Text(isActif ? 'ACTIF' : 'CLÔTURÉ', style: AppTextStyles.labelSmall.copyWith(color: Colors.white, fontWeight: FontWeight.w600))),
                 const SizedBox(width: AppSpacing.sm),
-                Container(padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs), decoration: BoxDecoration(color: typeColor.withOpacity(0.08), borderRadius: AppBorders.buttonRadius), child: Text(typeLabel, style: AppTextStyles.labelSmall.copyWith(color: typeColor, fontWeight: FontWeight.w600))),
+                Container(padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs), decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: AppBorders.buttonRadius), child: Text(typeLabel, style: AppTextStyles.labelSmall.copyWith(color: Colors.white, fontWeight: FontWeight.w600))),
               ]),
               const SizedBox(height: AppSpacing.md),
               Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
-                Expanded(child: Text(_cycle.nom, style: AppTextStyles.headlineLarge.copyWith(fontSize: 22, color: AppColors.textPrimary, fontWeight: FontWeight.w700))),
+                Expanded(child: Text(_cycle.nom, style: AppTextStyles.headlineLarge.copyWith(fontSize: 22, color: Colors.white, fontWeight: FontWeight.w700))),
                 const SizedBox(width: AppSpacing.sm),
-                Text('$age jours', style: AppTextStyles.headlineLarge.copyWith(fontSize: 20, color: AppColors.textPrimary, fontWeight: FontWeight.w300)),
+                Text('$age jours', style: AppTextStyles.headlineLarge.copyWith(fontSize: 18, color: Colors.white70, fontWeight: FontWeight.w300)),
               ]),
               const SizedBox(height: AppSpacing.sm),
               Row(children: [
-                const Icon(AppIcons.localisation, size: 16, color: AppColors.textPrimary),
+                const Icon(AppIcons.localisation, size: 14, color: Colors.white70),
                 const SizedBox(width: 4),
-                Text('${_cycle.poulaillerNom ?? "Poulailler"} • Début: $dateDebut', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.w500)),
+                Text('${_cycle.poulaillerNom ?? "Poulailler"} • Début: $dateDebut', style: AppTextStyles.bodySmall.copyWith(color: Colors.white70, fontWeight: FontWeight.w400)),
               ]),
               const SizedBox(height: AppSpacing.md),
               Row(children: [
-                Expanded(child: Text('${_cycle.nombreSujetsActuels} sujets vivants', style: AppTextStyles.subtitleLarge.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.w600))),
-                Text('${coutUnitaire.toInt()} FCFA/sujet', style: AppTextStyles.subtitleLarge.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.w600)),
+                Expanded(child: Text('${_cycle.nombreSujetsActuels} sujets vivants', style: AppTextStyles.subtitleLarge.copyWith(color: Colors.white, fontWeight: FontWeight.w600))),
+                Text('${coutUnitaire.toInt()} FCFA/sujet', style: AppTextStyles.subtitleLarge.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
               ]),
             ]),
           ),
@@ -458,15 +481,15 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
           const SizedBox(height: AppSpacing.md),
           Column(children: [
             Row(children: [
-              Expanded(child: _buildQuickAction(label: 'Déclarer\nune perte', icon: AppIcons.urgent, color: AppColors.error, bgColor: AppColors.error.withOpacity(0.06), onTap: _declarerPerte)),
+              Expanded(child: _buildQuickAction(label: 'Perte', icon: AppIcons.urgent, textColor: AppColors.error, bgColor: AppColors.error.withOpacity(0.06), borderColor: AppColors.error.withOpacity(0.2), onTap: _declarerPerte)),
               const SizedBox(width: AppSpacing.sm),
-              Expanded(child: _buildQuickAction(label: 'Noter\nune charge', icon: AppIcons.depenseAdd, color: AppColors.textPrimary, bgColor: AppColors.surfaceLight, onTap: () => Navigator.pushNamed(context, '/finance/depense', arguments: {'cycle_id': _cycle.id, 'cycle_nom': _cycle.nom}).then((_) => _refreshCycle()))),
+              Expanded(child: _buildQuickAction(label: 'Charge', icon: AppIcons.depenseAdd, textColor: AppColors.primary, bgColor: AppColors.primary.withOpacity(0.06), borderColor: AppColors.primary.withOpacity(0.2), onTap: () => Navigator.pushNamed(context, '/finance/depense', arguments: {'cycle_id': _cycle.id, 'cycle_nom': _cycle.nom}).then((_) => _refreshCycle()))),
             ]),
             const SizedBox(height: AppSpacing.sm),
             Row(children: [
-              Expanded(child: _buildQuickAction(label: 'Vente', icon: AppIcons.venteAdd, color: AppColors.textPrimary, bgColor: AppColors.surfaceLight, onTap: () => Navigator.pushNamed(context, '/finance/vente', arguments: {'cycle_id': _cycle.id, 'cycle_nom': _cycle.nom}).then((_) => _refreshCycle()))),
+              Expanded(child: _buildQuickAction(label: 'Vente', icon: AppIcons.venteAdd, textColor: AppColors.success, bgColor: AppColors.success.withOpacity(0.06), borderColor: AppColors.success.withOpacity(0.2), onTap: () => Navigator.pushNamed(context, '/finance/vente', arguments: {'cycle_id': _cycle.id, 'cycle_nom': _cycle.nom}).then((_) => _refreshCycle()))),
               const SizedBox(width: AppSpacing.sm),
-              Expanded(child: _buildQuickAction(label: 'Observation', icon: AppIcons.observation, color: AppColors.textPrimary, bgColor: AppColors.surfaceLight, onTap: () => Navigator.pushNamed(context, '/cycle/report/form', arguments: widget.cycleData).then((_) => _refreshCycle()))),
+              Expanded(child: _buildQuickAction(label: 'Observation', icon: AppIcons.observation, textColor: AppColors.primary, bgColor: AppColors.primary.withOpacity(0.06), borderColor: AppColors.primary.withOpacity(0.2), onTap: () => Navigator.pushNamed(context, '/cycle/report/form', arguments: widget.cycleData).then((_) => _refreshCycle()))),
             ]),
           ]),
           const SizedBox(height: AppSpacing.xxl),
@@ -492,7 +515,7 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
           const SizedBox(height: AppSpacing.xl),
 
           // ═══════════════════════════════════════════
-          // GRAPHIQUE
+          // GRAPHIQUE (identique dashboard)
           // ═══════════════════════════════════════════
           Text('Flux du cycle', style: AppTextStyles.subtitleLarge.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
           const SizedBox(height: AppSpacing.md),
@@ -529,12 +552,12 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
                   Container(width: 40, height: 40, decoration: BoxDecoration(color: AppColors.success.withOpacity(0.08), borderRadius: AppBorders.radiusSmall), child: const Icon(AppIcons.vente, color: AppColors.success, size: 20)),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(v['type_label'] ?? v['type'] ?? 'Vente', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textPrimary)),
+                    Text(v['type_label'] ?? v['type'] ?? 'Vente', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 2),
                     Text(v['date']?.toString() ?? '', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textHint)),
                   ])),
                   Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                    Text('+${_formatMoney(int.tryParse(v['montant_total']?.toString() ?? '0') ?? 0)} FCFA', style: AppTextStyles.numberSmall.copyWith(color: AppColors.success)),
+                    Text('+${_formatMoney(int.tryParse(v['montant_total']?.toString() ?? '0') ?? 0)} FCFA', style: AppTextStyles.numberSmall.copyWith(color: AppColors.success, fontWeight: FontWeight.w600)),
                     if (v['pourcentage_benefice'] != null)
                       Text('${v['pourcentage_benefice']}%', style: AppTextStyles.labelSmall.copyWith(color: AppColors.textHint)),
                   ]),
@@ -566,12 +589,12 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
                   Container(width: 40, height: 40, decoration: BoxDecoration(color: AppColors.error.withOpacity(0.08), borderRadius: AppBorders.radiusSmall), child: const Icon(AppIcons.depense, color: AppColors.error, size: 20)),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(d['categorie_label'] ?? d['categorie'] ?? 'Dépense', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textPrimary)),
+                    Text(d['categorie_label'] ?? d['categorie'] ?? 'Dépense', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 2),
                     Text(d['date']?.toString() ?? '', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textHint)),
                   ])),
                   Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                    Text('-${_formatMoney(int.tryParse(d['montant']?.toString() ?? '0') ?? 0)} FCFA', style: AppTextStyles.numberSmall.copyWith(color: AppColors.error)),
+                    Text('-${_formatMoney(int.tryParse(d['montant']?.toString() ?? '0') ?? 0)} FCFA', style: AppTextStyles.numberSmall.copyWith(color: AppColors.error, fontWeight: FontWeight.w600)),
                     if (d['impact_pourcentage'] != null)
                       Text('+${d['impact_pourcentage']}%', style: AppTextStyles.labelSmall.copyWith(color: AppColors.textHint)),
                   ]),
@@ -585,7 +608,7 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
   }
 
   // ═══════════════════════════════════════════
-  // GRAPHIQUE
+  // GRAPHIQUE – identique dashboard
   // ═══════════════════════════════════════════
   Widget _buildGraphique() {
     final totalVentes = _spotsVentes.isNotEmpty ? _spotsVentes.last.y : 0;
@@ -601,6 +624,7 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
     if (spotsV.length == 1) spotsV = [spotsV.first, FlSpot(1, spotsV.first.y)];
     if (spotsD.length == 1) spotsD = [spotsD.first, FlSpot(1, spotsD.first.y)];
     final maxX = (spotsV.length > spotsD.length ? spotsV.length : spotsD.length).toDouble() - 1;
+    if (maxX < 1) return const SizedBox.shrink();
 
     return LineChart(LineChartData(
       gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (value) => FlLine(color: AppColors.border.withOpacity(0.4), strokeWidth: 0.5, dashArray: [4, 4])),
@@ -608,14 +632,21 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
         leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 45, getTitlesWidget: (value, meta) => Text('${(value/1000).toInt()}k', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textPrimary, fontSize: 10, fontWeight: FontWeight.w600)))),
         rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
         topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 30, interval: 1, getTitlesWidget: (value, meta) {
+          final index = value.toInt();
+          if (index >= 0 && index < _labelsJours.length) {
+            if (_labelsJours.length > 7 && index % 2 != 0) return const Text('');
+            return Text(_labelsJours[index], style: AppTextStyles.bodySmall.copyWith(color: AppColors.textPrimary, fontSize: 9, fontWeight: FontWeight.w600));
+          }
+          return const Text('');
+        })),
       ),
       borderData: FlBorderData(show: false),
       lineBarsData: [
-        LineChartBarData(spots: spotsV, isCurved: true, curveSmoothness: 0.3, color: AppColors.success, dotData: FlDotData(show: false), barWidth: 1.5, belowBarData: BarAreaData(show: true, gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.success.withOpacity(0.1), AppColors.success.withOpacity(0.0)]))),
-        LineChartBarData(spots: spotsD, isCurved: true, curveSmoothness: 0.3, color: AppColors.error, dotData: FlDotData(show: false), barWidth: 1.5, belowBarData: BarAreaData(show: true, gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.error.withOpacity(0.08), AppColors.error.withOpacity(0.0)]))),
+        LineChartBarData(spots: spotsV, isCurved: true, curveSmoothness: 0.3, color: AppColors.success, dotData: FlDotData(show: false), barWidth: 1.5, belowBarData: BarAreaData(show: true, gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.success.withOpacity(0.08), AppColors.success.withOpacity(0.0)]))),
+        LineChartBarData(spots: spotsD, isCurved: true, curveSmoothness: 0.3, color: AppColors.error, dotData: FlDotData(show: false), barWidth: 1.5, belowBarData: BarAreaData(show: true, gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.error.withOpacity(0.06), AppColors.error.withOpacity(0.0)]))),
       ],
-      minX: 0, maxX: maxX < 1 ? 1 : maxX, minY: 0, maxY: maxY,
+      minX: 0, maxX: maxX, minY: 0, maxY: maxY,
     ));
   }
 
@@ -674,14 +705,14 @@ class _CycleDetailScreenState extends State<CycleDetailScreen> {
   // ═══════════════════════════════════════════
   // QUICK ACTION
   // ═══════════════════════════════════════════
-  Widget _buildQuickAction({required String label, required IconData icon, required Color color, required Color bgColor, required VoidCallback onTap}) {
+  Widget _buildQuickAction({required String label, required IconData icon, required Color textColor, required Color bgColor, required Color borderColor, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 56,
+        height: 52,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-        decoration: BoxDecoration(color: bgColor, borderRadius: AppBorders.cardRadius, border: Border.all(color: color.withOpacity(0.15))),
-        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, color: color, size: 20), const SizedBox(width: AppSpacing.sm), Flexible(child: Text(label, style: AppTextStyles.labelSmall.copyWith(color: color, fontWeight: FontWeight.w500), textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis))]),
+        decoration: BoxDecoration(color: bgColor, borderRadius: AppBorders.cardRadius, border: Border.all(color: borderColor)),
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, color: textColor, size: 18), const SizedBox(width: AppSpacing.sm), Flexible(child: Text(label, style: AppTextStyles.labelSmall.copyWith(color: textColor, fontWeight: FontWeight.w600), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis))]),
       ),
     );
   }

@@ -56,7 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
             backgroundColor: Colors.white,
             elevation: 0,
             selectedItemColor: AppColors.primary,
-            unselectedItemColor: AppColors.textHint,
+            unselectedItemColor: AppColors.textSecondary,
             selectedLabelStyle: AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.w600),
             unselectedLabelStyle: AppTextStyles.labelSmall,
             items: [
@@ -111,7 +111,6 @@ class _DashboardContentState extends State<_DashboardContent> {
   @override
   void initState() {
     super.initState();
-    // Afficher immédiatement les données en cache
     if (_hasCachedData) {
       _totalVentes = _cachedVentes;
       _totalDepenses = _cachedDepenses;
@@ -122,7 +121,6 @@ class _DashboardContentState extends State<_DashboardContent> {
       _spotsDepenses = _cachedSpotsDepenses;
       _labelsJours = _cachedLabels;
     }
-    // Rafraîchir en arrière-plan
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadDashboardData();
     });
@@ -131,7 +129,6 @@ class _DashboardContentState extends State<_DashboardContent> {
   Future<void> _loadDashboardData() async {
     setState(() => _isRefreshing = true);
 
-    // Charger chaque provider indépendamment
     try {
       final poulaillerProvider = context.read<PoulaillerProvider>();
       final cycleProvider = context.read<CycleProvider>();
@@ -146,7 +143,6 @@ class _DashboardContentState extends State<_DashboardContent> {
       print('❌ Erreur providers: $e');
     }
 
-    // Lire les données même si une requête a échoué
     final cycleProvider = context.read<CycleProvider>();
     final pretProvider = context.read<PretProvider>();
     final cycles = cycleProvider.cycles;
@@ -162,7 +158,6 @@ class _DashboardContentState extends State<_DashboardContent> {
       pretsRest += p.montantRestant ?? 0;
     }
 
-    // Charger les transactions (indépendamment)
     final transactions = <Map<String, dynamic>>[];
     double totalVentes = 0;
     double totalDepenses = 0;
@@ -195,7 +190,6 @@ class _DashboardContentState extends State<_DashboardContent> {
 
     transactions.sort((a, b) => (b['date'] as String).compareTo(a['date'] as String));
 
-    // Agréger par jour pour le graphique
     Map<String, double> ventesParJour = {};
     Map<String, double> depensesParJour = {};
 
@@ -333,6 +327,18 @@ class _DashboardContentState extends State<_DashboardContent> {
               ),
             ),
 
+            // ACTIONS RAPIDES
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.md),
+              child: Row(children: [
+                Expanded(child: _buildQuickAction(label: 'Vente', icon: AppIcons.venteAdd, onTap: () => Navigator.pushNamed(context, '/finance/vente').then((_) => _loadDashboardData()))),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(child: _buildQuickAction(label: 'Dépense', icon: AppIcons.depenseAdd, onTap: () => Navigator.pushNamed(context, '/finance/depense').then((_) => _loadDashboardData()))),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(child: _buildQuickAction(label: 'Rapport', icon: AppIcons.rapport, onTap: () => Navigator.pushNamed(context, '/cycle/report/form').then((_) => _loadDashboardData()))),
+              ]),
+            ),
+
             // GRAPHIQUE
             Container(
               padding: const EdgeInsets.all(AppSpacing.lg),
@@ -390,7 +396,7 @@ class _DashboardContentState extends State<_DashboardContent> {
       ]));
     }
     return LineChart(LineChartData(
-      gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (value) => FlLine(color: AppColors.border.withOpacity(0.4), strokeWidth: 1, dashArray: [4, 4])),
+      gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (value) => FlLine(color: AppColors.border.withOpacity(0.4), strokeWidth: 0.5, dashArray: [4, 4])),
       titlesData: FlTitlesData(
         leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 45, getTitlesWidget: (value, meta) => Text('${(value/1000).toInt()}k', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textHint, fontSize: 10)))),
         rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -406,8 +412,8 @@ class _DashboardContentState extends State<_DashboardContent> {
       ),
       borderData: FlBorderData(show: false),
       lineBarsData: [
-        LineChartBarData(spots: _spotsVentes, isCurved: true, curveSmoothness: 0.3, color: AppColors.success, dotData: FlDotData(show: false), barWidth: 2.5, belowBarData: BarAreaData(show: true, gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.success.withOpacity(0.2), AppColors.success.withOpacity(0.0)]))),
-        LineChartBarData(spots: _spotsDepenses, isCurved: true, curveSmoothness: 0.3, color: AppColors.error, dotData: FlDotData(show: false), barWidth: 2.5, belowBarData: BarAreaData(show: true, gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.error.withOpacity(0.15), AppColors.error.withOpacity(0.0)]))),
+        LineChartBarData(spots: _spotsVentes, isCurved: true, curveSmoothness: 0.3, color: AppColors.success, dotData: FlDotData(show: false), barWidth: 1.5, belowBarData: BarAreaData(show: true, gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.success.withOpacity(0.2), AppColors.success.withOpacity(0.0)]))),
+        LineChartBarData(spots: _spotsDepenses, isCurved: true, curveSmoothness: 0.3, color: AppColors.error, dotData: FlDotData(show: false), barWidth: 1.5, belowBarData: BarAreaData(show: true, gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.error.withOpacity(0.15), AppColors.error.withOpacity(0.0)]))),
       ],
       minX: 0, maxX: (_spotsVentes.length - 1).toDouble().clamp(1, 30), minY: 0, maxY: maxY,
     ));
@@ -418,8 +424,28 @@ class _DashboardContentState extends State<_DashboardContent> {
   Widget _buildSectionHeader({required String title, required IconData icon}) => Row(children: [
     Container(width: 4, height: 18, decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(4))),
     const SizedBox(width: 8),
-    Text(title, style: AppTextStyles.subtitleLarge.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+    Text(title, style: AppTextStyles.subtitleLarge.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)),
   ]);
+
+  Widget _buildQuickAction({required String label, required IconData icon, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 48,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: AppBorders.cardRadius,
+          border: Border.all(color: AppColors.border),
+          boxShadow: AppShadows.shadowCard,
+        ),
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(icon, color: AppColors.primary, size: 18),
+          const SizedBox(width: AppSpacing.sm),
+          Text(label, style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600)),
+        ]),
+      ),
+    );
+  }
 
   Widget _buildStatCard({required String title, required String value, required IconData icon, bool isPrimary = false, Color accentColor = AppColors.textPrimary}) {
     if (isPrimary) {

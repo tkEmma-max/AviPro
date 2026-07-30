@@ -37,12 +37,11 @@ class _CycleListScreenState extends State<CycleListScreen> {
 
     if (provider.isLoading && cycles.isEmpty) {
       return Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: AppColors.surface,
         appBar: AppBar(title: const Text('Cycles de production'), backgroundColor: AppColors.primary, foregroundColor: Colors.white),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
-
 
     // Filtrage
     List<Cycle> filteredCycles;
@@ -54,30 +53,39 @@ class _CycleListScreenState extends State<CycleListScreen> {
       filteredCycles = cycles;
     }
 
-    // Appliquer la recherche
     if (_searchQuery.isNotEmpty) {
       filteredCycles = filteredCycles.where((c) =>
           c.nom.toLowerCase().contains(_searchQuery.toLowerCase())
       ).toList();
     }
 
+    final nbTotal = cycles.length;
+    final nbActifs = cycles.where((c) => c.isActive && !c.isArchived).length;
+    final nbClotures = cycles.where((c) => c.isArchived).length;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: const Text('Cycles de production'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(AppIcons.refresh),
-            onPressed: () {
-              context.read<CycleProvider>().refreshCycles();
-            },
-          ),
-        ],
       ),
       body: Column(
         children: [
+          // STATS HEADER
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            decoration: const BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.only(bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24)),
+            ),
+            child: Row(children: [
+              _buildHeaderStat('$nbTotal', 'Total'),
+              _buildHeaderStat('$nbActifs', 'Actifs'),
+              _buildHeaderStat('$nbClotures', 'Clôturés'),
+            ]),
+          ),
+
           // Barre de recherche
           Container(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
@@ -91,10 +99,7 @@ class _CycleListScreenState extends State<CycleListScreen> {
 
           // Filtres
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: AppSpacing.md,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
             child: Row(
               children: ['Actifs', 'Clôturés', 'Tous'].map((filter) {
                 final isSelected = _filter == filter;
@@ -134,9 +139,7 @@ class _CycleListScreenState extends State<CycleListScreen> {
                   const SizedBox(height: AppSpacing.lg),
                   Text(
                     'Aucun cycle ${_filter.toLowerCase()}',
-                    style: AppTextStyles.headline4.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+                    style: AppTextStyles.headline4.copyWith(color: AppColors.textSecondary),
                   ),
                 ],
               ),
@@ -146,10 +149,7 @@ class _CycleListScreenState extends State<CycleListScreen> {
                 await context.read<CycleProvider>().refreshCycles();
               },
               child: ListView.builder(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg,
-                  vertical: AppSpacing.sm,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
                 itemCount: filteredCycles.length,
                 itemBuilder: (context, index) {
                   final cycle = filteredCycles[index];
@@ -161,9 +161,7 @@ class _CycleListScreenState extends State<CycleListScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(context, '/cycle/create');
-        },
+        onPressed: () => Navigator.pushNamed(context, '/cycle/create'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         shape: const CircleBorder(),
@@ -172,155 +170,68 @@ class _CycleListScreenState extends State<CycleListScreen> {
     );
   }
 
+  Widget _buildHeaderStat(String value, String label) {
+    return Expanded(
+      child: Column(children: [
+        Text(value, style: AppTextStyles.numberLarge.copyWith(fontSize: 24, color: Colors.white)),
+        const SizedBox(height: 4),
+        Text(label, style: AppTextStyles.bodySmall.copyWith(color: Colors.white70)),
+      ]),
+    );
+  }
+
   Widget _buildCycleCard(Cycle cycle) {
-    final typeColor = _getTypeColor(cycle.type);
     final progression = cycle.progression ?? 0;
+    final isActif = cycle.isActive && !cycle.isArchived;
 
     return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(
-          context,
-          '/cycle/${cycle.id}',
-          arguments: cycle.toJson(),
-        );
-      },
+      onTap: () => Navigator.pushNamed(context, '/cycle/${cycle.id}', arguments: cycle.toJson()),
       child: Container(
         margin: const EdgeInsets.only(bottom: AppSpacing.md),
         padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: AppBorders.cardRadius,
-          border: Border.all(color: AppColors.border, width: 1),
+          border: Border.all(color: AppColors.border),
           boxShadow: AppShadows.shadowCard,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 4,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: typeColor,
-                    borderRadius: AppBorders.radiusSmall,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(cycle.nom, style: AppTextStyles.subtitleLarge),
-                          const SizedBox(width: AppSpacing.sm),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: typeColor.withOpacity(0.1),
-                              borderRadius: AppBorders.buttonRadius,
-                            ),
-                            child: Text(
-                              _getTypeLabel(cycle.type),
-                              style: AppTextStyles.labelSmall.copyWith(
-                                color: typeColor,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Text(
-                        'Début: ${_formatDate(cycle.dateDebut)} • ${cycle.joursEcoules ?? 0} jours',
-                        style: AppTextStyles.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
-                  decoration: BoxDecoration(
-                    color: cycle.isActive && !cycle.isArchived
-                        ? AppColors.success.withOpacity(0.1)
-                        : AppColors.textHint.withOpacity(0.1),
-                    borderRadius: AppBorders.buttonRadius,
-                  ),
-                  child: Text(
-                    cycle.isActive && !cycle.isArchived ? 'Actif' : 'Clôturé',
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: cycle.isActive && !cycle.isArchived ? AppColors.success : AppColors.textHint,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // Ligne 1 : nom + badge statut
+          Row(children: [
+            Expanded(child: Text(cycle.nom, style: AppTextStyles.subtitleLarge.copyWith(fontWeight: FontWeight.w600, color: AppColors.textPrimary))),
+            const SizedBox(width: AppSpacing.sm),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+              decoration: BoxDecoration(
+                color: isActif ? AppColors.success.withOpacity(0.08) : AppColors.textHint.withOpacity(0.08),
+                borderRadius: AppBorders.buttonRadius,
+              ),
+              child: Text(isActif ? 'Actif' : 'Clôturé', style: AppTextStyles.labelSmall.copyWith(color: isActif ? AppColors.success : AppColors.textHint, fontWeight: FontWeight.w600)),
             ),
-            const SizedBox(height: AppSpacing.md),
-            // Barre de progression
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Progression', style: AppTextStyles.bodySmall),
-                      const SizedBox(height: 4),
-                      Stack(
-                        children: [
-                          Container(
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: AppColors.grey200,
-                              borderRadius: AppBorders.buttonRadius,
-                            ),
-                          ),
-                          FractionallySizedBox(
-                            widthFactor: progression / 100,
-                            child: Container(
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: progression > 80 ? AppColors.error : progression > 50 ? AppColors.warning : AppColors.success,
-                                borderRadius: AppBorders.buttonRadius,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+          ]),
+          const SizedBox(height: AppSpacing.xs),
+          // Ligne 2 : date + jours
+          Text('Début: ${_formatDate(cycle.dateDebut)} • ${cycle.joursEcoules ?? 0} jours', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
+          const SizedBox(height: AppSpacing.md),
+          // Barre de progression
+          Row(children: [
+            Expanded(
+              child: Stack(
+                children: [
+                  Container(height: 6, decoration: BoxDecoration(color: AppColors.grey200, borderRadius: AppBorders.buttonRadius)),
+                  FractionallySizedBox(
+                    widthFactor: progression / 100,
+                    child: Container(height: 6, decoration: BoxDecoration(color: AppColors.primary, borderRadius: AppBorders.buttonRadius)),
                   ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Text(
-                  '${progression.toInt()}%',
-                  style: AppTextStyles.numberSmall.copyWith(
-                    color: progression > 80 ? AppColors.error : progression > 50 ? AppColors.warning : AppColors.success,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ],
-        ),
+            const SizedBox(width: AppSpacing.sm),
+            Text('${progression.toInt()}%', style: AppTextStyles.numberSmall.copyWith(color: AppColors.primary)),
+          ]),
+        ]),
       ),
     );
-  }
-
-  Color _getTypeColor(String type) {
-    switch (type) {
-      case 'CHAIR': return AppColors.primary;
-      case 'PONDEUSE': return AppColors.warning;
-      case 'LOCAL': return AppColors.success;
-      default: return AppColors.textHint;
-    }
-  }
-
-  String _getTypeLabel(String type) {
-    switch (type) {
-      case 'CHAIR': return 'Chair';
-      case 'PONDEUSE': return 'Pondeuse';
-      case 'LOCAL': return 'Local';
-      default: return type;
-    }
   }
 
   String _formatDate(DateTime date) {

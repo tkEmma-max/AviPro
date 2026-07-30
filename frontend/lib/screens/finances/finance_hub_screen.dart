@@ -30,7 +30,6 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
   double _totalVentes = 0;
   double _totalDepenses = 0;
 
-  // Cache statique
   static List<Map<String, dynamic>> _cachedTransactions = [];
   static double _cachedTotalVentes = 0;
   static double _cachedTotalDepenses = 0;
@@ -122,36 +121,19 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
   void _openDetail(Map<String, dynamic> transaction) {
     final id = transaction['id'] as String;
     final type = transaction['type'] as String;
-
     if (id.isEmpty) return;
 
     if (type == 'vente') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ChangeNotifierProvider(
-            create: (_) => VenteProvider(),
-            child: VenteDetailScreen(venteId: id),
-          ),
-        ),
-      );
+      Navigator.push(context, MaterialPageRoute(builder: (_) => ChangeNotifierProvider(create: (_) => VenteProvider(), child: VenteDetailScreen(venteId: id))));
     } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ChangeNotifierProvider(
-            create: (_) => DepenseProvider(),
-            child: DepenseDetailScreen(depenseId: id),
-          ),
-        ),
-      );
+      Navigator.push(context, MaterialPageRoute(builder: (_) => ChangeNotifierProvider(create: (_) => DepenseProvider(), child: DepenseDetailScreen(depenseId: id))));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
         backgroundColor: AppColors.primary, elevation: 0,
         title: Text('Finances', style: AppTextStyles.headlineMedium.copyWith(color: Colors.white, fontSize: 22)),
@@ -179,6 +161,7 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
           : Column(children: [
         if (_isLoading && _hasCachedData)
           const LinearProgressIndicator(minHeight: 2, backgroundColor: Colors.transparent, valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary)),
+        // HEADER
         Container(
           padding: const EdgeInsets.all(AppSpacing.lg),
           decoration: const BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.only(bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24))),
@@ -198,6 +181,7 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
             ]),
           ]),
         ),
+        // FILTRES
         Container(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
           child: Row(children: ['Toutes', 'Ventes', 'Dépenses'].map((filter) {
@@ -208,6 +192,7 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
             ));
           }).toList()),
         ),
+        // LISTE
         Expanded(
           child: _filteredTransactions.isEmpty
               ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(AppIcons.transaction, size: 60, color: AppColors.textHint), const SizedBox(height: AppSpacing.lg), Text('Aucune transaction', style: AppTextStyles.headline4.copyWith(color: AppColors.textSecondary))]))
@@ -225,12 +210,16 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
                   onTap: () => _openDetail(t),
                   child: Container(
                     padding: const EdgeInsets.all(AppSpacing.md),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.border), boxShadow: AppShadows.shadowCard),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.border.withOpacity(0.5)), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2))]),
                     child: Row(children: [
-                      Container(width: 4, height: 40, decoration: BoxDecoration(color: color, borderRadius: AppBorders.radiusSmall)),
+                      Container(width: 40, height: 40, decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: AppBorders.radiusSmall), child: Icon(isVente ? AppIcons.vente : AppIcons.depense, color: color, size: 20)),
                       const SizedBox(width: AppSpacing.md),
-                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(t['libelle'] as String, style: AppTextStyles.subtitleMedium), Text('${t['date']} • ${t['cycle']}', style: AppTextStyles.bodySmall)])),
-                      Text('${isVente ? '+' : '-'} ${(t['montant'] as double).toStringAsFixed(0)} FCFA', style: AppTextStyles.numberMedium.copyWith(color: color, fontSize: 16)),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(t['libelle'] as String, style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 2),
+                        Text('${t['date']} • ${t['cycle']}', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textHint)),
+                      ])),
+                      Text('${isVente ? '+' : '-'} ${(t['montant'] as double).toStringAsFixed(0)} FCFA', style: AppTextStyles.numberSmall.copyWith(color: color, fontWeight: FontWeight.w600)),
                     ]),
                   ),
                 );
