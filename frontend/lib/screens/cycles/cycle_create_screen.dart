@@ -8,6 +8,7 @@ import '../../core/theme/app_borders.dart';
 import '../../core/constants/app_icons.dart';
 import '../../models/poulailler.dart';
 import '../../models/cycle.dart';
+import '../../models/type_poulet.dart';
 import '../../providers/poulailler_provider.dart';
 import '../../providers/cycle_provider.dart';
 import '../../services/densite_service.dart';
@@ -36,19 +37,60 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
 
   String? _selectedPoulaillerId;
   String _selectedType = 'CHAIR';
+  String? _selectedTypePouletId;
+  List<TypePoulet> _typesPoulet = [];
+  bool _isLoadingTypes = true;
 
   double _densite = 0;
   bool _isDensiteOk = false;
   int _capaciteMax = 0;
   bool _isLoading = false;
 
-  final List<String> _types = ['CHAIR', 'PONDEUSE', 'LOCAL'];
   @override
   void initState() {
     super.initState();
-    // Pré-remplir le nom du cycle
     final now = DateTime.now();
     _nomController.text = 'Lot-${now.day}/${now.month}/${now.year}-1';
+    _loadTypesPoulet();
+  }
+
+  Future<void> _loadTypesPoulet() async {
+    try {
+      final response = await _apiService.get('cycles/types-poulet/');
+      if (response.statusCode == 200 && response.data['results'] != null) {
+        final types = (response.data['results'] as List)
+            .map((json) => TypePoulet.fromJson(json))
+            .where((t) => t.isActive)
+            .toList();
+        if (mounted) {
+          setState(() {
+            _typesPoulet = types;
+            _isLoadingTypes = false;
+            // Présélectionner le type correspondant au type par défaut
+            // Présélectionner le Poulet de chair par défaut
+            if (_selectedTypePouletId == null && types.isNotEmpty) {
+              final chair = types.where((t) => t.nom.toLowerCase().contains('chair'));
+              if (chair.isNotEmpty) {
+                _selectedTypePouletId = chair.first.id;
+                _applyTypePoulet(chair.first);
+              } else {
+                _selectedTypePouletId = types.first.id;
+                _applyTypePoulet(types.first);
+              }
+            }
+          });
+        }
+      }
+    } catch (e) {
+      print('❌ Erreur chargement types poulet: $e');
+      if (mounted) setState(() => _isLoadingTypes = false);
+    }
+  }
+
+  void _applyTypePoulet(TypePoulet tp) {
+    setState(() {
+      _prixUnitaireController.text = tp.prixPoussinMoyen.toStringAsFixed(0);
+    });
   }
 
   @override
@@ -110,6 +152,8 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
   }
 
   int _getDureeEstimee() {
+    final match = _typesPoulet.where((t) => t.id == _selectedTypePouletId);
+    if (match.isNotEmpty) return match.first.dureeEstimeeJours;
     switch (_selectedType) {
       case 'CHAIR': return 45;
       case 'PONDEUSE': return 490;
@@ -144,6 +188,7 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
         nom: _nomController.text.trim(),
         poulailler: _selectedPoulaillerId!,
         type: _selectedType,
+        type_poulet: _selectedTypePouletId,  // ← AJOUTÉ
         dateDebut: dateDebut,
         dateFin: null,
         nombreSujetsInitiaux: nbSujets,
@@ -210,6 +255,35 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
         child: Form(key: _formKey, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const SizedBox(height: AppSpacing.lg),
 
+          // Type de poulet (NOUVEAU)
+          Text('Type d\'élevage', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
+          const SizedBox(height: AppSpacing.md),
+          _isLoadingTypes
+              ? const Center(child: CircularProgressIndicator())
+              : Container(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            decoration: BoxDecoration(color: AppColors.surfaceLight, borderRadius: AppBorders.inputRadius, border: Border.all(color: AppColors.border)),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _selectedTypePouletId,
+                isExpanded: true,
+                hint: Text('Sélectionnez un type', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint)),
+                items: _typesPoulet.map((tp) => DropdownMenuItem(
+                  value: tp.id,
+                  child: Text('${tp.nom} (${tp.dureeEstimeeJours} jours)', style: AppTextStyles.bodyMedium),
+                )).toList(),
+                onChanged: (value) {
+                  final tp = _typesPoulet.firstWhere((t) => t.id == value);
+                  setState(() {
+                    _selectedTypePouletId = value;
+                    _applyTypePoulet(tp);
+                  });
+                },
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+
           // Poulailler
           Text('Infrastructure', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
           const SizedBox(height: AppSpacing.md),
@@ -229,18 +303,6 @@ class _CycleCreateScreenState extends State<CycleCreateScreen> {
           Text('Caractéristiques du lot', style: AppTextStyles.subtitleMedium.copyWith(color: AppColors.textSecondary)),
           const SizedBox(height: AppSpacing.md),
           CustomTextField(controller: _nomController, label: 'Nom de la bande *', hint: 'Ex: Lot Chair Juil-07', prefixIcon: AppIcons.edit, validator: (v) => v!.isEmpty ? 'Requis' : null),
-          const SizedBox(height: AppSpacing.lg),
-
-          // Type
-          Row(children: _types.map((type) {
-            final isSelected = _selectedType == type;
-            return Expanded(
-                child: GestureDetector(
-                  onTap: () { setState(() => _selectedType = type); _updateDensite(); },
-                  child: Container(padding: const EdgeInsets.symmetric(vertical: AppSpacing.md), margin: const EdgeInsets.only(right: AppSpacing.sm), decoration: BoxDecoration(color: isSelected ? AppColors.primary : AppColors.surfaceLight, borderRadius: AppBorders.buttonRadius, border: Border.all(color: isSelected ? AppColors.primary : AppColors.border)),
-                      child: Center(child: Text(type, style: AppTextStyles.labelMedium.copyWith(color: isSelected ? Colors.white : AppColors.textSecondary, fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400)))),
-                ));
-          }).toList()),
           const SizedBox(height: AppSpacing.lg),
 
           // Nombre de sujets + Prix unitaire

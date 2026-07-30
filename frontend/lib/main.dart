@@ -8,6 +8,11 @@ import 'providers/poulailler_provider.dart';
 import 'providers/cycle_provider.dart';
 import 'providers/pret_provider.dart';
 import 'providers/rapport_provider.dart';
+import 'providers/vente_provider.dart';
+import 'providers/depense_provider.dart';
+import 'providers/prevision_provider.dart';
+import 'providers/comparaison_provider.dart';
+import 'providers/notification_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/onboarding_screen.dart';
@@ -24,6 +29,8 @@ import 'screens/cycles/cycle_edit_screen.dart';
 import 'screens/cycles/cycle_report_form_screen.dart';
 import 'screens/cycles/cycle_report_history_screen.dart';
 import 'screens/cycles/cycle_performance_report_screen.dart';
+import 'screens/cycles/prevision_screen.dart';
+import 'screens/cycles/comparaison_screen.dart';
 import 'screens/stock/stock_dashboard_screen.dart';
 import 'screens/stock/stock_mouvement_screen.dart';
 import 'screens/stock/stock_history_screen.dart';
@@ -37,8 +44,10 @@ import 'screens/finances/finance_loan_detail_screen.dart';
 import 'screens/finances/finance_echeance_create_screen.dart';
 import 'screens/finances/finance_remboursement_create_screen.dart';
 import 'screens/finances/pret_list_screen.dart';
+import 'screens/finances/vente_detail_screen.dart';
+import 'screens/finances/depense_detail_screen.dart';
 import 'screens/rapports/rapport_list_screen.dart';
-import 'screens/notifications_screen.dart';
+import 'screens/notifications/notification_screen.dart';
 import 'screens/profile_settings_screen.dart';
 import 'core/theme/app_theme.dart';
 import 'models/poulailler.dart';
@@ -65,6 +74,11 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => CycleProvider()),
         ChangeNotifierProvider(create: (_) => PretProvider()),
         ChangeNotifierProvider(create: (_) => RapportProvider()),
+        ChangeNotifierProvider(create: (_) => VenteProvider()),
+        ChangeNotifierProvider(create: (_) => DepenseProvider()),
+        ChangeNotifierProvider(create: (_) => PrevisionProvider()),
+        ChangeNotifierProvider(create: (_) => ComparaisonProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
       ],
       child: MaterialApp(
         title: 'AviPro',
@@ -78,7 +92,7 @@ class MyApp extends StatelessWidget {
         supportedLocales: const [
           Locale('fr', 'FR'),
         ],
-        initialRoute: '/splash',  // Au lieu de '/home'
+        initialRoute: '/splash',
         routes: {
           '/login': (context) => const LoginScreen(),
           '/register': (context) => const RegisterScreen(),
@@ -112,7 +126,7 @@ class MyApp extends StatelessWidget {
           '/finance/remboursement/create': (context) => FinanceRemboursementCreateScreen(
             pret: ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>,
           ),
-          '/notifications': (context) => const NotificationsScreen(),
+          '/notifications': (context) => const NotificationScreen(),
           '/poulailler/migration': (context) => PoulaillerMigrationScreen(
             source: ModalRoute.of(context)!.settings.arguments as Poulailler,
           ),
@@ -125,17 +139,18 @@ class MyApp extends StatelessWidget {
           '/settings': (context) => const ProfileSettingsScreen(),
           '/prets': (context) => const PretListScreen(),
           '/rapports': (context) => const RapportListScreen(),
-
-          '/splash': (context) => SplashScreen(),  // sans const
+          '/splash': (context) => SplashScreen(),
         },
         onGenerateRoute: (settings) {
-          if (settings.name?.startsWith('/cycle/report/') ?? false) {
+          // Navigation vers le détail d'un cycle
+          if (settings.name?.startsWith('/cycle/') ?? false) {
             final cycle = settings.arguments as Map<String, dynamic>;
             return MaterialPageRoute(
-              builder: (context) => CyclePerformanceReportScreen(cycle: cycle),
+              builder: (context) => CycleDetailScreen(cycleData: cycle),
             );
           }
 
+          // Navigation vers le détail d'un poulailler
           if (settings.name?.startsWith('/poulailler/') ?? false) {
             final id = settings.name!.split('/').last;
             return MaterialPageRoute(
@@ -147,13 +162,6 @@ class MyApp extends StatelessWidget {
                 }
                 return const PoulaillerListScreen();
               },
-            );
-          }
-
-          if (settings.name?.startsWith('/cycle/') ?? false) {
-            final cycle = settings.arguments as Map<String, dynamic>;
-            return MaterialPageRoute(
-              builder: (context) => CycleDetailScreen(cycleData: cycle),
             );
           }
 

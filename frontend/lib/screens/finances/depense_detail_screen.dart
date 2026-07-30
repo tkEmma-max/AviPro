@@ -1,4 +1,4 @@
-// lib/screens/finances/vente_detail_screen.dart
+// lib/screens/finances/depense_detail_screen.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -8,57 +8,31 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_borders.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../core/constants/app_icons.dart';
-import '../../providers/vente_provider.dart';
+import '../../providers/depense_provider.dart';
 
-class VenteDetailScreen extends StatefulWidget {
-  final String venteId;
+class DepenseDetailScreen extends StatefulWidget {
+  final String depenseId;
 
-  const VenteDetailScreen({super.key, required this.venteId});
+  const DepenseDetailScreen({super.key, required this.depenseId});
 
   @override
-  State<VenteDetailScreen> createState() => _VenteDetailScreenState();
+  State<DepenseDetailScreen> createState() => _DepenseDetailScreenState();
 }
 
-class _VenteDetailScreenState extends State<VenteDetailScreen> {
+class _DepenseDetailScreenState extends State<DepenseDetailScreen> {
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<VenteProvider>().getVenteById(widget.venteId);
+      context.read<DepenseProvider>().getDepenseById(widget.depenseId);
     });
   }
 
   String _formatMoney(num value) {
     return value.toStringAsFixed(0).replaceAllMapped(
       RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-      (match) => '${match[1]} ',
+          (match) => '${match[1]} ',
     );
-  }
-
-  Color _getStatusColor(String? status) {
-    switch (status) {
-      case 'GAIN':
-        return AppColors.success;
-      case 'PERTE':
-        return AppColors.error;
-      case 'STABLE':
-        return AppColors.warning;
-      default:
-        return AppColors.textHint;
-    }
-  }
-
-  String _getStatusLabel(String? status) {
-    switch (status) {
-      case 'GAIN':
-        return 'Vente bénéficiaire';
-      case 'PERTE':
-        return 'Vente à perte';
-      case 'STABLE':
-        return 'Équilibre';
-      default:
-        return status ?? 'Inconnu';
-    }
   }
 
   @override
@@ -73,32 +47,32 @@ class _VenteDetailScreenState extends State<VenteDetailScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Détail de la vente',
+          'Détail de la dépense',
           style: AppTextStyles.headlineMedium.copyWith(color: AppColors.textPrimary),
         ),
         centerTitle: true,
       ),
-      body: Consumer<VenteProvider>(
+      body: Consumer<DepenseProvider>(
         builder: (context, provider, _) {
           if (provider.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final vente = provider.venteDetail;
-          if (vente == null) {
+          final depense = provider.depenseDetail;
+          if (depense == null) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(AppIcons.vente, size: 60, color: AppColors.textHint),
+                  const Icon(AppIcons.depense, size: 60, color: AppColors.textHint),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
-                    'Vente introuvable',
+                    'Dépense introuvable',
                     style: AppTextStyles.headline4.copyWith(color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   TextButton(
-                    onPressed: () => provider.refreshVente(widget.venteId),
+                    onPressed: () => provider.refreshDepense(widget.depenseId),
                     child: const Text('Réessayer'),
                   ),
                 ],
@@ -106,9 +80,7 @@ class _VenteDetailScreenState extends State<VenteDetailScreen> {
             );
           }
 
-          final statusColor = _getStatusColor(vente.statusVente);
-          final statusLabel = _getStatusLabel(vente.statusVente);
-          final dateFormatted = DateFormat('dd MMMM yyyy', 'fr').format(vente.date);
+          final dateFormatted = DateFormat('dd MMMM yyyy', 'fr').format(depense.date);
 
           return SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -117,51 +89,44 @@ class _VenteDetailScreenState extends State<VenteDetailScreen> {
               children: [
                 const SizedBox(height: AppSpacing.md),
 
-                // BADGE STATUT
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.lg,
-                      vertical: AppSpacing.sm,
-                    ),
-                    decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.1),
-                      borderRadius: AppBorders.buttonRadius,
-                      border: Border.all(color: statusColor.withOpacity(0.3)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          vente.statusVente == 'GAIN'
-                              ? AppIcons.succes
-                              : vente.statusVente == 'PERTE'
-                                  ? AppIcons.urgent
-                                  : AppIcons.info,
-                          size: 18,
-                          color: statusColor,
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Text(
-                          statusLabel,
-                          style: AppTextStyles.subtitleMedium.copyWith(
-                            color: statusColor,
-                            fontWeight: FontWeight.w600,
+                // BADGE ROUTINE
+                if (depense.estDepenseRoutine)
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                        vertical: AppSpacing.sm,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: AppBorders.buttonRadius,
+                        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(AppIcons.refresh, size: 18, color: AppColors.primary),
+                          const SizedBox(width: AppSpacing.sm),
+                          Text(
+                            'Dépense de routine',
+                            style: AppTextStyles.subtitleMedium.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.xl),
+                if (depense.estDepenseRoutine) const SizedBox(height: AppSpacing.xl),
 
                 // MONTANT
                 Center(
                   child: Text(
-                    '+ ${_formatMoney(vente.montantTotal)} FCFA',
+                    '- ${_formatMoney(depense.montant)} FCFA',
                     style: AppTextStyles.numberLarge.copyWith(
                       fontSize: 32,
-                      color: AppColors.success,
+                      color: AppColors.error,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -178,111 +143,78 @@ class _VenteDetailScreenState extends State<VenteDetailScreen> {
                 // CARTE : INFORMATIONS GÉNÉRALES
                 _buildSectionCard(
                   title: 'Informations générales',
-                  icon: AppIcons.info,
+                  icon: AppIcons.observation,
                   children: [
-                    _buildInfoRow('Type de vente', vente.typeLabel ?? vente.type),
-                    _buildInfoRow('Poulailler', vente.poulaillerNom ?? '-'),
-                    _buildInfoRow('Cycle', vente.cycleNom ?? '-'),
-                    _buildInfoRow('Vendeur', vente.vendeur ?? '-'),
-                    if (vente.clientNom != null)
-                      _buildInfoRow('Client', vente.clientNom!),
-                    if (vente.description != null && vente.description!.isNotEmpty)
-                      _buildInfoRow('Description', vente.description!),
+                    _buildInfoRow('Catégorie', depense.categorieLabel ?? depense.categorie),
+                    _buildInfoRow('Poulailler', depense.poulaillerNom ?? '-'),
+                    _buildInfoRow('Cycle', depense.cycleNom ?? '-'),
+                    if (depense.fournisseurNom != null)
+                      _buildInfoRow('Fournisseur', depense.fournisseurNom!),
+                    if (depense.description != null && depense.description!.isNotEmpty)
+                      _buildInfoRow('Description', depense.description!),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.md),
 
-                // CARTE : DÉTAIL DU CALCUL
-                _buildSectionCard(
-                  title: 'Détail du calcul',
-                  icon: AppIcons.chart,
-                  children: [
-                    _buildInfoRow('Quantité', '${vente.quantite} sujets'),
-                    _buildInfoRow('Prix unitaire', '${_formatMoney(vente.prixUnitaire)} FCFA'),
-                    const Divider(height: AppSpacing.md),
-                    _buildInfoRow(
-                      'Montant total',
-                      '${_formatMoney(vente.montantTotal)} FCFA',
-                      valueBold: true,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-
-                // CARTE : RENTABILITÉ
-                _buildSectionCard(
-                  title: 'Rentabilité',
-                  icon: vente.estRentable == true ? AppIcons.succes : AppIcons.urgent,
-                  iconColor: vente.estRentable == true ? AppColors.success : AppColors.error,
-                  children: [
-                    if (vente.prixDeRevient != null)
-                      _buildInfoRow(
-                        'Prix de revient unitaire',
-                        '${_formatMoney(vente.prixDeRevient!)} FCFA',
-                      ),
-                    if (vente.margeUnitaire != null)
-                      _buildInfoRow(
-                        'Marge unitaire',
-                        '${vente.margeUnitaire! >= 0 ? "+" : ""}${_formatMoney(vente.margeUnitaire!)} FCFA',
-                        valueColor: vente.margeUnitaire! >= 0 ? AppColors.success : AppColors.error,
-                      ),
-                    if (vente.pourcentageBenefice != null)
-                      _buildInfoRow(
-                        'Pourcentage bénéfice',
-                        '${vente.pourcentageBenefice!.toStringAsFixed(1)}%',
-                        valueColor: vente.pourcentageBenefice! >= 0 ? AppColors.success : AppColors.error,
-                        valueBold: true,
-                      ),
-                    if (vente.cumulBeneficesCycle != null)
-                      _buildInfoRow(
-                        'Bénéfices cumulés du cycle',
-                        '${_formatMoney(vente.cumulBeneficesCycle!)} FCFA',
-                      ),
-                    if (vente.potentielRestant != null)
-                      _buildInfoRow(
-                        'Potentiel restant',
-                        '${_formatMoney(vente.potentielRestant!)} FCFA',
-                        valueColor: AppColors.primary,
-                      ),
-                  ],
-                ),
+                // CARTE : IMPACT SUR LE COÛT DE PRODUCTION
+                if (depense.impactPourcentage != null ||
+                    depense.prixRevientAvant != null ||
+                    depense.prixRevientApres != null)
+                  _buildSectionCard(
+                    title: 'Impact sur le coût de production',
+                    icon: AppIcons.chart,
+                    iconColor: (depense.impactPourcentage ?? 0) > 10
+                        ? AppColors.warning
+                        : AppColors.primary,
+                    children: [
+                      if (depense.cumulDepensesAvant != null)
+                        _buildInfoRow(
+                          'Total dépenses avant',
+                          '${_formatMoney(depense.cumulDepensesAvant!)} FCFA',
+                        ),
+                      if (depense.cumulDepensesApres != null)
+                        _buildInfoRow(
+                          'Total dépenses après',
+                          '${_formatMoney(depense.cumulDepensesApres!)} FCFA',
+                        ),
+                      if (depense.prixRevientAvant != null && depense.prixRevientApres != null) ...[
+                        const Divider(height: AppSpacing.md),
+                        _buildInfoRow(
+                          'Prix de revient avant',
+                          '${_formatMoney(depense.prixRevientAvant!)} FCFA',
+                        ),
+                        _buildInfoRow(
+                          'Prix de revient après',
+                          '${_formatMoney(depense.prixRevientApres!)} FCFA',
+                          valueColor: AppColors.warning,
+                        ),
+                      ],
+                      if (depense.impactPourcentage != null) ...[
+                        const Divider(height: AppSpacing.md),
+                        _buildInfoRow(
+                          'Augmentation du coût',
+                          '+${depense.impactPourcentage!.toStringAsFixed(1)}%',
+                          valueColor: depense.impactPourcentage! > 10
+                              ? AppColors.error
+                              : AppColors.warning,
+                          valueBold: true,
+                        ),
+                      ],
+                    ],
+                  ),
                 const SizedBox(height: AppSpacing.md),
 
                 // CARTE : DOCUMENTS
-                if (vente.factureNumero != null || vente.facturePhoto != null)
+                if (depense.factureNumero != null || depense.facturePhoto != null)
                   _buildSectionCard(
                     title: 'Documents',
                     icon: AppIcons.rapport,
                     children: [
-                      if (vente.factureNumero != null)
-                        _buildInfoRow('N° Facture', vente.factureNumero!),
-                      if (vente.facturePhoto != null)
+                      if (depense.factureNumero != null)
+                        _buildInfoRow('N° Facture', depense.factureNumero!),
+                      if (depense.facturePhoto != null)
                         _buildInfoRow('Photo facture', 'Disponible'),
                     ],
-                  ),
-
-                // CARTE : RAPPEL REMBOURSEMENT
-                if (vente.remboursementConfirme)
-                  Container(
-                    margin: const EdgeInsets.only(top: AppSpacing.md),
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.05),
-                      borderRadius: AppBorders.cardRadius,
-                      border: Border.all(color: AppColors.primary.withOpacity(0.2)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(AppIcons.pret, color: AppColors.primary, size: 20),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: Text(
-                            'Remboursement de prêt confirmé',
-                            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primary),
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
 
                 const SizedBox(height: AppSpacing.xxl),
@@ -326,11 +258,11 @@ class _VenteDetailScreenState extends State<VenteDetailScreen> {
   }
 
   Widget _buildInfoRow(
-    String label,
-    String value, {
-    Color? valueColor,
-    bool valueBold = false,
-  }) {
+      String label,
+      String value, {
+        Color? valueColor,
+        bool valueBold = false,
+      }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Row(

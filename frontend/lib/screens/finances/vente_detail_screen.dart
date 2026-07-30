@@ -137,7 +137,7 @@ class _VenteDetailScreenState extends State<VenteDetailScreen> {
                               ? AppIcons.succes
                               : vente.statusVente == 'PERTE'
                                   ? AppIcons.urgent
-                                  : AppIcons.info,
+                                  : AppIcons.observation,
                           size: 18,
                           color: statusColor,
                         ),
@@ -178,7 +178,7 @@ class _VenteDetailScreenState extends State<VenteDetailScreen> {
                 // CARTE : INFORMATIONS GÉNÉRALES
                 _buildSectionCard(
                   title: 'Informations générales',
-                  icon: AppIcons.info,
+                  icon: AppIcons.observation,
                   children: [
                     _buildInfoRow('Type de vente', vente.typeLabel ?? vente.type),
                     _buildInfoRow('Poulailler', vente.poulaillerNom ?? '-'),

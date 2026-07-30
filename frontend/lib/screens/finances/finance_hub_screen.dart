@@ -1,6 +1,6 @@
 // lib/screens/finances/finance_hub_screen.dart
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_spacing.dart';
@@ -8,7 +8,11 @@ import '../../core/theme/app_borders.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../core/constants/app_icons.dart';
 import '../../services/api_service.dart';
+import '../../providers/vente_provider.dart';
+import '../../providers/depense_provider.dart';
 import 'finance_loan_dashboard_screen.dart';
+import 'vente_detail_screen.dart';
+import 'depense_detail_screen.dart';
 
 class FinanceHubScreen extends StatefulWidget {
   const FinanceHubScreen({super.key});
@@ -35,7 +39,6 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
   @override
   void initState() {
     super.initState();
-    // Afficher immédiatement les données en cache
     if (_hasCachedData) {
       _allTransactions = _cachedTransactions;
       _totalVentes = _cachedTotalVentes;
@@ -58,6 +61,7 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
         if (data['results'] != null) {
           for (var d in data['results']) {
             transactions.add({
+              'id': d['id']?.toString() ?? '',
               'type': 'depense',
               'libelle': d['categorie_label'] ?? d['categorie'] ?? 'Dépense',
               'montant': double.tryParse(d['montant']?.toString() ?? '0') ?? 0,
@@ -73,6 +77,7 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
         if (data['results'] != null) {
           for (var v in data['results']) {
             transactions.add({
+              'id': v['id']?.toString() ?? '',
               'type': 'vente',
               'libelle': v['type_label'] ?? v['type'] ?? 'Vente',
               'montant': double.tryParse(v['montant_total']?.toString() ?? '0') ?? 0,
@@ -95,7 +100,6 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
           _totalDepenses = depenses;
           _isLoading = false;
         });
-        // Mettre en cache
         _cachedTransactions = _allTransactions;
         _cachedTotalVentes = _totalVentes;
         _cachedTotalDepenses = _totalDepenses;
@@ -114,6 +118,35 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
   }
 
   double get _soldeNet => _totalVentes - _totalDepenses;
+
+  void _openDetail(Map<String, dynamic> transaction) {
+    final id = transaction['id'] as String;
+    final type = transaction['type'] as String;
+
+    if (id.isEmpty) return;
+
+    if (type == 'vente') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ChangeNotifierProvider(
+            create: (_) => VenteProvider(),
+            child: VenteDetailScreen(venteId: id),
+          ),
+        ),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ChangeNotifierProvider(
+            create: (_) => DepenseProvider(),
+            child: DepenseDetailScreen(depenseId: id),
+          ),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -146,7 +179,6 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
           : Column(children: [
         if (_isLoading && _hasCachedData)
           const LinearProgressIndicator(minHeight: 2, backgroundColor: Colors.transparent, valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary)),
-        // HEADER
         Container(
           padding: const EdgeInsets.all(AppSpacing.lg),
           decoration: const BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.only(bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24))),
@@ -166,7 +198,6 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
             ]),
           ]),
         ),
-        // FILTRES
         Container(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
           child: Row(children: ['Toutes', 'Ventes', 'Dépenses'].map((filter) {
@@ -177,7 +208,6 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
             ));
           }).toList()),
         ),
-        // LISTE
         Expanded(
           child: _filteredTransactions.isEmpty
               ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(AppIcons.transaction, size: 60, color: AppColors.textHint), const SizedBox(height: AppSpacing.lg), Text('Aucune transaction', style: AppTextStyles.headline4.copyWith(color: AppColors.textSecondary))]))
@@ -191,14 +221,18 @@ class _FinanceHubScreenState extends State<FinanceHubScreen> {
                 final t = _filteredTransactions[index];
                 final isVente = t['type'] == 'vente';
                 final color = isVente ? AppColors.success : AppColors.error;
-                return Container(
-                  padding: const EdgeInsets.all(AppSpacing.md), decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.border), boxShadow: AppShadows.shadowCard),
-                  child: Row(children: [
-                    Container(width: 4, height: 40, decoration: BoxDecoration(color: color, borderRadius: AppBorders.radiusSmall)),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(t['libelle'] as String, style: AppTextStyles.subtitleMedium), Text('${t['date']} • ${t['cycle']}', style: AppTextStyles.bodySmall)])),
-                    Text('${isVente ? '+' : '-'} ${(t['montant'] as double).toStringAsFixed(0)} FCFA', style: AppTextStyles.numberMedium.copyWith(color: color, fontSize: 16)),
-                  ]),
+                return GestureDetector(
+                  onTap: () => _openDetail(t),
+                  child: Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: AppBorders.cardRadius, border: Border.all(color: AppColors.border), boxShadow: AppShadows.shadowCard),
+                    child: Row(children: [
+                      Container(width: 4, height: 40, decoration: BoxDecoration(color: color, borderRadius: AppBorders.radiusSmall)),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(t['libelle'] as String, style: AppTextStyles.subtitleMedium), Text('${t['date']} • ${t['cycle']}', style: AppTextStyles.bodySmall)])),
+                      Text('${isVente ? '+' : '-'} ${(t['montant'] as double).toStringAsFixed(0)} FCFA', style: AppTextStyles.numberMedium.copyWith(color: color, fontSize: 16)),
+                    ]),
+                  ),
                 );
               },
             ),

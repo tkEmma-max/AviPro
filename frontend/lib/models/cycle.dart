@@ -5,6 +5,7 @@ class Cycle {
   final String poulailler;
   final String? poulaillerNom;
   final String type;
+  final String? type_poulet;    // ← AJOUTÉ
   final DateTime dateDebut;
   final DateTime? dateFin;
   final int nombreSujetsInitiaux;
@@ -33,6 +34,7 @@ class Cycle {
     required this.poulailler,
     this.poulaillerNom,
     required this.type,
+    this.type_poulet,    // ← AJOUTÉ
     required this.dateDebut,
     this.dateFin,
     required this.nombreSujetsInitiaux,
@@ -63,6 +65,7 @@ class Cycle {
       poulailler: json['poulailler']?.toString() ?? '',
       poulaillerNom: json['poulailler_nom'],
       type: json['type'] ?? 'CHAIR',
+      type_poulet: json['type_poulet']?.toString(),    // ← AJOUTÉ
       dateDebut: json['date_debut'] != null ? DateTime.parse(json['date_debut']) : DateTime.now(),
       dateFin: json['date_fin'] != null ? DateTime.parse(json['date_fin']) : null,
       nombreSujetsInitiaux: json['nombre_sujets_initiaux'] ?? 0,
@@ -92,7 +95,6 @@ class Cycle {
       'nom': nom,
       'poulailler': poulailler,
       'type': type,
-      'date_debut': dateDebut.toIso8601String().split('T')[0],
       'nombre_sujets_initiaux': nombreSujetsInitiaux,
       'nombre_sujets_actuels': nombreSujetsActuels,
       'duree_estimee_jours': dureeEstimeeJours,
@@ -107,6 +109,10 @@ class Cycle {
     if (id.isNotEmpty) {
       data['id'] = id;
     }
+    if (type_poulet != null) {    // ← AJOUTÉ
+      data['type_poulet'] = type_poulet;
+    }
+    data['date_debut'] = dateDebut.toIso8601String().split('T')[0];
     return data;
   }
 }
