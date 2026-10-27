@@ -1,398 +1,431 @@
 <!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AviPro – Design System V2</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #2563EB;
-            --primary-dark: #1D4ED8;
-            --primary-light: #DBEAFE;
-            --green: #059669;
-            --green-light: #D1FAE5;
-            --text-primary: #0F172A;
-            --text-secondary: #334155;
-            --text-tertiary: #64748B;
-            --text-hint: #94A3B8;
-            --surface: #FFFFFF;
-            --surface-light: #F8FAFC;
-            --border: #E2E8F0;
-            --border-light: #F1F5F9;
-            --shadow-xs: 0 1px 2px 0 rgba(0,0,0,0.03);
-            --shadow-sm: 0 1px 3px 0 rgba(0,0,0,0.04), 0 1px 2px -1px rgba(0,0,0,0.03);
-            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.04);
-            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.06), 0 4px 6px -4px rgba(0,0,0,0.04);
-            --radius-sm: 8px;
-            --radius-md: 14px;
-            --radius-lg: 16px;
-            --radius-xl: 20px;
-        }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+<html class="dark" lang="fr"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-error-container": "#ffdad6", "on-secondary-fixed-variant": "#0039b5", "primary-container": "#4ade80", "secondary-fixed": "#dce1ff", "surface-container-high": "#202d26", "primary": "#6bfb9a", "surface": "#091610", "background": "#091610", "error-container": "#93000a", "surface-container-highest": "#2a3831", "secondary-fixed-dim": "#b7c4ff", "on-surface-variant": "#bccabb", "error": "#ffb4ab", "primary-fixed": "#6dfe9c", "on-tertiary": "#67001f", "surface-dim": "#091610", "on-secondary-fixed": "#001551", "on-primary-container": "#005e2d", "surface-container-low": "#111e18", "inverse-on-surface": "#26332c", "tertiary": "#ffd6d9", "surface-variant": "#2a3831", "surface-tint": "#4de082", "on-tertiary-container": "#97253c", "tertiary-fixed-dim": "#ffb2b9", "on-background": "#d7e6dc", "on-primary": "#003919", "tertiary-fixed": "#ffdadc", "surface-container-lowest": "#05110b", "on-primary-fixed": "#00210c", "on-tertiary-fixed": "#400010", "secondary-container": "#0040cb", "outline-variant": "#3d4a3e", "on-error": "#690005", "surface-bright": "#2f3c35", "on-primary-fixed-variant": "#005227", "on-surface": "#d7e6dc", "inverse-surface": "#d7e6dc", "primary-fixed-dim": "#4de082", "on-secondary-container": "#b2c0ff", "on-secondary": "#002682", "surface-container": "#15221c", "tertiary-container": "#ffafb7", "secondary": "#b7c4ff", "inverse-primary": "#006d36", "on-tertiary-fixed-variant": "#891933", "outline": "#869486" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-md": "1rem", "space-xs": "0.25rem", "gutter": "1rem", "space-lg": "1.25rem", "margin-mobile": "1rem", "margin": "1rem", "space-sm": "0.5rem", "space-xxl": "2.5rem", "space-xl": "1.75rem", "margin-tablet": "1.5rem" }, "fontFamily": { "label-kpi-lg": ["JetBrains Mono"], "label-caps": ["Plus Jakarta Sans"], "body-lg": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "body-sm": ["Plus Jakarta Sans"], "label-sm": ["JetBrains Mono"], "headline-md": ["Plus Jakarta Sans"], "label-kpi": ["JetBrains Mono"], "display": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "body-md": ["Plus Jakarta Sans"] }, "fontSize": { "label-kpi-lg": ["28px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "800" }], "label-caps": ["11px", { "lineHeight": "14px", "letterSpacing": "0.08em", "fontWeight": "700" }], "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }], "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }], "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }], "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }], "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "700" }], "label-kpi": ["22px", { "lineHeight": "26px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "display": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.03em", "fontWeight": "800" }], "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }] } } } };</script></head><body class="bg-surface text-on-surface font-body-md text-body-md min-h-screen selection:bg-primary selection:text-on-primary"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/90 backdrop-blur-xl shadow-[0_4px_24px_rgba(0,0,0,0.35)]"><div class="h-20 px-gutter flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0 flex-1"><img alt="AVIPRO Logo" class="h-8 w-auto object-contain shrink-0" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxeSE-cdphKQSP9IARy-NfJQAZ2-LyG6IKDrqhEJYHvnWxuxBc1omU0jKPmGC06Vy3wspq05fmRUsDyR7dG51r67_fzyhTh1NKtlcdxTSTtbhFke4kEc7_YKQw-OWmjqU9wy5FxRcBglccDNzVY1EqW9od84f75eM5lt2F1NmA2ntHvWKtaiJqjTZCe3Swfrk2QY_ADmNmJonEjLlsrhTDQXqBEIaz-mWmtnJ0-XKWpCrBxNIeqST1sw"/><div class="flex flex-col min-w-0"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm text-on-surface truncate">Accueil</span></div><div class="flex items-center gap-1.5 mt-0.5"><span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span></span><span class="font-body-sm text-body-sm text-on-surface-variant truncate">Connecté • Sync SQLite à jour</span></div></div></div><div class="flex items-center gap-space-sm shrink-0"><button aria-label="Notifications" class="relative w-11 h-11 rounded-xl bg-surface-container-high/80 hover:bg-surface-container-highest flex items-center justify-center text-on-surface transition-colors"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-error ring-2 ring-surface"></span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex flex-col relative w-full pt-20 pb-28 min-h-screen bg-surface px-margin-mobile"><div class="flex flex-col w-full space-y-space-md">
+<!-- En-tête contextuel & Salutation éleveur -->
+<section class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<h2 class="font-headline-md text-headline-md text-on-surface">Bonjour, Emma 👋</h2>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Lundi 26 octobre • Élevage des Pinsons</p>
+</div>
+<!-- Badge statut synchronisation locale SQLite -->
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-high/90 shadow-sm">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="font-label-sm text-[11px] text-primary">Sync locale OK</span>
+</div>
+</div>
+</section>
+<!-- Bannière d'alerte urgente : Échéance Prêt J-3 -->
+<section class="relative overflow-hidden rounded-xl bg-gradient-to-r from-surface-container to-surface-container-high p-space-md shadow-md">
+<div class="absolute -right-4 -top-4 w-24 h-24 rounded-full bg-tertiary-container/10 blur-xl pointer-events-none"></div>
+<div class="flex items-start gap-space-sm relative z-10">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center shrink-0 text-tertiary shadow-inner">
+<span class="material-symbols-outlined text-[24px]">crisis_alert</span>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-tertiary">URGENT • J-3</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">AgriBank CI</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mt-0.5">Échéance de prêt</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Reste à solder avant jeudi</p>
+<div class="flex items-center justify-between mt-2.5 pt-2">
+<span class="font-label-kpi text-label-kpi text-on-surface">150 000 <span class="text-sm font-sans font-normal text-on-surface-variant">FCFA</span></span>
+<button class="px-3.5 py-1.5 rounded-lg bg-surface-container-highest hover:bg-surface-bright text-on-surface font-label-caps text-label-caps transition-all active:scale-95 shadow-sm" id="open-repay-btn" type="button">
+            Régler
+          </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Grille 2x2 des indicateurs clés (Dark AgriTech KPIs) -->
+<section class="grid grid-cols-2 gap-space-sm">
+<!-- KPI 1 : Solde Net Global -->
+<div class="flex flex-col p-3.5 rounded-xl bg-surface-container shadow-md justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-on-surface-variant">Solde Net</span>
+<div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-[18px]">account_balance</span>
+</div>
+</div>
+<div class="mt-2.5">
+<div class="font-label-kpi text-label-kpi text-primary leading-tight truncate">+ 1 850 000</div>
+<div class="flex items-center justify-between mt-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant">FCFA</span>
+<span class="font-label-caps text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">+14% ce mois</span>
+</div>
+</div>
+</div>
+<!-- KPI 2 : Bandes Actives -->
+<div class="flex flex-col p-3.5 rounded-xl bg-surface-container shadow-md justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-on-surface-variant">Bandes Actives</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface text-[18px]">egg</span>
+</div>
+</div>
+<div class="mt-2.5">
+<div class="font-label-kpi text-label-kpi text-on-surface leading-tight">3 Lots</div>
+<div class="flex items-center justify-between mt-1">
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">4 800 sujets chair</span>
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+</div>
+</div>
+</div>
+<!-- KPI 3 : Dépenses du mois -->
+<div class="flex flex-col p-3.5 rounded-xl bg-surface-container shadow-md justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-on-surface-variant">Dépenses (Oct)</span>
+<div class="w-8 h-8 rounded-full bg-error-container/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-error text-[18px]">trending_down</span>
+</div>
+</div>
+<div class="mt-2.5">
+<div class="font-label-kpi text-label-kpi text-error leading-tight truncate">550 000</div>
+<div class="flex items-center justify-between mt-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant">FCFA</span>
+<span class="font-label-caps text-[10px] px-1.5 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant">Aliment &amp; Soins</span>
+</div>
+</div>
+</div>
+<!-- KPI 4 : Prêts en cours -->
+<div class="flex flex-col p-3.5 rounded-xl bg-surface-container shadow-md justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-on-surface-variant">Prêts Actifs</span>
+<div class="w-8 h-8 rounded-full bg-secondary-container/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary text-[18px]">request_quote</span>
+</div>
+</div>
+<div class="mt-2.5">
+<div class="font-label-kpi text-label-kpi text-on-surface leading-tight truncate">300 000</div>
+<div class="flex items-center justify-between mt-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant">FCFA</span>
+<span class="font-label-caps text-[10px] px-1.5 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant">1 Prêt restant</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Visualisation : Flux de Trésorerie & Rentabilité (Luminescent Chart) -->
+<section class="flex flex-col p-space-md rounded-xl bg-surface-container shadow-md">
+<div class="flex items-center justify-between mb-2">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-on-surface-variant">ANALYSE FINANCIÈRE</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Flux de trésorerie</h3>
+</div>
+<div class="px-2.5 py-1 rounded-full bg-surface-container-highest text-on-surface-variant font-label-caps text-[10px]">
+        30 derniers jours
+      </div>
+</div>
+<!-- Légende -->
+<div class="flex items-center gap-space-md py-1">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Recettes ventes</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-error"></span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Charges intrants</span>
+</div>
+</div>
+<!-- Graphique SVG haute précision Dark AgriTech -->
+<div class="relative w-full h-44 mt-2">
+<svg class="w-full h-full overflow-visible" fill="none" preserveaspectratio="none" viewbox="0 0 340 140">
+<defs>
+<lineargradient id="primaryGlow" x1="0%" x2="0%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#4ade80" stop-opacity="0.32"></stop>
+<stop offset="100%" stop-color="#4ade80" stop-opacity="0.00"></stop>
+</lineargradient>
+<lineargradient id="expenseGlow" x1="0%" x2="0%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#ffb4ab" stop-opacity="0.18"></stop>
+<stop offset="100%" stop-color="#ffb4ab" stop-opacity="0.00"></stop>
+</lineargradient>
+</defs>
+<!-- Lignes repères horizontales -->
+<line stroke="#202d26" stroke-dasharray="3 3" stroke-width="1" x1="0" x2="340" y1="20" y2="20"></line>
+<line stroke="#202d26" stroke-dasharray="3 3" stroke-width="1" x1="0" x2="340" y1="65" y2="65"></line>
+<line stroke="#202d26" stroke-dasharray="3 3" stroke-width="1" x1="0" x2="340" y1="110" y2="110"></line>
+<!-- Courbe Dépenses (Rouge) -->
+<path d="M 0,115 Q 40,110 80,100 T 160,85 T 240,95 T 340,75 L 340,140 L 0,140 Z" fill="url(#expenseGlow)"></path>
+<path d="M 0,115 Q 40,110 80,100 T 160,85 T 240,95 T 340,75" stroke="#ffb4ab" stroke-linecap="round" stroke-width="2"></path>
+<!-- Courbe Recettes (Néon Vert) -->
+<path d="M 0,120 Q 50,115 100,75 T 200,45 T 280,30 T 340,18 L 340,140 L 0,140 Z" fill="url(#primaryGlow)"></path>
+<path d="M 0,120 Q 50,115 100,75 T 200,45 T 280,30 T 340,18" stroke="#4ade80" stroke-linecap="round" stroke-width="2.5"></path>
+<!-- Points de données d'impact -->
+<circle cx="200" cy="45" fill="#091610" r="4" stroke="#4ade80" stroke-width="2.5"></circle>
+<circle cx="340" cy="18" fill="#091610" r="4" stroke="#4ade80" stroke-width="2.5"></circle>
+<circle cx="160" cy="85" fill="#ffb4ab" r="3"></circle>
+</svg>
+<!-- Échelle Axe Y & X discrète -->
+<div class="absolute left-0 top-1 text-[9px] font-label-sm text-on-surface-variant/60">2.0M</div>
+<div class="absolute left-0 top-14 text-[9px] font-label-sm text-on-surface-variant/60">1.0M</div>
+<div class="absolute left-0 top-24 text-[9px] font-label-sm text-on-surface-variant/60">0 FCFA</div>
+</div>
+<!-- Pied de graphe avec highlight financier -->
+<div class="flex items-center justify-between mt-3 pt-2 bg-surface-container-low px-3 py-2 rounded-lg">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Marge nette estimée</span>
+<span class="font-label-sm text-label-sm text-primary font-bold">+ 1 300 000 FCFA (70.2%)</span>
+</div>
+</section>
+<!-- Bâtiments & Densité du cheptel (Poulaillers en direct) -->
+<section class="flex flex-col space-y-space-sm">
+<div class="flex items-center justify-between">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Poulaillers en activité</h3>
+<a class="font-label-caps text-label-caps text-primary hover:text-primary-fixed" href="#">Voir tout (3)</a>
+</div>
+<!-- Bâtiment 1 : Poulailler Nord (Conforme) -->
+<div class="flex flex-col p-space-md rounded-xl bg-surface-container shadow-md space-y-space-sm">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[22px]">domain</span>
+</div>
+<div>
+<h4 class="font-headline-sm text-[16px] text-on-surface">Poulailler Nord</h4>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Cycle Chair #04 • J26/45</span>
+</div>
+</div>
+<span class="font-label-caps text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary">Optimisé</span>
+</div>
+<!-- Métriques de charge & Équipement -->
+<div class="grid grid-cols-2 gap-space-sm pt-1">
+<div class="flex flex-col bg-surface-container-low p-2 rounded-lg">
+<span class="font-label-caps text-[10px] text-on-surface-variant">Effectif en loge</span>
+<span class="font-label-kpi text-[17px] text-on-surface mt-0.5">2 500 <span class="text-xs font-normal text-on-surface-variant">sujets</span></span>
+</div>
+<div class="flex flex-col bg-surface-container-low p-2 rounded-lg">
+<span class="font-label-caps text-[10px] text-on-surface-variant">Densité m²</span>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="font-label-sm text-label-sm text-primary">83%</span>
+<div class="w-full bg-surface-container-highest rounded-full h-1.5">
+<div class="bg-primary h-1.5 rounded-full w-[83%]"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant text-[11px] font-body-sm pt-0.5">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[15px] text-primary">water_drop</span>
+<span>Abreuvoirs : 1/28 (Conforme)</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-on-surface-variant">thermostat</span>
+<span>28.4 °C</span>
+</div>
+</div>
+</div>
+<!-- Bâtiment 2 : Poulailler Est (Alerte Mangeoires) -->
+<div class="flex flex-col p-space-md rounded-xl bg-surface-container shadow-md space-y-space-sm">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[22px]">warehouse</span>
+</div>
+<div>
+<h4 class="font-headline-sm text-[16px] text-on-surface">Poulailler Est</h4>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Cycle Poussins #06 • J14/45</span>
+</div>
+</div>
+<span class="font-label-caps text-[10px] px-2 py-0.5 rounded-full bg-tertiary-container/30 text-tertiary">Attention</span>
+</div>
+<!-- Métriques de charge & Alerte -->
+<div class="grid grid-cols-2 gap-space-sm pt-1">
+<div class="flex flex-col bg-surface-container-low p-2 rounded-lg">
+<span class="font-label-caps text-[10px] text-on-surface-variant">Effectif en loge</span>
+<span class="font-label-kpi text-[17px] text-on-surface mt-0.5">1 800 <span class="text-xs font-normal text-on-surface-variant">sujets</span></span>
+</div>
+<div class="flex flex-col bg-surface-container-low p-2 rounded-lg">
+<span class="font-label-caps text-[10px] text-on-surface-variant">Densité m²</span>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="font-label-sm text-label-sm text-tertiary">91%</span>
+<div class="w-full bg-surface-container-highest rounded-full h-1.5">
+<div class="bg-tertiary h-1.5 rounded-full w-[91%]"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Alerte équipement terrain critique -->
+<div class="flex items-center gap-2 p-2 rounded-lg bg-surface-container-high">
+<span class="material-symbols-outlined text-tertiary text-[18px] shrink-0">warning</span>
+<span class="font-body-sm text-[11px] text-on-surface">Mangeoires : 1/55 vs 1/50 recommandé (+6 requises)</span>
+</div>
+</div>
+</section>
+<!-- Dernières Transactions rattachées aux cycles -->
+<section class="flex flex-col space-y-space-sm">
+<div class="flex items-center justify-between">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Dernières écritures</h3>
+<span class="font-label-caps text-label-caps text-on-surface-variant">Historique</span>
+</div>
+<div class="flex flex-col rounded-xl bg-surface-container p-2 space-y-1 shadow-md">
+<!-- Ligne 1 : Recette vente de poulets -->
+<div class="flex items-center justify-between p-2.5 rounded-lg hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">arrow_outward</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-[14px] text-on-surface truncate">Vente 150 poulets vifs</span>
+<div class="flex items-center gap-1.5">
+<span class="font-label-caps text-[10px] text-primary">Lot Chair #04</span>
+<span class="text-on-surface-variant text-[11px]">• Aujourd'hui 09:30</span>
+</div>
+</div>
+</div>
+<div class="font-label-sm text-label-sm text-primary font-bold text-right shrink-0">
+          + 450 000 <span class="font-normal text-[10px]">FCFA</span>
+</div>
+</div>
+<!-- Ligne 2 : Dépense Alimentation -->
+<div class="flex items-center justify-between p-2.5 rounded-lg hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-9 h-9 rounded-full bg-error-container/20 text-error flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">arrow_downward</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-[14px] text-on-surface truncate">Aliment Finition (10 sacs)</span>
+<div class="flex items-center gap-1.5">
+<span class="font-label-caps text-[10px] text-on-surface-variant">Lot Chair #04</span>
+<span class="text-on-surface-variant text-[11px]">• Hier 16:45</span>
+</div>
+</div>
+</div>
+<div class="font-label-sm text-label-sm text-error font-bold text-right shrink-0">
+          - 85 000 <span class="font-normal text-[10px]">FCFA</span>
+</div>
+</div>
+<!-- Ligne 3 : Traitement vétérinaire -->
+<div class="flex items-center justify-between p-2.5 rounded-lg hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-9 h-9 rounded-full bg-error-container/20 text-error flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">vaccines</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-[14px] text-on-surface truncate">Vaccination Gumboro J12</span>
+<div class="flex items-center gap-1.5">
+<span class="font-label-caps text-[10px] text-on-surface-variant">Lot Poussins #06</span>
+<span class="text-on-surface-variant text-[11px]">• 24 Octobre</span>
+</div>
+</div>
+</div>
+<div class="font-label-sm text-label-sm text-error font-bold text-right shrink-0">
+          - 24 500 <span class="font-normal text-[10px]">FCFA</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Illustration visuelle de statut cheptel -->
+<section class="relative rounded-xl overflow-hidden shadow-lg h-36">
+<img alt="Statut sanitaire cheptel avicole" class="w-full h-full object-cover opacity-35 filter brightness-75" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB0GyvUE6WX7gylyTTV8vaiCKiBhlwQtihBUqWIwnV38Vhpk_Sqq-9y7FJyttcgpApaQZVNELfhf5EgHbSbM6n1rqEc4Ujhkf9UGRxRZgwt4zM10V0kLknsuVjrgz3n1kWjO31Of9T9dwAIjxOAKCbqNYrLO98IOcpJKOaAYi6AJDLYYWw5bK6CtXZBuoPbhwlAViojDRaLUg_f75hMZFxW7xZyyrJgjlBEQk3RKj1EgvSyTNDE_rArxd-lm-1wn4-GXjE"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface via-surface/60 to-transparent flex flex-col justify-end p-space-md">
+<div class="flex items-center justify-between">
+<div>
+<span class="font-label-caps text-label-caps text-primary">QUALITÉ ÉLEVAGE</span>
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Taux de viabilité global 98.4%</h4>
+</div>
+<div class="w-9 h-9 rounded-full bg-primary/20 backdrop-blur-md flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">check_circle</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Modal Bottom Sheet pour Actions Rapides Terrain (Accessible via FAB ou triggers) -->
+<div class="fixed inset-0 z-50 flex flex-col justify-end bg-surface-container-lowest/80 backdrop-blur-md transition-opacity duration-300 opacity-0 pointer-events-none" id="quick-action-modal">
+<!-- Backdrop dismiss touch target -->
+<div class="flex-1 w-full" id="modal-backdrop-close"></div>
+<div class="relative w-full rounded-t-3xl bg-surface-container-high p-gutter shadow-[0_-12px_40px_rgba(0,0,0,0.6)] space-y-space-md max-h-[85vh] overflow-y-auto">
+<!-- Poignée ergonomique mobile -->
+<div class="mx-auto w-12 h-1.5 rounded-full bg-outline-variant/60"></div>
+<div class="flex items-center justify-between">
+<div>
+<span class="font-label-caps text-label-caps text-primary">SAISIE RAPIDE TERRAIN</span>
+<h3 class="font-headline-md text-headline-md text-on-surface">Nouvelle transaction</h3>
+</div>
+<button class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface" id="close-modal-btn">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- Boutons tactiles pour gants / terrain -->
+<div class="flex flex-col space-y-space-sm pt-1">
+<!-- 1. Vente -->
+<button class="flex items-center gap-space-md p-space-md rounded-xl bg-surface-container hover:bg-surface-bright active:scale-[0.98] transition-all text-left group" type="button">
+<div class="w-12 h-12 rounded-xl bg-primary text-on-primary flex items-center justify-center shrink-0 shadow-[0_0_12px_rgba(107,251,154,0.3)]">
+<span class="material-symbols-outlined text-[28px]">payments</span>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface">Enregistrer une Vente</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Poulets vifs, abattus ou alvéoles d'œufs</span>
+</div>
+<span class="material-symbols-outlined text-primary group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+<!-- 2. Dépense -->
+<button class="flex items-center gap-space-md p-space-md rounded-xl bg-surface-container hover:bg-surface-bright active:scale-[0.98] transition-all text-left group" type="button">
+<div class="w-12 h-12 rounded-xl bg-surface-container-highest text-error flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[28px]">receipt_long</span>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface">Enregistrer une Dépense</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Sacs d'aliment, vaccins, copeaux + photo reçu</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+<!-- 3. Rapport Journalier Terrain -->
+<button class="flex items-center gap-space-md p-space-md rounded-xl bg-surface-container hover:bg-surface-bright active:scale-[0.98] transition-all text-left group" type="button">
+<div class="w-12 h-12 rounded-xl bg-secondary-container/50 text-secondary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[28px]">assignment_turned_in</span>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface">Rapport Quotidien</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Mortalités, conso aliment (kg) &amp; eau (L)</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+</div>
+<div class="p-3 rounded-lg bg-surface-container text-center">
+<p class="font-body-sm text-[11px] text-on-surface-variant">Données sauvegardées instantanément dans le cache SQLite local pour les zones blanches hors réseau.</p>
+</div>
+</div>
+</div>
+</div>
+<script>
+  (function() {
+    const modal = document.getElementById('quick-action-modal');
+    const closeBtn = document.getElementById('close-modal-btn');
+    const backdropClose = document.getElementById('modal-backdrop-close');
+    const repayBtn = document.getElementById('open-repay-btn');
 
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #F1F5F9;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 24px;
-            -webkit-font-smoothing: antialiased;
-        }
+    // Lie le FAB central du shell ou le bouton d'action interne
+    const fabButton = document.querySelector('a[data-path="saisie-rapide"]');
 
-        .phone-frame {
-            width: 390px;
-            height: 844px;
-            background: var(--surface-light);
-            border-radius: 40px;
-            box-shadow: var(--shadow-lg);
-            overflow: hidden;
-            position: relative;
-            border: 1px solid var(--border-light);
-        }
+    function openModal(e) {
+      if (e) e.preventDefault();
+      modal.classList.remove('opacity-0', 'pointer-events-none');
+      modal.classList.add('opacity-100', 'pointer-events-auto');
+    }
 
-        .status-bar {
-            height: 44px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 28px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
+    function closeModal() {
+      modal.classList.remove('opacity-100', 'pointer-events-auto');
+      modal.classList.add('opacity-0', 'pointer-events-none');
+    }
 
-        .content {
-            padding: 0 18px;
-            height: calc(100% - 44px - 80px);
-            overflow-y: auto;
-            scroll-behavior: smooth;
-        }
-        .content::-webkit-scrollbar { display: none; }
+    if (fabButton) {
+      fabButton.addEventListener('click', openModal);
+    }
 
-        /* HEADER */
-        .header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 0 10px;
-        }
-        .avatar {
-            width: 42px; height: 42px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            border-radius: 42px;
-            display: flex; align-items: center; justify-content: center;
-            color: white; font-weight: 700; font-size: 16px;
-            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.22);
-        }
-        .greeting { flex: 1; margin-left: 12px; }
-        .greeting h1 { font-size: 17px; font-weight: 600; color: var(--text-primary); }
-        .greeting p { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
-        .icon-btn {
-            width: 38px; height: 38px;
-            background: var(--surface); border-radius: 38px;
-            display: flex; align-items: center; justify-content: center;
-            border: 1px solid var(--border); box-shadow: var(--shadow-xs);
-            cursor: pointer; color: var(--text-secondary);
-        }
+    if (closeBtn) {
+      closeBtn.addEventListener('click', closeModal);
+    }
 
-        /* STATS GRID */
-        .stats-grid {
-            display: grid; grid-template-columns: 1fr 1fr;
-            gap: 12px; margin: 16px 0 18px;
-        }
-        .stat-card {
-            background: var(--surface); padding: 14px 16px;
-            border-radius: var(--radius-lg); border: 1px solid var(--border-light);
-            box-shadow: var(--shadow-xs);
-        }
-        .stat-card.primary {
-            background: linear-gradient(135deg, #1E40AF, #2563EB);
-            color: white; border: none;
-            box-shadow: 0 8px 20px -6px rgba(37, 99, 235, 0.3);
-        }
-        .stat-icon {
-            width: 34px; height: 34px; border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            margin-bottom: 10px;
-        }
-        .stat-card:not(.primary) .stat-icon { background: var(--surface-light); }
-        .stat-card.primary .stat-icon { background: rgba(255,255,255,0.15); }
-        .stat-value {
-            font-size: 19px; font-weight: 700; letter-spacing: -0.3px;
-            margin-bottom: 2px; color: var(--text-primary);
-        }
-        .stat-card.primary .stat-value { color: white; }
-        .stat-label { font-size: 11px; color: var(--text-tertiary); font-weight: 500; }
-        .stat-card.primary .stat-label { color: rgba(255,255,255,0.8); }
+    if (backdropClose) {
+      backdropClose.addEventListener('click', closeModal);
+    }
 
-        /* SECTION TITLE */
-        .section-title {
-            display: flex; align-items: center;
-            margin: 20px 0 10px;
-        }
-        .section-title h2 {
-            font-size: 14px; font-weight: 600;
-            color: var(--text-secondary); text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* TRANSACTIONS */
-        .tx-card {
-            background: var(--surface); padding: 12px 14px;
-            border-radius: var(--radius-md); border: 1px solid var(--border-light);
-            box-shadow: var(--shadow-xs); display: flex; align-items: center;
-            margin-bottom: 8px;
-        }
-        .tx-icon {
-            width: 38px; height: 38px; border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            margin-right: 12px;
-        }
-        .tx-info { flex: 1; }
-        .tx-info .title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
-        .tx-info .date { font-size: 11px; color: var(--text-hint); }
-        .tx-amount {
-            font-size: 13px; font-weight: 600; padding: 4px 10px;
-            border-radius: 8px;
-        }
-        .tx-amount.positive { background: var(--green-light); color: var(--green); }
-        .tx-amount.negative { background: #FEE2E2; color: #991B1B; }
-
-        /* BADGES */
-        .badge {
-            display: inline-flex; align-items: center; gap: 4px;
-            font-size: 10px; font-weight: 600; padding: 3px 8px;
-            border-radius: 20px;
-        }
-        .badge.success { background: var(--green-light); color: var(--green); }
-        .badge.info { background: var(--primary-light); color: var(--primary); }
-        .badge.warning { background: #FEF3C7; color: #92400E; }
-        .badge.danger { background: #FEE2E2; color: #991B1B; }
-
-        /* ÉCHÉANCES */
-        .ech-card {
-            background: var(--surface); padding: 12px 14px;
-            border-radius: var(--radius-md); border: 1px solid var(--border-light);
-            box-shadow: var(--shadow-xs); display: flex; align-items: center;
-            margin-bottom: 8px;
-        }
-        .ech-card .dot {
-            width: 8px; height: 8px; border-radius: 8px;
-            margin-right: 10px; flex-shrink: 0;
-        }
-        .ech-card .dot.urgent { background: #DC2626; }
-        .ech-card .dot.normal { background: #F59E0B; }
-        .ech-card .name { flex: 1; font-weight: 500; font-size: 13px; color: var(--text-primary); }
-        .ech-card .amount { font-weight: 600; font-size: 13px; color: var(--text-secondary); }
-
-        /* CHART PLACEHOLDER */
-        .chart-box {
-            background: var(--surface); padding: 18px;
-            border-radius: var(--radius-lg); border: 1px solid var(--border-light);
-            box-shadow: var(--shadow-xs); margin: 16px 0;
-        }
-        .chart-header {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 14px;
-        }
-        .chart-title { font-weight: 600; font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
-        .chart-area {
-            height: 110px; background: var(--surface-light);
-            border-radius: 10px; border: 1px dashed var(--border);
-            display: flex; align-items: center; justify-content: center;
-            color: var(--text-hint); font-size: 12px;
-        }
-
-        /* BUTTONS */
-        .btn-row { display: flex; gap: 10px; margin: 12px 0; }
-        .btn {
-            display: inline-flex; align-items: center; justify-content: center;
-            gap: 6px; font-family: 'Inter', sans-serif; font-size: 13px;
-            font-weight: 600; padding: 9px 18px; border-radius: 12px;
-            cursor: pointer; border: none; transition: all 0.15s ease;
-        }
-        .btn-primary { background: var(--primary); color: white; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2); }
-        .btn-outline { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
-
-        /* INPUT */
-        .input-field {
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: 10px; padding: 10px 14px; font-family: 'Inter', sans-serif;
-            font-size: 13px; width: 100%; color: var(--text-primary); margin: 8px 0 12px;
-        }
-        .input-field:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08); }
-
-        /* BOTTOM NAV */
-        .bottom-nav {
-            position: absolute; bottom: 0; width: 100%; height: 80px;
-            background: var(--surface); border-top: 1px solid var(--border-light);
-            display: flex; justify-content: space-around; align-items: center;
-            padding: 0 8px; box-shadow: 0 -2px 10px rgba(0,0,0,0.02);
-        }
-        .nav-item {
-            display: flex; flex-direction: column; align-items: center;
-            gap: 3px; color: var(--text-hint); font-size: 10px; font-weight: 500;
-            cursor: pointer;
-        }
-        .nav-item.active { color: var(--primary); font-weight: 600; }
-        .nav-item svg { width: 22px; height: 22px; }
-
-        /* ICONS - DARK & CRISP */
-        .icon-dark { color: var(--text-primary); stroke-width: 2; }
-        .icon-secondary { color: var(--text-secondary); stroke-width: 1.8; }
-    </style>
-</head>
-<body>
-    <div class="phone-frame">
-        <div class="status-bar"><span>9:41</span><span>📶 🔋</span></div>
-
-        <div class="content">
-            <!-- HEADER -->
-            <div class="header">
-                <div class="avatar">AV</div>
-                <div class="greeting">
-                    <h1>Bonjour, Admin 👋</h1>
-                    <p>Mercredi 30 juillet 2026</p>
-                </div>
-                <div class="icon-btn">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                </div>
-            </div>
-
-            <!-- STATS -->
-            <div class="stats-grid">
-                <div class="stat-card primary">
-                    <div class="stat-icon">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
-                    </div>
-                    <div class="stat-value">+245 000 FCFA</div>
-                    <div class="stat-label">Solde net</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-                    </div>
-                    <div class="stat-value">310 000 FCFA</div>
-                    <div class="stat-label">Dépenses totales</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-                    </div>
-                    <div class="stat-value">3 bandes</div>
-                    <div class="stat-label">Cycles actifs</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
-                    </div>
-                    <div class="stat-value">85 000 FCFA</div>
-                    <div class="stat-label">Prêts en cours</div>
-                </div>
-            </div>
-
-            <!-- CHART -->
-            <div class="chart-box">
-                <div class="chart-header">
-                    <div class="chart-title">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                        Flux de trésorerie
-                    </div>
-                    <div style="display:flex; gap:12px; font-size:11px; color:var(--text-tertiary);">
-                        <span>🟢 Gains</span>
-                        <span>🔴 Dépenses</span>
-                    </div>
-                </div>
-                <div class="chart-area">📈 Graphique cumulé (fl_chart)</div>
-            </div>
-
-            <!-- BADGES -->
-            <div class="section-title"><h2>Badges de statut</h2></div>
-            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
-                <span class="badge success">✅ Cycle actif</span>
-                <span class="badge info">ℹ️ Densité OK</span>
-                <span class="badge warning">⚠️ À venir</span>
-                <span class="badge danger">❗ Urgent</span>
-            </div>
-
-            <!-- BOUTONS -->
-            <div class="btn-row">
-                <button class="btn btn-primary">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
-                    Ajouter
-                </button>
-                <button class="btn btn-outline">Annuler</button>
-            </div>
-
-            <!-- INPUT -->
-            <input type="text" class="input-field" placeholder="Nom du poulailler">
-
-            <!-- TRANSACTIONS -->
-            <div class="section-title"><h2>Dernières transactions</h2></div>
-            <div class="tx-card">
-                <div class="tx-icon" style="background:#F8FAFC;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="1.8"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-                </div>
-                <div class="tx-info">
-                    <div class="title">Vente de poulets</div>
-                    <div class="date">30/07/2026</div>
-                </div>
-                <div class="tx-amount positive">+175 000 FCFA</div>
-            </div>
-            <div class="tx-card">
-                <div class="tx-icon" style="background:#F8FAFC;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="1.8"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
-                </div>
-                <div class="tx-info">
-                    <div class="title">Aliment démarrage</div>
-                    <div class="date">29/07/2026</div>
-                </div>
-                <div class="tx-amount negative">-50 000 FCFA</div>
-            </div>
-
-            <!-- ÉCHÉANCES -->
-            <div class="section-title"><h2>Échéances prêts</h2></div>
-            <div class="ech-card">
-                <div class="dot urgent"></div>
-                <span class="name">Crédit Agricole</span>
-                <span class="amount">45 000 FCFA</span>
-            </div>
-            <div class="ech-card">
-                <div class="dot normal"></div>
-                <span class="name">Tontine Mme Koffi</span>
-                <span class="amount">30 000 FCFA</span>
-            </div>
-        </div>
-
-        <!-- BOTTOM NAV -->
-        <div class="bottom-nav">
-            <div class="nav-item active">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                Accueil
-            </div>
-            <div class="nav-item">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 22h20"/><path d="M2 22V6l10-4 10 4v16"/></svg>
-                Poulaillers
-            </div>
-            <div class="nav-item">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.38-3.36L23 10M1 14l5.11 1.36A9 9 0 0 0 20.49 15"/></svg>
-                Cycles
-            </div>
-            <div class="nav-item">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-                Finances
-            </div>
-            <div class="nav-item">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                Profil
-            </div>
-        </div>
-    </div>
-</body>
-</html>
+    if (repayBtn) {
+      repayBtn.addEventListener('click', function() {
+        alert("Ouverture de l'échéancier AgriBank CI (Réf: LN-2026-902).");
+      });
+    }
+  })();
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface-container-lowest/90 backdrop-blur-2xl shadow-[0_-8px_32px_rgba(0,0,0,0.5)]" data-active-classes="text-primary font-semibold"><div class="relative flex items-center justify-around h-16 px-space-xs"><a aria-current="page" class="flex flex-col items-center justify-center w-14 h-14 transition-colors text-primary font-semibold" data-path="accueil" href="#"><span class="material-symbols-outlined text-[24px]">dashboard</span><span class="font-label-caps text-label-caps mt-0.5">Accueil</span></a><a class="flex flex-col items-center justify-center w-14 h-14 text-on-surface-variant transition-colors" data-path="poulaillers" href="#"><span class="material-symbols-outlined text-[24px]">warehouse</span><span class="font-label-caps text-label-caps mt-0.5">Bâtiments</span></a><div class="relative -top-5 flex flex-col items-center justify-center"><a aria-label="Saisie rapide terrain" class="w-14 h-14 rounded-full bg-primary hover:bg-primary-fixed text-on-primary flex items-center justify-center shadow-[0_0_20px_rgba(107,251,154,0.4)] transition-transform active:scale-95" data-path="saisie-rapide" href="#"><span class="material-symbols-outlined text-[30px] font-bold">add</span></a><span class="font-label-caps text-label-caps text-on-surface-variant mt-1">Terrain</span></div><a class="flex flex-col items-center justify-center w-14 h-14 text-on-surface-variant transition-colors" data-path="cycles-bandes" href="#"><span class="material-symbols-outlined text-[24px]">egg_alt</span><span class="font-label-caps text-label-caps mt-0.5">Cycles</span></a><a class="flex flex-col items-center justify-center w-14 h-14 text-on-surface-variant transition-colors" data-path="finances-profil" href="#"><span class="material-symbols-outlined text-[24px]">account_balance_wallet</span><span class="font-label-caps text-label-caps mt-0.5">Finances</span></a></div></nav></body></html>
